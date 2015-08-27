@@ -1,0 +1,14 @@
+
+1.  arp151.formatted.trs -- This is the main data file.  It has several components.
+        i. The first line has the number of pixels in each spectrum, the number of spectra (or times at which data was taken), and the number of data cubes
+        ii. There is a separator "---" between each component.  The first appears on line 2.
+        iii.  Line three is the list of wavelengths associated with each pixel.  This is in the restframe of the AGN.
+        iv.  Line five (after another separator) is the list of times at which each spectrum was taken.  They are given in HJD - 2450000
+        v. Line seven (after a separator) begins the first datacube.  The datacube has Nspec x Npix entries.  There are Nspec lines in the datacube, and each line has Npix entries, so each line gives a single spectrum minus the continuum and any constant components (I think this is right...)  Units are flux density (10^-15 erg s^-1 cm^-2 A^-1)
+        vi. Finally, after the first datacube and a separator is the second datacube.  It has the same dimensions and is the error cube, with the measurement uncertainties for each pixel in each spectrum.
+
+
+2.  arp151.b.dat -- This is much simpler.  It is a single lightcurve from B-band photometry and is the driving light curve.  The datacube in the previous file gives us the echoes relative to this light curve.  Columns are HJD-2450000, flux, and flux uncertainty.  Units here don't really matter but are probably something like 10^-15 ergs s^-1 cm^-2
+
+
+This should be plenty to get started.  You could crop down the datacubes so that you just focus on the region around Hbeta to begin with to speed everything up for testing.  This is the same object as in my 2010 ApJ Letter, so you can see the published results there.
