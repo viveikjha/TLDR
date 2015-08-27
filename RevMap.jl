@@ -1,7 +1,7 @@
 using Optim
 #using PyPlot
 include("RMLib.jl")
-path="../../data/"
+path="data/"
 clear()
 #=IMPORTING FILES=#
 #SPECTRA

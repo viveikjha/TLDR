@@ -1,7 +1,7 @@
 using Optim
 #using PyPlot
 include("RMLib.jl")
-path="../../data/"
+path="/data/"
 clear()
 #=IMPORTING FILES=#
 #SPECTRA
@@ -184,7 +184,7 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
     # Evaluation:
       if l == 350
 	ext = 1.0/2 * (H*vec(X[it,l,:])-vec(L[l,:]))'*squeeze(W[l,:,:],1)*(H*vec(X[it,l,:])-vec(L[l,:]))
-        println("Line = ", l, "Chi2 = ",Chi2(Model(vec(X[it,l,:]),ICF),L[l,:],EL[l,:]), " Mat = ",ext)
+        println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),ICF),L[l,:],EL[l,:]), " Mat = ",ext)
         #println("Rho: ",rho[it,l]," U: ",mean(U[it-1,l,:]))
 
 	M = Model(squeeze(X[it,l,:],1),ICF)
