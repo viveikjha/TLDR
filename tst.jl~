@@ -1,0 +1,9 @@
+
+
+
+A = [1,2,3,4,5]
+
+W = eye(5)
+
+chiA = A'*W*A
+println(chiA)

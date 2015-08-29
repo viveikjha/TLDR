@@ -202,8 +202,6 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
 	println("e1: ", size(e1))
 	#ext =  (e1)'*squeeze(W[l,:,:],1)*(e1)
 	println( squeeze(W[l,:,:],1))	
-	println("-------------------------------------------")
-	println(L[l,:])
 	ext = (e1)' * 0.5*eye(86)*(e1)
 	#println("L: ", vec(L[l,:]))
 	#println(W[l,:,:])

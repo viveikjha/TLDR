@@ -113,7 +113,6 @@ function Chi2(M,D,Sigma)
 	println("M: ", size(vec(M)))
 	println("D: ", size(vec(D)))
 	println("Sigma: ", size(vec(Sigma)))
-	fill!(Sigma,1.0)
 	println((  (vec(M).-vec(D))  ./vec(Sigma) ).^2)
   sum( (  (vec(M)-vec(D))  ./vec(Sigma) ).^2)   #Value Returned!
 end
