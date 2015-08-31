@@ -1,7 +1,8 @@
 using Optim
 #using PyPlot
 include("RMLib.jl")
-path="data/"
+#path="data/"
+path ="synth/"
 clear()
 #=IMPORTING FILES=#
 #SPECTRA
@@ -9,12 +10,14 @@ wavelength_filename = "rvm_wavelengths.csv"
 wavelength_path = string(path,wavelength_filename)
 wavelength = readcsv(wavelength_path)                    #List of measured wavelengths
 
-spectra_filename= "rvm_fluxes.csv"
+#spectra_filename= "rvm_fluxes.csv"
+spectra_filename= "rvm_flxS.csv"
 spectrapath = string(path,spectra_filename)
 L = readcsv(spectrapath)                           #SPECTRAL FLUXES (L)
 num_lines = size(L,1)                                #NUMBER OF SPECTRAL LINES
 
-spectra_error_filename = "rvm_errfluxes.csv"
+#spectra_error_filename = "rvm_errfluxes.csv"
+spectra_error_filename = "rvm_flx_errS.csv"
 spectra_error_path = string(path,spectra_error_filename)
 EL = readcsv(spectra_error_path)                 #SPECTRAL FLUX ERRORS
 
@@ -24,9 +27,12 @@ spectra_dates = readcsv(spectra_dates_path)                   #SPECTRAL SAMPLING
 num_spectra_samples = length(spectra_dates)      				  #NUMBER OF DATA POINTS IN SPECTRA
 
 #CONTINUUM
-continuum_array_filename = "arp151.b.dat"
+#continuum_array_filename = "arp151.b.dat"
+continuum_array_filename = "continuumS.csv"
 continuum_array_path =string(path,continuum_array_filename)
-continuum_array = readdlm(continuum_array_path)
+#continuum_array = readdlm(continuum_array_path)
+continuum_array = readcsv(continuum_array_path)
+println(size(continuum_array))
 #CONTINUUM_ARRAY CONTAINTS THE CONTINUUM DATES, FLUX, AND FLUX ERRORS.
 #IN THAT ORDER.
 
@@ -90,6 +96,7 @@ for lam in 1:num_lines
     for j in 1:num_spectra_dates
       #println("!")
       if i == j
+	println(EL[lam,i])
         T[i,j] =1.0/ EL[lam,i].^2
       end
     end
