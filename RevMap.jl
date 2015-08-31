@@ -125,7 +125,6 @@ tau_prim = zeros((nits,num_lines))
 tau_dual = zeros((nits,num_lines))
 value = 1.0
 initial_rho = 2.0
-#println(size(U))
 fill!(X,initial_psi)
 fill!(X_s,initial_psi)
 fill!(Z,initial_psi)
@@ -136,16 +135,16 @@ for p in 1:num_lines
 #for p in 1:2
   U[1,p,:]=HT * squeeze(W[p,:,:],1) * ( H * vec(Z[1,p,:]) - vec(L[p,:]))
 end
-#println(size(val))
 
 #= Calculate Initial Rho =#
 #Holding off on this due to minimization;
 #NEEDS GRADIENT TO WORK!
 #f(V) = Chi2(  Model((Z[1,1,:]-U[1,1,:]./V),ICF) ,vec(L[1,:]),vec(EL[1,:]))
 #println(optimize(f,[1.0], method= :l_bfgs))
+
 converged = 0
 it = 2
-nits = 2
+nits = 20
 
 while it <= nits && converged==0        #ADMM ITERATION LOOP
   println("Iteration: ", it)
@@ -175,15 +174,6 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
       
     #Step 3 done!
     # Evaluation:
-      if l == 250
-	e1 = H*vec(X[it,l,:]).-vec(L[l,:])
-	ext =  e1'*squeeze(W[l,:,:],1)*e1
-        #println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),ICF),L[l,:],EL[l,:]), " Mat = ",ext)
-	 println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),H),L[l,:],EL[l,:]), " Mat = ",ext)        
-	#println("--------------------")
-	#println("Rho: ",rho[it,l]," U: ",mean(U[it-1,l,:]))
-
-     end
       eps_abs = 0.00     #Must be >= 0
       eps_rel = 0.001  #Must be between 0 and 1
       S = rho[it,l]*(Z[it,l,:]-Z[it-1,l,:])
@@ -195,6 +185,18 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
       #eta = ell2norm(R)*tau_dual[it,l] / (ell2norm(S)*tau_prim[it,l])		#OPTION 1
       eta = ell2norm(R)*tau_dual[it-1,l] / (ell2norm(S)*tau_prim[it-1,l])	#OPTION 2
 
+
+      if l == 250
+	e1 = H*vec(X[it,l,:]).-vec(L[l,:])
+	ext =  e1'*squeeze(W[l,:,:],1)*e1
+        #println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),ICF),L[l,:],EL[l,:]), " Mat = ",ext)
+	println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),H),L[l,:],EL[l,:]), " Mat = ",ext)        
+	println("Rho: ",rho[it,l]," U: ",mean(U[it-1,l,:]))
+	println("S: ", ell2norm(S), "    R: ", ell2norm(R))
+	println("tau_prim: ", tau_prim[it,l], "    tau_dual: ", tau_dual[it,l])
+	println("--------------------------------------")
+     end
+	
       #Check for convergance
       if ell2norm(R) < tau_prim[it,l] && ell2norm(S) < tau_dual[it,l]
         println("Line Converged")
