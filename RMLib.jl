@@ -83,22 +83,6 @@ end
 function Model(X,H)
   L = size(ICF)[1]
   MF = zeros(L)
-	#println("In Model:----------")
-	#println("vecICF': ", size((ICF[1,:])'))
-	#println("squeezeX: ", size(squeeze(X,1)))
-	#println("H: ", size(H))
-	#println("L: ", L)
-	#println("ICF: ", size((ICF[1,:])))	
-	#println("-------------------")
-
-  #for i in 1:L
-  #  MF[i] = sum(vec(X).*vec(ICF[i,:]))
-  #end
-  #F = ICF[1,:]
-  #println("F: ",size(F))
-  #println("L: ",L)
-  #println("X: ",size(X))
-  #println(MF)
   MF = H*vec(X)
   MF #Array Returned!
 end
@@ -110,12 +94,7 @@ end
 # D should be the spectral data
 # Sigma should be the error on the spectral data
 function Chi2(M,D,Sigma)
-	println("M: ", size(vec(M)))
-	println("D: ", size(vec(D)))
-	println("Sigma: ", size(vec(Sigma)))
-	fill!(Sigma,1.0)
-	println((  (vec(M).-vec(D))  ./vec(Sigma) ).^2)
-  sum( (  (vec(M)-vec(D))  ./vec(Sigma) ).^2)   #Value Returned!
+	  sum(   (vec(M)-vec(D)).^2  ./vec(Sigma) .^2)   #Value Returned!
 end
 
 #=--------------------------------------------------=#

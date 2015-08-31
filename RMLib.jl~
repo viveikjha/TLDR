@@ -110,11 +110,7 @@ end
 # D should be the spectral data
 # Sigma should be the error on the spectral data
 function Chi2(M,D,Sigma)
-	println("M: ", size(vec(M)))
-	println("D: ", size(vec(D)))
-	println("Sigma: ", size(vec(Sigma)))
-	println((  (vec(M).-vec(D))  ./vec(Sigma) ).^2)
-  sum( (  (vec(M)-vec(D))  ./vec(Sigma) ).^2)   #Value Returned!
+	  sum(   (vec(M)-vec(D)).^2  ./vec(Sigma) .^2)   #Value Returned!
 end
 
 #=--------------------------------------------------=#

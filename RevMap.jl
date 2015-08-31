@@ -46,7 +46,6 @@ tdf_times = linspace(1,20,num_tdf_times)
 #= COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS =#
 interpolation_points = zeros(num_spectra_samples,num_tdf_times)
 ICF = zeros(num_spectra_samples,num_tdf_times)
-println("ICF: ", size(ICF))
 ICFE= zeros(num_spectra_samples,num_tdf_times)
 for date in 1:num_spectra_samples
 	for delay in 1:num_tdf_times
@@ -59,29 +58,22 @@ for date in 1:num_spectra_samples
   ICFE[date,:] = interp(interpolation_points[date,:],continuum_dates,continuum_error_flux)
 end
 
-#println("---------------------------------------------------------------------------------------------------------")
-#println("ICF: ", ICF)
-#println("---------------------------------------------------------------------------------------------------------")
-#= DONE WITH THE CONTINUUM INTERPOLATION =#
+
 #=
 plot(continuum_dates,continuum_flux)
 plot(interpolation_points[1,:],ICF[1,:],"r*")
 show()
 =#
+
 #for i in 1:10
 #  println(interpolation_points[i,1],"     ",ICF[i,1])
 #end
-
 
 #=    PRECOMPUTING TIKHONOV MATRICES     =#
 
 #Build Mapping Matrix
 num_spectra_dates=size(spectra_dates)[1]
 H = zeros((num_spectra_dates, num_tdf_times))
-#H = zeros((num_tdf_times, num_spectra_dates))
-#println(num_spectra_dates)
-
-
 for lns in 1:num_spectra_dates
   for tdf in 1:num_tdf_times
     if lns >= tdf
@@ -89,27 +81,16 @@ for lns in 1:num_spectra_dates
     end
   end
 end
-#println("---------------------------------------------------------------------------------------------------------")
-#println(H)
-#println("---------------------------------------------------------------------------------------------------------")
-#println("Size of H: ", size(H))
-
-
-
-
-
-
 
 #Build Covariance Matrix
 W = zeros((size(wavelength)[1],size(L)[2],size(L)[2]))
-#println("W: ",size(W))
 for lam in 1:num_lines
   T = eye(num_spectra_dates)
   for i in 1:num_spectra_dates
     for j in 1:num_spectra_dates
       #println("!")
       if i == j
-        T[i,j] = EL[lam,i].^2
+        T[i,j] =1.0/ EL[lam,i].^2
       end
     end
   end
@@ -121,7 +102,7 @@ Gamma = eye(num_tdf_times)
 GammaT = Gamma'
 
 #= INITIALIZING ADMM PARAMETERS =#
-nits = 10 #Number of ADMM Iterations (An upper limit if convergence is not reached)
+nits = 30 #Number of ADMM Iterations (An upper limit if convergence is not reached)
 final_it = nits
 initial_psi = 0.1  #Initial value for PSI
 
@@ -179,7 +160,7 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
     #Step 2:
       Z_s[it,l,:] = X[it,l,:]-U[it-1,l,:]/rho[it,l]
       slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
-      #slice = squeeze(W[l,:,:],1)
+      #slice = squeeze(W[l,:,:],1)	#RESHAPE IS SUPPOSED TO BE FASTER THAN SQUEEZE!
 
       A =inv(((HT*slice)*H)+(rho[it,l]/2.0)*(GammaT*Gamma))
       B = (HT*slice)*vec(L[l,:])+(rho[it,l])*GammaT*Gamma*vec(Z_s[it,l,:])
@@ -191,49 +172,18 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
       #U[it,l,:] = U[it-1,l,:]+(rho[it,l]/2.0)*(X[it,l,:]-Z[it,l,:])
       #= OR =#
       U[it,l,:] = HT * slice * ( H * vec(Z[it,l,:]) - vec(L[l,:]))
-      yk22 = HT * slice * ( H * vec(Z[it,l,:]) - vec(L[l,:]))
-      #println( " Eqn: ",eq[1], " Matr: ", yk22[1])
-      #println("ratio: ", eq[1] / yk22[1])
-
+      
     #Step 3 done!
     # Evaluation:
       if l == 250
 	e1 = H*vec(X[it,l,:]).-vec(L[l,:])
-	println("e1: ", size(e1))
-	#ext =  (e1)'*squeeze(W[l,:,:],1)*(e1)
-	println( squeeze(W[l,:,:],1))	
-	println("-------------------------------------------")
-	println(L[l,:])
-	ext = (e1)' * 0.5*eye(86)*(e1)
-	#println("L: ", vec(L[l,:]))
-	#println(W[l,:,:])
-	println("-------------------------------------------")
-
+	ext =  e1'*squeeze(W[l,:,:],1)*e1
         #println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),ICF),L[l,:],EL[l,:]), " Mat = ",ext)
 	 println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),H),L[l,:],EL[l,:]), " Mat = ",ext)        
+	#println("--------------------")
 	#println("Rho: ",rho[it,l]," U: ",mean(U[it-1,l,:]))
 
-	#M = Model((X[it,l,:]),ICF)
-	M = Model((X[it,l,:]),H)	
-	B =  H*vec(X[it,l,:])
-	println("X: ",vec(X[it,l,:]))
-
-	#println("L[l]: ", size(L))
-	#println("L[l,:]: ",L[l,:])
-	
-
-	println("--------------------")
-
-
-	chiins= ((L[l,:])./(EL[l,:])).^2
-	println(sum(chiins))
-	
-
-	println("--------------------")
-	println("ext: ", (ext))
-
-       # println(X[it,l,:])
-      end
+     end
       eps_abs = 0.00     #Must be >= 0
       eps_rel = 0.001  #Must be between 0 and 1
       S = rho[it,l]*(Z[it,l,:]-Z[it-1,l,:])
@@ -242,8 +192,8 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
       tau_prim[it,l] = sqrt(num_tdf_times)*eps_abs + eps_rel*(maximum([ell2norm(X[it,l,:]),ell2norm(Z[it,l,:])]))
       tau_dual[it,l] = sqrt(num_tdf_times)*eps_abs + eps_rel*ell2norm(U[it,l,:])
 
-      #eta = ell2norm(R)*tau_dual[it,l] / (ell2norm(S)*tau_prim[it,l])
-      eta = ell2norm(R)*tau_dual[it-1,l] / (ell2norm(S)*tau_prim[it-1,l])
+      #eta = ell2norm(R)*tau_dual[it,l] / (ell2norm(S)*tau_prim[it,l])		#OPTION 1
+      eta = ell2norm(R)*tau_dual[it-1,l] / (ell2norm(S)*tau_prim[it-1,l])	#OPTION 2
 
       #Check for convergance
       if ell2norm(R) < tau_prim[it,l] && ell2norm(S) < tau_dual[it,l]
