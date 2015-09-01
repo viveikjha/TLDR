@@ -30,6 +30,7 @@ num_spectra_samples = length(spectra_dates)      				  #NUMBER OF DATA POINTS IN
 #continuum_array_filename = "arp151.b.dat"
 continuum_array_filename = "continuumS.csv"
 continuum_array_path =string(path,continuum_array_filename)
+#continuum_array = readdlm(continuum_array_path)
 continuum_array = readcsv(continuum_array_path)
 println(size(continuum_array))
 #CONTINUUM_ARRAY CONTAINTS THE CONTINUUM DATES, FLUX, AND FLUX ERRORS.
@@ -50,6 +51,7 @@ tdf_times = linspace(1,20,num_tdf_times)
 
 #= COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS =#
 interpolation_points = zeros(num_spectra_samples,num_tdf_times)
+println(size(interpolation_points))
 ICF = zeros(num_spectra_samples,num_tdf_times)
 ICFE= zeros(num_spectra_samples,num_tdf_times)
 for date in 1:num_spectra_samples
@@ -95,7 +97,6 @@ for lam in 1:num_lines
     for j in 1:num_spectra_dates
       #println("!")
       if i == j
-	println(EL[lam,i])
         T[i,j] =1.0/ EL[lam,i].^2
       end
     end
@@ -110,11 +111,10 @@ GammaT = Gamma'
 #= INITIALIZING ADMM PARAMETERS =#
 nits = 30 #Number of ADMM Iterations (An upper limit if convergence is not reached)
 final_it = nits
-initial_psi = 0.1  #Initial value for PSI
-
+initial_psi = 100.0  #Initial value for PSI
 
 	#= REGULARIZATION WEIGHTS =#
-mu = 10.0
+mu = 1000000.0
 
   #= CONVERGANCE PARAMETERS =#
 G = 10.0 # only for first iteration 1.5 otherwise
@@ -150,7 +150,7 @@ end
 
 converged = 0
 it = 2
-nits = 20
+nits = 5
 
 while it <= nits && converged==0        #ADMM ITERATION LOOP
   println("Iteration: ", it)
@@ -167,8 +167,10 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
       slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
       #slice = squeeze(W[l,:,:],1)	#RESHAPE IS SUPPOSED TO BE FASTER THAN SQUEEZE!
 
-      A =inv(((HT*slice)*H)+(rho[it,l]/2.0)*(GammaT*Gamma))
-      B = (HT*slice)*vec(L[l,:])+(rho[it,l])*GammaT*Gamma*vec(Z_s[it,l,:])
+      A =inv(HT*slice*H+rho[it,l]/2.0*GammaT*Gamma)
+      #B = HT*slice*vec(L[l,:])+rho[it,l]*GammaT*Gamma*vec(Z_s[it,l,:])
+      B = HT*slice*vec(L[l,:])
+	
       Z[it,l,:] = A * B
 
     #Step 2 done!
@@ -181,7 +183,7 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
     #Step 3 done!
     # Evaluation:
       eps_abs = 0.00     #Must be >= 0
-      eps_rel = 0.001  #Must be between 0 and 1
+      eps_rel = 0.01  #Must be between 0 and 1
       S = rho[it,l]*(Z[it,l,:]-Z[it-1,l,:])
       R = X[it,l,:]-Z[it,l,:]
 
@@ -242,4 +244,6 @@ output_filename = "tdf.csv"
 writecsv(output_filename,Save_Array)
 
 
+println(vec(X[it-1,250,:]))
+println(vec(Z[it-1,250,:]))
 println("done")

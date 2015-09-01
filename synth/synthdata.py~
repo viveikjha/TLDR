@@ -2,7 +2,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from scipy.interpolate import UnivariateSpline as UVS
-
+from scipy.interpolate import interp1d
 
 
 def Model(X,ICF):
@@ -12,7 +12,6 @@ def Model(X,ICF):
 		MF[i]=np.sum(X*ICF[i,:])
 	print 'Model: ',MF	
 	return MF
-
 
 def convolve(tdf_values,data_flux):
 		val = len(data_flux)
@@ -42,7 +41,7 @@ def RAN(t,r):
 inputfile = '../data/rvm_fluxes.csv'
 rvm_spectra_flux = np.loadtxt(open(inputfile,'rb'),delimiter=',',skiprows=0)
 #print 'Flux Array: ',rvm_spectra_flux.shape
-spectra_scale=1e0
+spectra_scale=1.0e0
 rvm_spectra_flux=rvm_spectra_flux*spectra_scale
 #print rvm_spectra_flux.shape
 
@@ -68,9 +67,8 @@ ndataperline = len(rvm_spectra_date)
 inputfile = '../data/arp151.b.dat'
 data = np.loadtxt(open(inputfile,'rb'),delimiter=' ',skiprows=0)
 continuum_date = data[:,0]
-continuum_scale = 1.0e3
+continuum_scale = 1.0e0
 continuum_flux = data[:,1]*continuum_scale
-
 
 inputfile = '../data/arp151.b.dat'
 data = np.loadtxt(open(inputfile,'rb'),delimiter=' ',skiprows=0)
@@ -79,60 +77,50 @@ continuum_scale = 1.0
 continuum_flux = data[:,1]*continuum_scale
 av = np.mean(continuum_flux)
 print 'average: ', av
-print continuum_flux
+print 'continuum flux: ', continuum_flux
 ax = np.max(continuum_flux)
 continuum_errflux = data[:,2]
 
 print('cont: ', data.shape)
 '''DONE IMPORTING DATA FILES'''
 
-
 '''----------------------------------------------------'''
 '''===================================================='''
 '''----------------------------------------------------'''
 tau = 50
-
 c = 1.0
 r = 15.0
-tau = np.linspace(0,50,49)
+tau = np.linspace(0,20,50)
 Psi = RAN(tau,r)	#TDF from Blanford & McKee
-print tau
-#plt.figure()
-#plt.plot(tau,Psi)
+
+#print tau
+plt.figure(1)
+plt.plot(tau,Psi)
 #plt.show()
-
-
 
 '''COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS'''
 pts_required=len(rvm_spectra_date)*len(tau)
 interpolation_points = np.empty([len(rvm_spectra_date),len(tau)])
+print interpolation_points.shape
 q=0
 for idate in range(0,len(rvm_spectra_date)):
 	for jdelay in range(0,len(tau)):
 		interpolation_points[idate][jdelay] = rvm_spectra_date[idate]-tau[jdelay]
-#f= interp1d(continuum_date,continuum_flux)					#Creates interpolation function
-f= UVS(continuum_date,continuum_flux,k=2)					#Creates interpolation function
-
+f= interp1d(continuum_date,continuum_flux)					#Creates interpolation function
+#f= UVS(continuum_date,continuum_flux,k=2)					#Creates interpolation function
 ICF = f(np.ravel(interpolation_points))			#Interpolates continuum over points
-#print len(ICF)
-#print len(rvm_spectra_date)*len(tau)
 ICF=np.reshape(ICF,(len(rvm_spectra_date),len(tau)))
 int_continuum_dates = interpolation_points					#only to make a matching set
 
-ICF=ICF/1.0e6
-print ICF.shape
-
-
-
-
-
+#print "REGULAR: ",interpolation_points
+#print "RAVELED: ",np.ravel(interpolation_points)
 
 #INTERPOLATION!!!
 #f= interp1d(continuum_date,continuum_flux)  
 #f = interp1d(data[0,:],data[1,:],bounds_error=False,fill_value=data[65,2])
 #ICF = f(data_flux_dates)
 #ICF[impulse_position]=impulse_value
-print 'ICF: ', ICF.shape
+print 'ICF: ', ICF
 
 L = Model(Psi,ICF)
 LR=L
@@ -141,26 +129,24 @@ for j in range(0,len(data_errflux)):
 	for h in range(0,len(L)):
 		data_flux[j][h]=np.random.normal(L[h],0.02*L[h])
 	#data_errflux[j] = percent_err/100*L
-
 print data.shape
 
 TDF = np.array([tau,Psi])
 #print TDF
-np.savetxt('rvm_flxS.txt',data_flux,delimiter=',')
-print "Wrote: rvm_flxS.txt"
-np.savetxt('rvm_flx_errS.txt',data_errflux,delimiter=',')	
-print "Wrote: rvm_flx_errS.txt"
-np.savetxt('continuumS.txt',data,delimiter=',')
-print "Wrote: continuumS.txt"
+np.savetxt('rvm_flxS.csv',data_flux,delimiter=',')
+print "Wrote: rvm_flxS.csv"
+np.savetxt('rvm_flx_errS.csv',data_errflux,delimiter=',')	
+print "Wrote: rvm_flx_errS.csv"
+np.savetxt('continuumS.csv',data,delimiter=',')
+print "Wrote: continuumS.csv"
 np.savetxt('PsiS.txt',TDF,delimiter=',')
 
-plt.figure(1)
+plt.figure(2)
 #plt.plot(data_flux_dates,L)
 plt.plot(data_flux[0])
 plt.plot(L,'r--')
 #plt.figure()
 #plt.plot(data[:,1])
 plt.show()
-
 
 #print data[:,1]
