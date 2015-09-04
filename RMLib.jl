@@ -55,7 +55,6 @@ function interp(x_DESIRED,x_DATA,y_DATA)
   end
   y_DESIRED #This is the returned value. In Julia, return statements are not required.
 end
-
 #=--------------------------------------------------=#
 #============== Chi Squared Gradient ================#
 #=--------------------------------------------------=#
@@ -69,7 +68,7 @@ function chigrad(Z,D,Sigma,rho,ICF)
   chi2grad = zeros(size(Z))
   for i in 1:size(Z)[1]
     #chi2grad[i] = 2.0*sum((M-D)/Sigma^2. .* ICF[:,i])
-    chi2grad[i] = sum(2.0*sum(D - sum(vec(Z).*vec(ICF[i,:])))*-sum(ICF,2))
+    chi2grad[i] = sum(2.0*sum(D - sum(vec(Z).*vec(ICF[i,:])))-sum(ICF,2))
   end
   chi2grad #Array Returned!
 end
@@ -81,8 +80,8 @@ end
 #ICF is the interpolated continuum flux.
 #function Model(X,ICF)
 function Model(X,H)
-  L = size(ICF)[1]
-  MF = zeros(L)
+  #L = size(ICF)[1]
+  #MF = zeros(L)
   MF = H*vec(X)
   MF #Array Returned!
 end
@@ -95,6 +94,7 @@ end
 # Sigma should be the error on the spectral data
 function Chi2(M,D,Sigma)
 	  sum(   (vec(M)-vec(D)).^2  ./vec(Sigma) .^2)   #Value Returned!
+		#sum(((vec(M)-vec(D))/vec(Sigma))^2)
 end
 
 #=--------------------------------------------------=#
@@ -124,5 +124,5 @@ end
 #=================== Ell 2 Norm =====================#
 #=--------------------------------------------------=#
 function ell2norm(X)
-  sqrt(sum(X.^2))   #Array Returned!
+	sqrt(sum(vec(X).^2))   #Array Returned!
 end

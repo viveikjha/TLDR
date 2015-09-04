@@ -5,6 +5,55 @@ from scipy.interpolate import UnivariateSpline as UVS
 from scipy.interpolate import interp1d
 
 
+
+#=--------------------------------------------------=#
+#==================INTERPOLATION=====================#
+#=--------------------------------------------------=#
+#interp takes x and y data and desired x points
+#returns linearally interpolated y desired points
+#extrapolates off either end of x data using the
+#slope of the first and last sets of data points given.
+def interp(x_DESIRED,x_DATA,y_DATA):
+  y_DESIRED = zeros(length(x_DESIRED))
+  index_DATA = linspace(1,length(x_DATA)-1,length(x_DATA)-1)
+  index_DESIRED = [1:length(x_DESIRED)]
+  #println([1:length(x_DESIRED)])
+  #println(index_DESIRED)
+  minx = minimum(x_DATA)
+  maxx = maximum(x_DATA)
+  for i in index_DESIRED:
+    yset=0
+    y_NEW =0
+    for y in index_DATA:
+      if yset ==0 && x_DESIRED[i] > x_DATA[y] && x_DESIRED[i] < x_DATA[y+1]  y < (length(index_DATA)-1) && i < (length(index_DATA)-1)
+        rise = y_DATA[y+1]-y_DATA[y]
+        run = x_DATA[y+1]-x_DATA[y]
+        slope = rise / run
+        y_change = slope*(x_DESIRED[i]-x_DATA[y])
+        y_NEW = y_DATA[y]+y_change
+        yset = 1
+      elseif yset ==0 && x_DESIRED[i] < minx: #EXTRAPOLATION DOWNWARD
+        #println("EXTRAP LOW!!")
+        rise =y_DATA[2]-y_DATA[1]
+        run = x_DATA[2]-x_DATA[1]
+        first_slope= rise / run
+        y_change = first_slope*(x_DATA[1]-x_DESIRED[i])
+        y_NEW = y_DATA[1]-y_change
+        yset = 1
+      elseif yset ==0 && x_DESIRED[i] > maxx: #EXTRAPOLATION UPWARD
+        #println("EXTRAP HIGH!!")
+        rise=y_DATA[length(y_DATA)]-y_DATA[length(y_DATA)-1]
+        run = x_DATA[length(x_DATA)]-x_DATA[length(x_DATA)-1]
+        last_slope = rise / run
+        y_change = last_slope*(x_DESIRED[i]-x_DATA[length(x_DATA)])
+        y_NEW = y_DATA[length(y_DATA)]+ y_change
+        yset = 1
+      y_DESIRED[i] = y_NEW
+  return y_DESIRED #This is the returned value. In Julia, return statements are not required.
+
+
+
+
 def Model(X,ICF):
 	L = len(ICF)
 	MF=np.zeros((L),dtype='float')
@@ -76,12 +125,12 @@ continuum_date = data[:,0]
 continuum_scale = 1.0
 continuum_flux = data[:,1]*continuum_scale
 av = np.mean(continuum_flux)
-print 'average: ', av
-print 'continuum flux: ', continuum_flux
+#print 'average: ', av
+#print 'continuum flux: ', continuum_flux
 ax = np.max(continuum_flux)
 continuum_errflux = data[:,2]
 
-print('cont: ', data.shape)
+#print('cont: ', data.shape)
 '''DONE IMPORTING DATA FILES'''
 
 '''----------------------------------------------------'''
@@ -92,6 +141,11 @@ c = 1.0
 r = 15.0
 tau = np.linspace(0,20,50)
 Psi = RAN(tau,r)	#TDF from Blanford & McKee
+Psi = np.zeros(50)
+Psi.fill(0.04)
+#print '*******', len(Psi)
+
+
 
 #print tau
 plt.figure(1)
@@ -101,13 +155,13 @@ plt.plot(tau,Psi)
 '''COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS'''
 pts_required=len(rvm_spectra_date)*len(tau)
 interpolation_points = np.empty([len(rvm_spectra_date),len(tau)])
-print interpolation_points.shape
+#print interpolation_points.shape
 q=0
 for idate in range(0,len(rvm_spectra_date)):
 	for jdelay in range(0,len(tau)):
 		interpolation_points[idate][jdelay] = rvm_spectra_date[idate]-tau[jdelay]
-f= interp1d(continuum_date,continuum_flux)					#Creates interpolation function
-#f= UVS(continuum_date,continuum_flux,k=2)					#Creates interpolation function
+#f= interp1d(continuum_date,continuum_flux)					#Creates interpolation function
+f= UVS(continuum_date,continuum_flux,k=1)					#Creates interpolation function
 ICF = f(np.ravel(interpolation_points))			#Interpolates continuum over points
 ICF=np.reshape(ICF,(len(rvm_spectra_date),len(tau)))
 int_continuum_dates = interpolation_points					#only to make a matching set
@@ -124,10 +178,12 @@ print 'ICF: ', ICF
 
 L = Model(Psi,ICF)
 LR=L
-percent_err = 5.0
+percent_err = 0.0
 for j in range(0,len(data_errflux)):
 	for h in range(0,len(L)):
-		data_flux[j][h]=np.random.normal(L[h],0.02*L[h])
+		#data_flux[j][h]=np.random.normal(L[h],0.02*L[h])
+		data_flux[j][h] = L[h] #USING NO NOISE FOR TESTING!
+	data_errflux[j] = 1.0 #MAKE SIGMA AS SIMPLE AS POSSIBLE FOR TESTING!	
 	#data_errflux[j] = percent_err/100*L
 print data.shape
 

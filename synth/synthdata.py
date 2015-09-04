@@ -5,6 +5,7 @@ from scipy.interpolate import UnivariateSpline as UVS
 from scipy.interpolate import interp1d
 
 
+
 def Model(X,ICF):
 	L = len(ICF)
 	MF=np.zeros((L),dtype='float')
@@ -76,12 +77,12 @@ continuum_date = data[:,0]
 continuum_scale = 1.0
 continuum_flux = data[:,1]*continuum_scale
 av = np.mean(continuum_flux)
-print 'average: ', av
-print 'continuum flux: ', continuum_flux
+#print 'average: ', av
+#print 'continuum flux: ', continuum_flux
 ax = np.max(continuum_flux)
 continuum_errflux = data[:,2]
 
-print('cont: ', data.shape)
+#print('cont: ', data.shape)
 '''DONE IMPORTING DATA FILES'''
 
 '''----------------------------------------------------'''
@@ -92,6 +93,11 @@ c = 1.0
 r = 15.0
 tau = np.linspace(0,20,50)
 Psi = RAN(tau,r)	#TDF from Blanford & McKee
+Psi = np.zeros(50)
+Psi.fill(0.04)
+#print '*******', len(Psi)
+
+
 
 #print tau
 plt.figure(1)
@@ -101,7 +107,7 @@ plt.plot(tau,Psi)
 '''COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS'''
 pts_required=len(rvm_spectra_date)*len(tau)
 interpolation_points = np.empty([len(rvm_spectra_date),len(tau)])
-print interpolation_points.shape
+#print interpolation_points.shape
 q=0
 for idate in range(0,len(rvm_spectra_date)):
 	for jdelay in range(0,len(tau)):
@@ -124,10 +130,15 @@ print 'ICF: ', ICF
 
 L = Model(Psi,ICF)
 LR=L
-percent_err = 5.0
+percent_err = 0.0
+print "data_errflux", len(data_errflux)
+print "L", len(L)
+
 for j in range(0,len(data_errflux)):
 	for h in range(0,len(L)):
-		data_flux[j][h]=np.random.normal(L[h],0.02*L[h])
+		#data_flux[j][h]=np.random.normal(L[h],0.02*L[h])
+		data_flux[j][h] = L[h] #USING NO NOISE FOR TESTING!
+	data_errflux[j] = 1.0 #MAKE SIGMA AS SIMPLE AS POSSIBLE FOR TESTING!	
 	#data_errflux[j] = percent_err/100*L
 print data.shape
 

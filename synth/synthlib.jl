@@ -55,23 +55,7 @@ function interp(x_DESIRED,x_DATA,y_DATA)
   end
   y_DESIRED #This is the returned value. In Julia, return statements are not required.
 end
-#=--------------------------------------------------=#
-#============== Chi Squared Gradient ================#
-#=--------------------------------------------------=#
-#Z is the current TDF
-#D is the spectral data
-#Sigma is the error on D
-#Rho is the regularization weight
-#ICF is the interpolated continuum flux
-function chigrad(Z,D,Sigma,rho,ICF)
-  M = Model(Z,ICF)
-  chi2grad = zeros(size(Z))
-  for i in 1:size(Z)[1]
-    #chi2grad[i] = 2.0*sum((M-D)/Sigma^2. .* ICF[:,i])
-    chi2grad[i] = sum(2.0*sum(D - sum(vec(Z).*vec(ICF[i,:])))-sum(ICF,2))
-  end
-  chi2grad #Array Returned!
-end
+
 
 #=--------------------------------------------------=#
 #====================== Model =======================#
@@ -97,33 +81,4 @@ function Chi2(M,D,Sigma)
 		#sum(((vec(M)-vec(D))/vec(Sigma))^2)
 end
 
-#=--------------------------------------------------=#
-#================ Proximal Operator =================#
-#=--------------------------------------------------=#
-#Proximal operator for the L1 norm with positivity.
-#X is the current model TDF
-#mu is the regularization weight
-#rho is the current hyperparameter
-function Prox(X,mu,rho)
-  if mu/rho == 0.0
-    println("Error in Proximal Operator: mu/rho = 0")
-  elseif mu/rho == inf || mu/rho == inf
-    println("Error in Proximal Operator: mu/rho = infinity")
-  end
-  for i in 1:size(X)[3]
-    if X[i] > mu/rho
-      X[i] = X[i] - mu/rho
-    else
-      X[i] = 0
-    end
-  end
-  X #Array Returned!
-end
 
-#=--------------------------------------------------=#
-#=================== Ell 2 Norm =====================#
-#=--------------------------------------------------=#
-function ell2norm(X)
-	println(:"Size of X in ell2norm",size(vec(X)))
-	sqrt(sum(vec(X).^2))   #Array Returned!
-end
