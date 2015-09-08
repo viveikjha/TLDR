@@ -106,11 +106,11 @@ end
 #rho is the current hyperparameter
 function Prox(X,mu,rho)
   if mu/rho == 0.0
-    println("Error in Proximal Operator: mu/rho = 0")
+    #println("Error in Proximal Operator: mu/rho = 0")
   elseif mu/rho == inf || mu/rho == inf
     println("Error in Proximal Operator: mu/rho = infinity")
   end
-  for i in 1:size(X)[3]
+  for i in 1:size(X)[2]
     if X[i] > mu/rho
       X[i] = X[i] - mu/rho
     else
@@ -124,6 +124,5 @@ end
 #=================== Ell 2 Norm =====================#
 #=--------------------------------------------------=#
 function ell2norm(X)
-	println(:"Size of X in ell2norm",size(vec(X)))
 	sqrt(sum(vec(X).^2))   #Array Returned!
 end

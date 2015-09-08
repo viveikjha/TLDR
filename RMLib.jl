@@ -110,7 +110,7 @@ function Prox(X,mu,rho)
   elseif mu/rho == inf || mu/rho == inf
     println("Error in Proximal Operator: mu/rho = infinity")
   end
-  for i in 1:size(X)[3]
+  for i in 1:size(X)[2]
     if X[i] > mu/rho
       X[i] = X[i] - mu/rho
     else

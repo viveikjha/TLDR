@@ -111,47 +111,62 @@ GammaT = Gamma'
 #= INITIALIZING ADMM PARAMETERS =#
 nits = 50 #Number of ADMM Iterations (An upper limit if convergence is not reached)
 final_it = nits
-initial_psi = 0.04  #Initial value for PSI
+initial_psi = 0.0  #Initial value for PSI
 
 	#= REGULARIZATION WEIGHTS =#
-mu = 3.0
+mu = 1.0
 
   #= CONVERGANCE PARAMETERS =#
 G = 10.0 # only for first iteration 1.5 otherwise
-tau = 1.2
+tau = 1.01
+sigma = 0.9
 Con_Arr = zeros(num_lines)
 
-X =   zeros((nits+1, size(L,1),num_tdf_times))
-X_s = zeros((nits+1, size(L,1),num_tdf_times))
-Z =   zeros((nits+1, size(L,1),num_tdf_times))
-Z_s = zeros((nits+1, size(L,1),num_tdf_times))
-rho = zeros((nits+1, size(L,1)))
-U =   zeros((nits+1, size(L,1),num_tdf_times))
-tau_prim = zeros((nits,num_lines))
-tau_dual = zeros((nits,num_lines))
+X =   zeros((size(L,1),num_tdf_times))
+X_s = zeros((size(L,1),num_tdf_times))
+Z =   zeros((size(L,1),num_tdf_times))
+Z_previous = zeros((size(L,1),num_tdf_times))
+Z_s = zeros((size(L,1),num_tdf_times))
+rho = zeros((size(L,1)))
+rho_min = zeros((size(L,1)))
+rho_max = zeros((size(L,1)))
+
+phi = zeros((size(L,1)))
+phi_previous = zeros((size(L,1)))
+
+
+U =   zeros((size(L,1),num_tdf_times))
+tau_prim = zeros((num_lines))
+tau_prim_previous = zeros((num_lines))
+
+tau_dual = zeros((num_lines))
+tau_dual_previous = zeros((num_lines))
+
 value = 1.0
-initial_rho = 500.0
+#initial_rho = 500000.0
 fill!(X,initial_psi)
 fill!(X_s,initial_psi)
 fill!(Z,initial_psi)
 fill!(Z_s,initial_psi)
-fill!(rho,initial_rho)
+#fill!(rho,initial_rho)
 
 
 X_act = zeros((50))
 fill!(X_act,initial_psi)
 
-#=  Calculate Initial Multipliers  =#
+#=  Calculate Initial Multipliers & RHO =#
 for p in 1:num_lines
 #for p in 1:2
-  U[1,p,:]=HT * squeeze(W[p,:,:],1) * ( H * vec(Z[1,p,:]) - vec(L[p,:]))
+  U[p,:]=HT * squeeze(W[p,:,:],1) * ( H * vec(Z[p,:]) - vec(L[p,:]))
+	A =(vec(U[p,:])'*HT*squeeze(W[p,:,:],1)*H*vec(U[p,:]))
+	B =(vec(U[p,:])'*vec(U[p,:]))
+	#println(A,B)
+	rho[p] = A[1]/B[1]
 end
+println("initial rho: ", rho[250])
 
 #= Calculate Initial Rho =#
-#Holding off on this due to minimization;
-#NEEDS GRADIENT TO WORK!
-#f(V) = Chi2(  Model((Z[1,1,:]-U[1,1,:]./V),H) ,vec(L[1,:]),vec(EL[1,:]))
-#println(optimize(f,[1.0], method= :l_bfgs))
+
 
 converged = 0
 it = 2
@@ -162,110 +177,121 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
   #for l in 1:1
     if Con_Arr[l] != 1
     #Step 1:
-      X_s[it,l,:] = Z[it-1,l,:]-U[it-1,l,:]/rho[it,l]
-      X[it,l,:] = Prox(X_s[it,l,:],mu,rho[it,l])
+      X_s[l,:] = Z[l,:]-U[l,:]/rho[l]
+      X[l,:] = Prox(X_s[l,:],mu,rho[l])
       #converged = 1
     #Step 1 done!
     #Step 2:
-      Z_s[it,l,:] = X[it,l,:]-U[it-1,l,:]/rho[it,l]
+      Z_s[l,:] = X[l,:]-U[l,:]/rho[l]
       slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
       #slice = squeeze(W[l,:,:],1)	#RESHAPE IS SUPPOSED TO BE FASTER THAN SQUEEZE!
 
-      A =inv(HT*slice*H+rho[it,l]/2.0*GammaT*Gamma)
+      A =inv(HT*slice*H+rho[l]/2.0*GammaT*Gamma)
       #B = HT*slice*vec(L[l,:])+rho[it,l]*GammaT*Gamma*vec(Z_s[it,l,:])
       B = HT*slice*vec(L[l,:])
 	
-      Z[it,l,:] = A * B
+      Z[l,:] = A * B
 
     #Step 2 done!
     #Step 3:
-      eq =U[it-1,l,:]+(rho[it,l]/2.0)*(X[it,l,:]-Z[it,l,:])
-      #U[it,l,:] = U[it-1,l,:]+(rho[it,l]/2.0)*(X[it,l,:]-Z[it,l,:])
+      #eq =U[l,:]+(rho[l]/2.0)*(X[l,:]-Z[l,:])
+      U[l,:] = U[l,:]+(rho[l]/2.0)*(X[l,:]-Z[l,:])
       #= OR =#
-      U[it,l,:] = HT * slice * ( H * vec(Z[it,l,:]) - vec(L[l,:]))
+		      
+			#U[l,:] = HT * slice * ( H * vec(Z[l,:]) - vec(L[l,:]))		#UPDATE MULTIPLIERS
       
     #Step 3 done!
     # Evaluation:
       eps_abs = 0.00     #Must be >= 0
-      eps_rel = 0.001  #Must be between 0 and 1
-      S = rho[it,l]*(Z[it,l,:]-Z[it-1,l,:])
-      R = X[it,l,:]-Z[it,l,:]
+      eps_rel = 0.0001  #Must be between 0 and 1
+      S = rho[l]*(Z[l,:]-Z_previous[l,:])
+      R = X[l,:]-Z[l,:]
 
-      tau_prim[it,l] = sqrt(num_tdf_times)*eps_abs + eps_rel*(maximum([ell2norm(X[it,l,:]),ell2norm(Z[it,l,:])]))
-      tau_dual[it,l] = sqrt(num_tdf_times)*eps_abs + eps_rel*ell2norm(U[it,l,:])
+			tau_prim_previous = tau_prim[l]
+      tau_prim[l] = sqrt(num_tdf_times)*eps_abs + eps_rel*(maximum([ell2norm(X[l,:]),ell2norm(Z[l,:])]))
+			tau_dual_previous[l] = tau_dual[l]
+      tau_dual[l] = sqrt(num_tdf_times)*eps_abs + eps_rel*ell2norm(U[l,:])
 
-      #eta = ell2norm(R)*tau_dual[it,l] / (ell2norm(S)*tau_prim[it,l])		#OPTION 1
-      eta = ell2norm(R)*tau_dual[it-1,l] / (ell2norm(S)*tau_prim[it-1,l])	#OPTION 2
-
-
+      eta = ell2norm(R)*tau_dual[l] / (ell2norm(S)*tau_prim[l])		#OPTION 1\
+		  #eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
+			
+			phi_previous[l] = phi[l]
+			phi[l] = max(ell2norm(R/tau_prim[l]),ell2norm(S)/tau_dual[l])
+		
       if l == 250
-	
-	e1 = (H*vec(X[it,l,:])-vec(L[l,:]))
+		println("-------------------------")
+			println(X[1,:])
+			println("-------------------------")
+	e1 = (H*vec(X[l,:])-vec(L[l,:]))
 	ext =  e1'*squeeze(W[l,:,:],1)*e1
-        #println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),H),L[l,:],EL[l,:]), " Mat = ",ext)
+  #println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),H),L[l,:],EL[l,:]), " Mat = ",ext)
 	#println(X[it,l,1])
-	Mod = Model(X[it,l,:],H)
+	Mod = Model(X[l,:],H) 
 	println("Line = ", l, " Chi2 = ",Chi2(Mod,L[l,:],EL[l,:])/num_tdf_times, " Mat = ",ext/num_tdf_times)
-	#println("Flux: ", L[1,1], " Sigma: ", EL[1,1], " Model: ", Mod[1])       
-	println("Rho: ",rho[it,l]," U: ",mean(U[it-1,l,:]))
-	#println("S: ", ell2norm(S), "    R: ", ell2norm(R))
-	#println("tau_prim: ", tau_prim[it,l], "    tau_dual: ", tau_dual[it,l])
-	#println("X_act: ",X_act)
-	println("x: ",size(X_act)," H: ", size(H))
+	println("Line = ", l, " Chi2 = ",Chi2(Model(Z[l,:],H),L[l,:],EL[l,:])/num_tdf_times)
+
+	println("||S||2: ", ell2norm(S), "||R||2: ", ell2norm(R))
+
+	tmp = ext + rho[l]/2.0*ell2norm(Z[l,:]-Z_s[l,:])^2
+	println("Total FCN: ", tmp)
+	println("Rho: ",rho[l]," U: ",mean(U[l,:]))
 	Mod_act = Model(X_act,H)
-	#println("modact: ", Mod_act[1])
 	e2 = H*vec(X_act)-vec(L[l,:])
 	ext2 =  e2'*squeeze(W[l,:,:],1)*e2
-	println("act chi2: ", Chi2(Mod_act,L[1,:],EL[1,:])/num_tdf_times, "  mat: ",ext2)
+	#println("act chi2: ", Chi2(Mod_act,L[1,:],EL[1,:])/num_tdf_times, "  mat: ",ext2)
 	println("--------------------------------------")
      end
-	
-      #Check for convergance
-      if ell2norm(R) < tau_prim[it,l] && ell2norm(S) < tau_dual[it,l]
-        println("Line Converged")
-        Con_Arr[l]=1
-      end
+			if it == 2 
+				G = 1.5
+			end
+			#if (1.0/tau <= eta <= tau )			
+			if (1.0/tau <= eta <= tau ) || (phi[l] < sigma*phi_previous[l])
+				#println("Line ", l, " has converged.")
+				Con_Arr[l] = 1
+
+
+			elseif eta < (1.0/tau)
+				rho_max[l] = rho[l]
+				if rho_min[l] > 0.0
+					rho[l] = sqrt(rho_min[l]*rho_max[l])
+				else rho[l] = rho_max[l]/G 
+				end
+
+
+			elseif eta > tau
+				rho_min[l] = rho[l]
+				if rho_max[l] < Inf
+					rho[l] = sqrt(rho_min[l]*rho_max[l])
+				else rho[l] = rho_min[l]*G
+				end
+			end
+
+     
       if sum(Con_Arr) == num_lines
         converged = 1
-        final_it = it
         println("All lines Converged!!!") 
       end
-
-
-    #Evaluation Done
-    #Update Rho
-      if it == 2
-        G = 1.3
-      end
-      if eta > tau
-        rho[it+1,l] = G * rho[it,l]
-      elseif eta < 1.0/tau
-        rho[it+1,l] = rho[it,l]/G
-      else
-        rho[it+1,l] = rho[it,l]
-    #Rho done
-      end
-    else
-      X[it,l,:]=X[it-1,l,:]
-      X_s[it,l,:]=X_s[it-1,l,:]
-      Z[it,l,:]=Z[it-1,l,:]
-      Z_s[it,l,:]=Z_s[it-1,l,:]
+	  #else
+    #  X[l,:]=X[l,:]
+    #  X_s[l,:]=X_s[l,:]
+    #  Z[l,:]=Z[l,:]
+    #  Z_s[l,:]=Z_s[l,:]
     end
   end
   it = it+1
 end
-Save_Array = reshape(X[final_it,:,:],size(X)[2],size(X)[3])
+Save_Array = reshape(X[:,:],size(X)[1],size(X)[2])
 output_filename = "tdf.csv"
 writecsv(output_filename,Save_Array)
 
 println("--------------------------------------")
-println("X final: ",vec(X[it-1,1,:]))
-println("Chi2 final: ", Chi2(Model(X[it-1,1,:],H)/num_tdf_times,L[1,:],EL[1,:]))
+println("X final: ",vec(X[1,:]))
+println("Chi2 final: ", Chi2(Model(X[1,:],H)/num_tdf_times,L[1,:],EL[1,:]))
 println("--------------------------------------")
-println("Z final: ",vec(Z[it-1,1,:]))
+println("Z final: ",vec(Z[1,:]))
 println("--------------------------------------")
-figure(1)
-plot(vec(X[it-1,1,:]))
-show()
+#figure(1)
+#plot(vec(X[1,:]))
+#show()
 
 println("done")
