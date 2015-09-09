@@ -55,7 +55,7 @@ ax.set_ylabel(r'$\tau$ (days)')
 plt.title(r'Velocity Delay Map of $H\beta$')
 
 fig, ax = plt.subplots(figsize=(12,8))
-ax.imshow(np.rot90(np.log(np.sqrt(tdf)),1), cmap='Reds',extent=[0,20,nlines-1, 0])
+ax.imshow(np.rot90(np.log(tdf),1), cmap='Reds',extent=[0,20,nlines-1, 0])
 plt.title('TDF Reconstruction')
 print len(tdf[0])
 ax.set_aspect(0.01*len(tdf)/(4.0*nlines))

@@ -5,35 +5,47 @@ include("RMLib.jl")
 #path="data/"
 path ="synth/"
 clear()
+
+mode = 1 	#SYNTHETIC DATA MODE
+#mode = 2	#REAL DATA MODE
+
+if mode == 1
+	path ="synth/"
+	wavelength_filename = "wavelengthS.csv"
+	spectra_filename= "rvm_flxS.csv"
+	spectra_error_filename = "rvm_flx_errS.csv"
+	spectra_dates_filename = "rvm_dateS.csv"
+	continuum_array_filename = "continuumS.csv"
+	continuum_array_path =string(path,continuum_array_filename)
+	continuum_array = readcsv(continuum_array_path)
+elseif mode == 2
+	path="data/"
+	wavelength_filename = "rvm_wavelengths.csv"
+	spectra_filename= "rvm_fluxes.csv"
+	spectra_error_filename = "rvm_errfluxes.csv"
+	spectra_dates_filename = "rvm_dates.csv"
+	continuum_array_filename = "arp151.b.dat"
+	continuum_array_path =string(path,continuum_array_filename)
+	continuum_array = readdlm(continuum_array_path)
+end
 #=IMPORTING FILES=#
 #SPECTRA
-wavelength_filename = "rvm_wavelengths.csv"
 wavelength_path = string(path,wavelength_filename)
 wavelength = readcsv(wavelength_path)                    #List of measured wavelengths
 
-#spectra_filename= "rvm_fluxes.csv"
-spectra_filename= "rvm_flxS.csv"
 spectrapath = string(path,spectra_filename)
 L = readcsv(spectrapath)                           #SPECTRAL FLUXES (L)
 num_lines = size(L,1)                                #NUMBER OF SPECTRAL LINES
 
-#spectra_error_filename = "rvm_errfluxes.csv"
-spectra_error_filename = "rvm_flx_errS.csv"
 spectra_error_path = string(path,spectra_error_filename)
 EL = readcsv(spectra_error_path)                 #SPECTRAL FLUX ERRORS
 
-spectra_dates_filename = "rvm_dates.csv"
 spectra_dates_path = string(path,spectra_dates_filename)
 spectra_dates = readcsv(spectra_dates_path)                   #SPECTRAL SAMPLING DATES
 num_spectra_samples = length(spectra_dates)      				  #NUMBER OF DATA POINTS IN SPECTRA
 
 #CONTINUUM
-#continuum_array_filename = "arp151.b.dat"
-continuum_array_filename = "continuumS.csv"
-continuum_array_path =string(path,continuum_array_filename)
-#continuum_array = readdlm(continuum_array_path)
-continuum_array = readcsv(continuum_array_path)
-println(size(continuum_array))
+println("Continuum: ",size(continuum_array))
 #CONTINUUM_ARRAY CONTAINTS THE CONTINUUM DATES, FLUX, AND FLUX ERRORS.
 #IN THAT ORDER.
 
@@ -109,17 +121,17 @@ Gamma = eye(num_tdf_times)
 GammaT = Gamma'
 
 #= INITIALIZING ADMM PARAMETERS =#
-nits = 50 #Number of ADMM Iterations (An upper limit if convergence is not reached)
+nits = 5000 #Number of ADMM Iterations (An upper limit if convergence is not reached)
 final_it = nits
 initial_psi = 0.0  #Initial value for PSI
 
 	#= REGULARIZATION WEIGHTS =#
-mu = 1.0
+mu = 115000.0 #Begins to work around 48
 
   #= CONVERGANCE PARAMETERS =#
 G = 10.0 # only for first iteration 1.5 otherwise
-tau = 1.01
-sigma = 0.9
+tau = 1.1
+sigma = 0.75
 Con_Arr = zeros(num_lines)
 
 X =   zeros((size(L,1),num_tdf_times))
@@ -130,6 +142,10 @@ Z_s = zeros((size(L,1),num_tdf_times))
 rho = zeros((size(L,1)))
 rho_min = zeros((size(L,1)))
 rho_max = zeros((size(L,1)))
+
+fill!(rho_min,0.0)
+fill!(rho_max,Inf)
+
 
 phi = zeros((size(L,1)))
 phi_previous = zeros((size(L,1)))
@@ -163,7 +179,7 @@ for p in 1:num_lines
 	#println(A,B)
 	rho[p] = A[1]/B[1]
 end
-println("initial rho: ", rho[250])
+#println("initial rho: ", rho[250])
 
 #= Calculate Initial Rho =#
 
@@ -172,7 +188,7 @@ converged = 0
 it = 2
 #nits = 50
 while it <= nits && converged==0        #ADMM ITERATION LOOP
-  println("Iteration: ", it)
+  println("Iteration: ", it, "  ", sum(Con_Arr), "/", num_lines, " Converged.")
   for l in 1:num_lines        #SPECTAL CHANNEL LOOP
   #for l in 1:1
     if Con_Arr[l] != 1
@@ -202,8 +218,8 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
       
     #Step 3 done!
     # Evaluation:
-      eps_abs = 0.00     #Must be >= 0
-      eps_rel = 0.0001  #Must be between 0 and 1
+      eps_abs = 0.0    #Must be >= 0
+      eps_rel = 0.1  #Must be between 0 and 1
       S = rho[l]*(Z[l,:]-Z_previous[l,:])
       R = X[l,:]-Z[l,:]
 
@@ -217,37 +233,51 @@ while it <= nits && converged==0        #ADMM ITERATION LOOP
 			
 			phi_previous[l] = phi[l]
 			phi[l] = max(ell2norm(R/tau_prim[l]),ell2norm(S)/tau_dual[l])
-		
-      if l == 250
-		println("-------------------------")
-			println(X[1,:])
-			println("-------------------------")
-	e1 = (H*vec(X[l,:])-vec(L[l,:]))
-	ext =  e1'*squeeze(W[l,:,:],1)*e1
-  #println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),H),L[l,:],EL[l,:]), " Mat = ",ext)
-	#println(X[it,l,1])
-	Mod = Model(X[l,:],H) 
-	println("Line = ", l, " Chi2 = ",Chi2(Mod,L[l,:],EL[l,:])/num_tdf_times, " Mat = ",ext/num_tdf_times)
-	println("Line = ", l, " Chi2 = ",Chi2(Model(Z[l,:],H),L[l,:],EL[l,:])/num_tdf_times)
+			
+			
 
-	println("||S||2: ", ell2norm(S), "||R||2: ", ell2norm(R))
+      if l == 1
+			#println("-------------------------")
+			#println(X[1,:])
+			#println("-------------------------")
+			e1 = (H*vec(X[l,:])-vec(L[l,:]))
+			ext =  e1'*squeeze(W[l,:,:],1)*e1
+  		#println("Line = ", l, "Chi2 = ",Chi2(Model((X[it,l,:]),H),L[l,:],EL[l,:]), " Mat = ",ext)
+			#println(X[it,l,1])
+			Mod = Model(X[l,:],H) 
+			println("Line = ", l, " Chi2 = ",Chi2(Mod,L[l,:],EL[l,:])/num_tdf_times, " Mat = ",ext/num_tdf_times)
+			println("Line = ", l, " Chi2 = ",Chi2(Model(Z[l,:],H),L[l,:],EL[l,:])/num_tdf_times)
+			println("Phi = ", phi[l])
+			println("||S||2: ", ell2norm(S), "    ||R||2: ", ell2norm(R))
+			println("Tau_Dual: ", tau_dual[l], " Tau_prim: ", tau_prim[l])
+			println("ratio dual: ", ell2norm(S)/tau_dual[l]," ratio prime ", ell2norm(R)/tau_prim[l])
 
-	tmp = ext + rho[l]/2.0*ell2norm(Z[l,:]-Z_s[l,:])^2
-	println("Total FCN: ", tmp)
-	println("Rho: ",rho[l]," U: ",mean(U[l,:]))
-	Mod_act = Model(X_act,H)
-	e2 = H*vec(X_act)-vec(L[l,:])
-	ext2 =  e2'*squeeze(W[l,:,:],1)*e2
-	#println("act chi2: ", Chi2(Mod_act,L[1,:],EL[1,:])/num_tdf_times, "  mat: ",ext2)
-	println("--------------------------------------")
-     end
+			println(" Eta: ",eta, "    Phi: ", phi[l])
+			tmp = ext + rho[l]/2.0*ell2norm(Z[l,:]-Z_s[l,:])^2
+			println("Total FCN: ", tmp)
+			println("Rho: ",rho[l]," U: ",mean(U[l,:]))
+			Mod_act = Model(X_act,H)
+			e2 = H*vec(X_act)-vec(L[l,:])
+			ext2 =  e2'*squeeze(W[l,:,:],1)*e2
+			#println("act chi2: ", Chi2(Mod_act,L[1,:],EL[1,:])/num_tdf_times, "  mat: ",ext2)
+			println("--------------------------------------")
+     	end
+			
+
+			if phi[l] <= 1.0
+				Con_Arr[l] = 1
+			end
+
+
+
+
 			if it == 2 
 				G = 1.5
 			end
 			#if (1.0/tau <= eta <= tau )			
-			if (1.0/tau <= eta <= tau ) || (phi[l] < sigma*phi_previous[l])
+			if (1.0/tau <= eta) && (eta <= tau) || (phi[l] < sigma*phi_previous[l])
 				#println("Line ", l, " has converged.")
-				Con_Arr[l] = 1
+				#Con_Arr[l] = 1
 
 
 			elseif eta < (1.0/tau)
@@ -283,15 +313,16 @@ end
 Save_Array = reshape(X[:,:],size(X)[1],size(X)[2])
 output_filename = "tdf.csv"
 writecsv(output_filename,Save_Array)
-
 println("--------------------------------------")
 println("X final: ",vec(X[1,:]))
-println("Chi2 final: ", Chi2(Model(X[1,:],H)/num_tdf_times,L[1,:],EL[1,:]))
+println("--------------------------------------")
+println("Chi2 final: ", Chi2(Model(X[1,:],H),L[1,:],EL[1,:])/num_tdf_times)
 println("--------------------------------------")
 println("Z final: ",vec(Z[1,:]))
 println("--------------------------------------")
-figure(1)
-plot(vec(X[1,:]))
-show()
+println("Chi2 final: ", Chi2(Model(Z[1,:],H),L[1,:],EL[1,:])/num_tdf_times)
+#figure(1)
+#plot(vec(X[1,:]))
+#show()
 
 println("done")

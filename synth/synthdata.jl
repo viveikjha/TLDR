@@ -1,5 +1,5 @@
 #using Optim
-#using PyPlot
+using PyPlot
 #using Gadfly
 include("synthlib.jl")
 path="../data/"
@@ -61,6 +61,25 @@ fill!(X,initial_x)															#FILL TDF WITH INITIAL VALUE
 #=DONE SETTING UP TIME DELAY FUNCTION=#
 
 
+#= Creating Artificial Data Arrays =#
+num_lines = 1
+num_spectra_samples = 100
+
+#For Wavlength:
+low = 450.0
+high = 1000.0
+Lrange = high - low
+wavelengths = Lrange * sort(rand(num_lines))+low
+
+
+#For Spectra Dates/Samples:
+beginning = minimum(spectra_dates)
+ending = maximum(spectra_dates)
+range  = ending -beginning
+spectra_dates = range * sort(rand(num_spectra_samples))+beginning
+
+
+
 
 #= COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS =#
 
@@ -72,17 +91,15 @@ for date in 1:num_spectra_samples
 		interpolation_points[date,delay]=spectra_dates[date]-tdf_times[delay]
   end
   P = interpolation_points[date,:]
-  #ICF[date,:] = interp(P[:],continuum_dates,continuum_flux)
   H[date,:] =interp(interpolation_points[date,:],continuum_dates,continuum_flux)
-  #println(interp(interpolation_points[date,:],continuum_dates,continuum_flux))
   HE[date,:] = interp(interpolation_points[date,:],continuum_dates,continuum_error_flux)
 end
 
 
 
-println("Size of L: ", size(L))
+#println("Size of L: ", size(L))
 
-synd = Model(X,H)		
+synthetic_data = Model(X,H)		
 
 #= No have the synthetic spectral line (L) and the TDF (x).
 Now need to build the output arrays to match the arp151 data. =#
@@ -102,29 +119,36 @@ println("Data Array: ", size(flx_arr))
 
 
 #FILL OUPUT ARRAYS!
-percent_err = 0.0															#FOR ADDING ERROR
+sigma = 5															#FOR ADDING ERROR
 for j in 1:num_lines
 	for h in 1:num_spectra_samples
-		flx_arr[j,:] = synd
- 		err_arr[j,h] = 1.0											#NO ERROR HERE YET.
+		flx_arr[j,h] = synthetic_data[h]+sigma*randn(1)[1]		
+		err_arr[j,h] = sigma
+		#flx_arr[j,:] = synd										#NO ERROR
+ 		#err_arr[j,h] = 1.0											#NO ERROR 
 	end
 end
 
 #WRITE OUPUT FILES
 
-
+println("--------------------------")
+println(flx_arr[1,:])
+println("--------------------------")
 
 #writecsv("filename.csv",array)
+writecsv("wavelengthS.csv",wavelengths)
+writecsv("rvm_dateS.csv",spectra_dates)
 writecsv("rvm_flxS.csv", flx_arr)
 writecsv("rvm_flx_errS.csv",err_arr)
 writecsv("continuumS.csv",continuum_array)
 writecsv("TDF.csv",X)
-println(size(flx_arr),size(err_arr),size(continuum_array),size(TDF))
-println(L[1,:])
+#println(size(flx_arr),size(err_arr),size(continuum_array),size(TDF))
+#println(L[1,:])
 
-#figure(1)
-#plot(synd,"r--")
-#show()
+figure(1)
+plot(synthetic_data,"b") #PLOT MODEL
+plot(flx_arr[1,:]',"r*")		 #PLOT snyth noise
+show()
 
 
 println("Done")
