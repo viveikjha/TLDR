@@ -6,54 +6,6 @@ from scipy.interpolate import interp1d
 
 
 
-#=--------------------------------------------------=#
-#==================INTERPOLATION=====================#
-#=--------------------------------------------------=#
-#interp takes x and y data and desired x points
-#returns linearally interpolated y desired points
-#extrapolates off either end of x data using the
-#slope of the first and last sets of data points given.
-def interp(x_DESIRED,x_DATA,y_DATA):
-  y_DESIRED = zeros(length(x_DESIRED))
-  index_DATA = linspace(1,length(x_DATA)-1,length(x_DATA)-1)
-  index_DESIRED = [1:length(x_DESIRED)]
-  #println([1:length(x_DESIRED)])
-  #println(index_DESIRED)
-  minx = minimum(x_DATA)
-  maxx = maximum(x_DATA)
-  for i in index_DESIRED:
-    yset=0
-    y_NEW =0
-    for y in index_DATA:
-      if yset ==0 && x_DESIRED[i] > x_DATA[y] && x_DESIRED[i] < x_DATA[y+1]  y < (length(index_DATA)-1) && i < (length(index_DATA)-1)
-        rise = y_DATA[y+1]-y_DATA[y]
-        run = x_DATA[y+1]-x_DATA[y]
-        slope = rise / run
-        y_change = slope*(x_DESIRED[i]-x_DATA[y])
-        y_NEW = y_DATA[y]+y_change
-        yset = 1
-      elseif yset ==0 && x_DESIRED[i] < minx: #EXTRAPOLATION DOWNWARD
-        #println("EXTRAP LOW!!")
-        rise =y_DATA[2]-y_DATA[1]
-        run = x_DATA[2]-x_DATA[1]
-        first_slope= rise / run
-        y_change = first_slope*(x_DATA[1]-x_DESIRED[i])
-        y_NEW = y_DATA[1]-y_change
-        yset = 1
-      elseif yset ==0 && x_DESIRED[i] > maxx: #EXTRAPOLATION UPWARD
-        #println("EXTRAP HIGH!!")
-        rise=y_DATA[length(y_DATA)]-y_DATA[length(y_DATA)-1]
-        run = x_DATA[length(x_DATA)]-x_DATA[length(x_DATA)-1]
-        last_slope = rise / run
-        y_change = last_slope*(x_DESIRED[i]-x_DATA[length(x_DATA)])
-        y_NEW = y_DATA[length(y_DATA)]+ y_change
-        yset = 1
-      y_DESIRED[i] = y_NEW
-  return y_DESIRED #This is the returned value. In Julia, return statements are not required.
-
-
-
-
 def Model(X,ICF):
 	L = len(ICF)
 	MF=np.zeros((L),dtype='float')
@@ -179,6 +131,9 @@ print 'ICF: ', ICF
 L = Model(Psi,ICF)
 LR=L
 percent_err = 0.0
+print "data_errflux", len(data_errflux)
+print "L", len(L)
+
 for j in range(0,len(data_errflux)):
 	for h in range(0,len(L)):
 		#data_flux[j][h]=np.random.normal(L[h],0.02*L[h])
