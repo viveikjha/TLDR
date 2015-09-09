@@ -126,7 +126,7 @@ final_it = nits
 initial_psi = 0.0  #Initial value for PSI
 
 	#= REGULARIZATION WEIGHTS =#
-mu = 115000.0 #Begins to work around 48
+mu = 100.0 #Begins to work around 48 fails around 115000.0
 
   #= CONVERGANCE PARAMETERS =#
 G = 10.0 # only for first iteration 1.5 otherwise
