@@ -153,9 +153,9 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	    #Step 2 done!
 	    #Step 3:
 	      #eq =U[l,:]+(rho[l]/2.0)*(X[l,:]-Z[l,:])
-	      #U[l,:] = U[l,:]+(rho[l]/2.0)*(X[l,:]-Z[l,:])
+	      U[l,:] = U[l,:]+(rho[l]/2.0)*(X[l,:]-Z[l,:])
 	      #= OR =#   
-				U[l,:] = HT * slice * ( H * vec(Z[l,:]) - vec(L[l,:]))		#UPDATE MULTIPLIERS
+				#U[l,:] = HT * slice * ( H * vec(Z[l,:]) - vec(L[l,:]))		#UPDATE MULTIPLIERS
 	    #Step 3 done!
 	    # Evaluation:
 	      eps_abs = 0.0    #Must be >= 0

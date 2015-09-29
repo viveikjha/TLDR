@@ -138,40 +138,18 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	  #println("Iteration: ", it, "  ", sum(Con_Arr), "/", num_lines, " Converged.")
 	  for l in 1:num_lines        #SPECTAL CHANNEL LOOP
 	    if Con_Arr[l] != 1
-	    #Step 1: MINIMIZATION W.R.T. X
-#			  X_s[l,:] = Z[l,:]-U[l,:]/rho[l]
-#	      X[l,:] = Prox(X_s[l,:],mu,rho[l])
-	    
-				#move current z here
+	    #Step 1:
 	      X_s[l,:] = Z[l,:]-U[l,:]/rho[l]
+	      X[l,:] = Prox(X_s[l,:],mu,rho[l])
+	    #Step 1 done!
+	    #Step 2:
+	      Z_s[l,:] = X[l,:]-U[l,:]/rho[l]
 	      slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
 	      #slice = squeeze(W[l,:,:],1)	#RESHAPE IS SUPPOSED TO BE FASTER THAN SQUEEZE!
 	      A =inv(HT*slice*H+rho[l]/2.0*GammaT*Gamma)
-	      #B = HT*slice*vec(L[l,:])+rho[it,l]*GammaT*Gamma*vec(X_s[it,l,:]) #REALLY NEED THIS ONE WORKING!!!!
-	      B = HT*slice*vec(L[l,:])
-		    X[l,:] = A * B
-
-
-
-
-			#Step 1 done!
-	    #Step 2: MINIMIZATION W.R.T Z
-#	      Z_s[l,:] = X[l,:]-U[l,:]/rho[l]
-#	      slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
-	      #slice = squeeze(W[l,:,:],1)	#RESHAPE IS SUPPOSED TO BE FASTER THAN SQUEEZE!
-#	      A =inv(HT*slice*H+rho[l]/2.0*GammaT*Gamma)
-	      #B = HT*slice*vec(L[l,:])+rho[it,l]*GammaT*Gamma*vec(Z_s[it,l,:])
-#	      B = HT*slice*vec(L[l,:])
-#		    Z[l,:] = A * B
-
-
-				#move current x here
-			  Z_s[l,:] = X[l,:]-U[l,:]/rho[l]
-	      Z[l,:] = Prox(Z_s[l,:],mu,rho[l])
-
-
-
-
+	      B = HT*slice*vec(L[l,:])+rho[l]*GammaT*Gamma*vec(Z_s[l,:])
+	      #B = HT*slice*vec(L[l,:])
+		    Z[l,:] = A * B
 	    #Step 2 done!
 	    #Step 3:
 	      #eq =U[l,:]+(rho[l]/2.0)*(X[l,:]-Z[l,:])
@@ -230,8 +208,8 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 end
 
 
-num_mus=500
-mu = linspace(40,120000.0,num_mus)   #A GOOD RANGE FOR SIGMA = 0.75 On SYNTH DATA : TDF == 0.04
+num_mus=10
+mu = linspace(100000,100000,num_mus)   #A GOOD RANGE FOR SIGMA = 0.75 On SYNTH DATA : TDF == 0.04
 
 chi2 = zeros((num_mus))
 its = zeros((num_mus))
@@ -240,7 +218,7 @@ for i in 1:num_mus
 	tmp = TLDR(mu[i],L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_dates,continuum_scale,continuum_flux,continuum_error_flux,num_continuum_dates)
 	chi2[i] = tmp[2]
 	its[i] = tmp[1]
-	println(i/num_mus)
+	println(chi2[i])
 end
 
 outarr = [mu chi2 its]
