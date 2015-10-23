@@ -36,7 +36,7 @@ spectra_dates_path = string(path,spectra_dates_filename)
 spectra_dates = readcsv(spectra_dates_path)                   #SPECTRAL SAMPLING DATES
 num_spectra_samples = length(spectra_dates)      				  #NUMBER OF DATA POINTS IN SPECTRA
 #CONTINUUM
-println("Continuum: ",size(continuum_array))
+#println("Continuum: ",size(continuum_array))
 #CONTINUUM_ARRAY CONTAINTS THE CONTINUUM DATES, FLUX, AND FLUX ERRORS.
 #IN THAT ORDER.
 continuum_dates = continuum_array[:,1]
@@ -59,8 +59,8 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	interpolation_points = zeros(num_spectra_samples,num_tdf_times)
 	H = zeros(num_spectra_samples,num_tdf_times)
 	HE= zeros(num_spectra_samples,num_tdf_times)
-	for date in 1:num_spectra_samples
-		for delay in 1:num_tdf_times
+	for date in collect(1:num_spectra_samples)
+		for delay in collect(1:num_tdf_times)
 			interpolation_points[date,delay]=spectra_dates[date]-tdf_times[delay]
 	  end
 	  P = interpolation_points[date,:]
@@ -68,13 +68,14 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	  HE[date,:] = interp(interpolation_points[date,:],continuum_dates,continuum_error_flux)
 	end
 	#=    PRECOMPUTING TIKHONOV MATRICES     =#
+	println("L: ", size(L))
 	#Build Mapping Matrix
 	num_spectra_dates=size(spectra_dates)[1]
 	W = zeros((size(wavelength)[1],size(L)[2],size(L)[2]))
-	for lam in 1:num_lines
+	for lam in collect(1:num_lines)
 	  T = eye(num_spectra_dates)
-	  for i in 1:num_spectra_dates
-	    for j in 1:num_spectra_dates
+	  for i in collect(1:num_spectra_dates)
+	    for j in collect(1:num_spectra_dates)
 	      if i == j
 	        T[i,j] =1.0/ EL[lam,i].^2
 	      end
@@ -85,20 +86,22 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	HT = H'
 	Gamma = eye(num_tdf_times)
 	GammaT = Gamma'
-	
+	println("size of W:" ,size(W))
 	#= INITIALIZING ADMM PARAMETERS =#
-	nits = 500 #Number of ADMM Iterations (An upper limit if convergence is not reached)
+	nits = 1000 #Number of ADMM Iterations (An upper limit if convergence is not reached)
 	final_it = nits
 	initial_psi = 0.0  #Initial value for PSI
 		#= REGULARIZATION WEIGHT =#
 	#mu = 100.0 #Begins to work around 48 fails around 115000.0
 	  #= CONVERGANCE PARAMETERS =#
 	G = 10.0 # only for first iteration 1.5 otherwise
-	tau = 1.1
-	sigma = 0.9
+	tau = 1.2
+	sigma = 4.0
 	#ADMM ARRAYS:
 	Con_Arr = zeros(num_lines)
 	X =   zeros((size(L,1),num_tdf_times))
+
+	println(size(X))
 	X_s = zeros((size(L,1),num_tdf_times))
 	Z =   zeros((size(L,1),num_tdf_times))
 	Z_previous = zeros((size(L,1),num_tdf_times))
@@ -124,31 +127,39 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	fill!(X_act,initial_psi)
 	
 	#=  Calculate Initial Multipliers & RHO =#
-	for p in 1:num_lines
+	for p in collect(1:num_lines)
 	  U[p,:]=HT * squeeze(W[p,:,:],1) * ( H * vec(Z[p,:]) - vec(L[p,:]))
 		A =(vec(U[p,:])'*HT*squeeze(W[p,:,:],1)*H*vec(U[p,:]))
 		B =(vec(U[p,:])'*vec(U[p,:]))
 		rho[p] = A[1]/B[1]
 	end
-	
+	println("#############################################################################################")
+	println("INITIAL RHO: ", rho)
+	println("#############################################################################################")
+	println("INITIAL U- ", " min: ",minimum(U)," max: ", maximum(U), " mean: ", mean(U) )
+	println("#############################################################################################")
 	#= Calculate Initial Rho =#
 	converged = 0
-	it = 2
+	it = 2	#DON'T CHANGE THIS
 	while it <= nits && converged==0        #ADMM ITERATION LOOP
 	  #println("Iteration: ", it, "  ", sum(Con_Arr), "/", num_lines, " Converged.")
-	  for l in 1:num_lines        #SPECTAL CHANNEL LOOP
+	  for l in collect(1:num_lines)        #SPECTAL CHANNEL LOOP
 	    if Con_Arr[l] != 1
 	    #Step 1:
 	      X_s[l,:] = Z[l,:]-U[l,:]/rho[l]
-	      X[l,:] = Prox(X_s[l,:],mu,rho[l])
+	      X[l,:] = ell1_prox_op(X_s[l,:],mu,rho[l])
 	    #Step 1 done!
 	    #Step 2:
 	      Z_s[l,:] = X[l,:]-U[l,:]/rho[l]
 	      slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
 	      #slice = squeeze(W[l,:,:],1)	#RESHAPE IS SUPPOSED TO BE FASTER THAN SQUEEZE!
 	      A =inv(HT*slice*H+rho[l]/2.0*GammaT*Gamma)
-	      B = HT*slice*vec(L[l,:])+rho[l]*GammaT*Gamma*vec(Z_s[l,:])
-	      #B = HT*slice*vec(L[l,:])
+#	      B = HT*slice*vec(L[l,:])+(rho[l]*GammaT*Gamma*vec(Z_s[l,:]))
+	      B = HT*slice*vec(L[l,:])+(rho[l]/2.0*vec(Z_s[l,:])) #Same as above but faster.
+				
+
+				#println( rho[l]*GammaT*Gamma*vec(Z_s[l,:]))
+#	      B = HT*slice*vec(L[l,:])
 		    Z[l,:] = A * B
 	    #Step 2 done!
 	    #Step 3:
@@ -158,16 +169,47 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 				#U[l,:] = HT * slice * ( H * vec(Z[l,:]) - vec(L[l,:]))		#UPDATE MULTIPLIERS
 	    #Step 3 done!
 	    # Evaluation:
+
+				Mod = Model(X[l,:],H) 
+				
+			
 	      eps_abs = 0.0    #Must be >= 0
-	      eps_rel = 0.1  #Must be between 0 and 1
-	      S = rho[l]*(Z[l,:]-Z_previous[l,:])
+	      eps_rel = 0.001  #Must be between 0 and 1
+				
+				S = rho[l]*(Z[l,:]-Z_previous[l,:])
 	      R = X[l,:]-Z[l,:]
+				
+				S_previous =  S	      
+				R_previous =  R
 				tau_prim_previous = tau_prim[l]
 	      tau_prim[l] = sqrt(num_tdf_times)*eps_abs + eps_rel*(maximum([ell2norm(X[l,:]),ell2norm(Z[l,:])]))
 				tau_dual_previous[l] = tau_dual[l]
 	      tau_dual[l] = sqrt(num_tdf_times)*eps_abs + eps_rel*ell2norm(U[l,:])
 	      eta = ell2norm(R)*tau_dual[l] / (ell2norm(S)*tau_prim[l])		#OPTION 1\
 			  #eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
+
+				if (ell2norm(R)/tau_dual[l]) < (ell2norm(R_previous)/tau_dual_previous[l])
+					Acol = :red
+				else
+					Acol = :green
+				end
+
+				if (ell2norm(S)/tau_prim[l]) < (ell2norm(S_previous)/tau_prim_previous[l])
+					Bcol = :red
+				else
+					Bcol = :green
+				end
+				#Diagnostic Print Statements:
+				println("Chi2: ",Chi2(Mod,L[1,:],EL[1,:])/num_tdf_times)
+				println("Tau_prim: ", tau_prim[l],"   tau_dual: ", tau_dual[l])
+				println("       R: ", ell2norm(R),             "        S: ", ell2norm(S))
+				print("R/Tau_pr: ")
+				print_with_color(Acol,string(ell2norm(R)/tau_prim[l]))
+				print( " S/Tau_du: ")
+				print_with_color(Bcol, string(ell2norm(S)/tau_dual[l]))
+				print("\n")
+				println("Phi: ", phi[l], "  Rho: ", rho[l])
+				println("--------------------------------------------------------------------")
 				phi_previous[l] = phi[l]
 				phi[l] = max(ell2norm(R/tau_prim[l]),ell2norm(S)/tau_dual[l])
 				if phi[l] <= 1.0
@@ -208,13 +250,13 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 end
 
 
-num_mus=10
-mu = linspace(100000,100000,num_mus)   #A GOOD RANGE FOR SIGMA = 0.75 On SYNTH DATA : TDF == 0.04
-
+num_mus=1
+#mu = linspace(10.0,100.0,num_mus)   #A GOOD RANGE FOR SIGMA = 0.75 On SYNTH DATA : TDF == 0.04
+mu = 2000.0
 chi2 = zeros((num_mus))
 its = zeros((num_mus))
 
-for i in 1:num_mus
+for i in collect(1:num_mus)
 	tmp = TLDR(mu[i],L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_dates,continuum_scale,continuum_flux,continuum_error_flux,num_continuum_dates)
 	chi2[i] = tmp[2]
 	its[i] = tmp[1]
@@ -225,7 +267,7 @@ outarr = [mu chi2 its]
 
 writecsv("mu_test_mu.csv",outarr)
 
-println("Done")
+print_rgb(0,255,255,"Done")
 
 
 

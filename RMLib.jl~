@@ -2,11 +2,16 @@
 #====================== CLEAR =======================#
 #=--------------------------------------------------=#
 function clear()
-  for i in 1:30
+  for i in collect(1:30)
     println("\n")
   end
 end
 
+
+
+function print_rgb(r, g, b, t)
+           println("\e[1m\e[38;2;$r;$g;$b;249m",t)
+       end
 #=--------------------------------------------------=#
 #==================INTERPOLATION=====================#
 #=--------------------------------------------------=#
@@ -17,7 +22,7 @@ end
 function interp(x_DESIRED,x_DATA,y_DATA)
   y_DESIRED = zeros(length(x_DESIRED))
   index_DATA = linspace(1,length(x_DATA)-1,length(x_DATA)-1)
-  index_DESIRED = [1:length(x_DESIRED)]
+  index_DESIRED = collect(1:length(x_DESIRED))
   #println([1:length(x_DESIRED)])
   #println(index_DESIRED)
   minx = minimum(x_DATA)
@@ -66,7 +71,7 @@ end
 function chigrad(Z,D,Sigma,rho,ICF)
   M = Model(Z,ICF)
   chi2grad = zeros(size(Z))
-  for i in 1:size(Z)[1]
+  for i in collect(1:size(Z)[1])
     #chi2grad[i] = 2.0*sum((M-D)/Sigma^2. .* ICF[:,i])
     chi2grad[i] = sum(2.0*sum(D - sum(vec(Z).*vec(ICF[i,:])))-sum(ICF,2))
   end
@@ -98,19 +103,19 @@ function Chi2(M,D,Sigma)
 end
 
 #=--------------------------------------------------=#
-#================ Proximal Operator =================#
+#============= ELL1 Proximal Operator ===============#
 #=--------------------------------------------------=#
 #Proximal operator for the L1 norm with positivity.
 #X is the current model TDF
 #mu is the regularization weight
 #rho is the current hyperparameter
-function Prox(X,mu,rho)
-  if mu/rho == 0.0
-    #println("Error in Proximal Operator: mu/rho = 0")
-  elseif mu/rho == inf || mu/rho == inf
-    println("Error in Proximal Operator: mu/rho = infinity")
-  end
-  for i in 1:size(X)[2]
+function ell1_prox_op(X,mu,rho)
+  #if mu/rho == 0.0
+  #  println("Error in Proximal Operator: mu/rho = 0")
+  #elseif mu/rho == inf || mu/rho == inf
+  #  println("Error in Proximal Operator: mu/rho = infinity")
+  #end
+  for i in collect(1:length(X))
     if X[i] > mu/rho
       X[i] = X[i] - mu/rho
     else
@@ -118,6 +123,26 @@ function Prox(X,mu,rho)
     end
   end
   X #Array Returned!
+end
+
+#=--------------------------------------------------=#
+#============= ELL2 Proximal Operator ===============#
+#=--------------------------------------------------=#
+#Proximal operator for the L2 norm.
+#X is the current model TDF
+#mu is the regularization weight
+function ell2_prox_op(X,mu)
+	X_returned = 1.0/(1.0*2.0*mu).*X
+end
+
+#=--------------------------------------------------=#
+#========= Positivity Proximal Operator  ============#
+#=--------------------------------------------------=#
+function pos_prox_op(X)
+	for i in collect(1:length(X))
+		X[i] = max([0,X[i]])
+	end	
+	X
 end
 
 #=--------------------------------------------------=#
