@@ -105,8 +105,10 @@ for lam in 1:num_lines
   W[lam,:,:] = T
 end
 HT = H'
-Gamma = eye(num_tdf_times)
-GammaT = Gamma'
+Gammatdf = eye(num_tdf_times)
+GammatdfT = Gammatdf'
+Gammaspe = eye(num_lines)
+GammaspeT = Gammaspec'
 DT = D'
 
 
@@ -126,30 +128,30 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 	#ADMM ARRAYS:
 	Con_Arr = zeros(num_lines)
 	#IMAGE ARRAYS
-	X =   zeros((size(L,1),num_tdf_times))
+	X = zeros((num_tdf_times,num_spectra_samples))
 	fill!(X,initial_psi)
-	X_s = zeros((size(L,1),num_tdf_times))
+	X_s = zeros((num_tdf_times,num_spectra_samples))
 	fill!(X_s,initial_psi)
-
-	Z =   zeros((size(L,1),num_tdf_times))
+ 
+	Z = zeros((num_tdf_times,num_spectra_samples))
 	fill!(Z,initial_psi)
-	Z_previous = zeros((size(L,1),num_tdf_times)) 	#-> UNECESSARY????????? <-
-	Z_s = zeros((size(L,1),num_tdf_times))
+	Z_previous = zeros((num_tdf_times,num_spectra_samples)) 	#-> UNECESSARY????????? <-
+	Z_s = zeros((num_tdf_times,num_spectra_samples))
 	fill!(Z_s,initial_psi)
 
-	P = zeros((size(L,1),num_tdf_times))
+	P = zeros((num_tdf_times,num_spectra_samples))
 	fill!(P,initial_psi)
-	P_s = zeros((size(L,1),num_tdf_times))
+	P_s = zeros((num_tdf_times,num_spectra_samples))
 	fill!(P_s,initial_psi)
 
-	T = zeros((size(L,1),num_tdf_times))
+	T = zeros((num_tdf_times,num_spectra_samples))
 	fill!(T,initial_psi)
-	T_s = zeros((size(L,1),num_tdf_times))
+	T_s = zeros((num_tdf_times,num_spectra_samples))
 	fill!(T_s,initial_psi)
 
-	V = zeros((size(L,1),num_tdf_times))
+	V = zeros((num_tdf_times,num_spectra_samples))
 	fill!(V,initial_psi)
-	V_s = zeros((size(L,1),num_tdf_times))
+	V_s = zeros((num_tdf_times,num_spectra_samples))
 	fill!(V_s,initial_psi)
 
 
@@ -171,10 +173,10 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 	rho_V_max = Inf
 
 #LAGRANGE MULTIPLIERS
-	U_Z =   zeros((size(L,1),num_tdf_times))
-	U_P =   zeros((size(L,1),num_tdf_times))
-	U_T =   zeros((size(L,1),num_tdf_times))
-	U_V =   zeros((size(L,1),num_tdf_times))
+	U_Z = zeros((num_tdf_times,num_spectra_samples))
+	U_P = zeros((num_tdf_times,num_spectra_samples))
+	U_T = zeros((num_tdf_times,num_spectra_samples))
+	U_V = zeros((num_tdf_times,num_spectra_samples))
 
 #CONVERGANCE ARRAYS
 	phi = zeros((size(L,1)))
@@ -205,12 +207,12 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 	  #println("Iteration: ", it, "  ", sum(Con_Arr), "/", num_lines, " Converged.")
 
 	#Step 1: MINIMIZATION W.R.T. X
-		Q = HT * H + rho_T * DsT*Ds + (mu_smoo+rho_S+rho_T)*Gamma
-		B = HT * L + DsT*(U_T+rho_T*T)+U_P+rho_P*P+U_S+rho_S*S
 	  for l in 1:num_lines        #SPECTAL CHANNEL LOOP
-			b=
 		#MINIMIZATION ON X_v INDIVIDUALLY WITHIN THIS SPECTRAL LOOP. (THIS PART CAN BE DONE IN PARALLEL!!!!)			
-					
+			W_slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
+			Qinv = inv(HT *W_slice* H + rho_T * DsT*Ds + (mu_smoo+rho_S+rho_T)*Gammatdf) #GAMMA MAY NOT BE CORRECT DIMS
+			B = HT* W_slice * L + DsT*(U_T+rho_T*T)+U_P+rho_P*P+U_S+rho_S*S
+			X[:,l] = Qinv*B[:,l] 
 		end
 	#Step 1 done!
 	#Step 2: UPDATE REGULARIZATION TERMS
@@ -227,9 +229,7 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 
 	#Step 3: MINIMIZATION W.R.T Z
 		#TIKHONOV SOLUTION
-		Rinv = inv(rho_V*Dv*DvT+rho_S*Gamma)
-		C =	(U_V+rho_V*V)*DvT-U_S+rho_S*X 
-		Z = Rinv*C
+		Z = (1.0/(rho_V+rho_S))(U_V+rho_V*V)*DvT-U_S+rho_S*X 
 	#Step 3: done!
 
 	#Step 4: UPDATE LAGRANGE MULTIPLIERS
@@ -243,81 +243,55 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 		U_Z = U_Z+(rho_Z/2.0)*(X-Z)
 	#Step 4: done!
 
-
-
-
-
-
-
-
-
- #Step 2: MINIMIZATION W.R.T Z
-#      Z_s[l,:] = X[l,:]-U[l,:]/rho[l]
-#      slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
-	      #slice = squeeze(W[l,:,:],1)	#RESHAPE IS SUPPOSED TO BE FASTER THAN SQUEEZE!
-#	      A =inv(HT*slice*H+rho[l]/2.0*GammaT*Gamma)
-	      #B = HT*slice*vec(L[l,:])+rho[it,l]*GammaT*Gamma*vec(Z_s[it,l,:])
-#	      B = HT*slice*vec(L[l,:])
-#		    Z[l,:] = A * B
-    #Step 2 done!
-
-
-    #Step 3: UPDATE LAGRANGE MULTIPLIERS
-      #eq =U[l,:]+(rho[l]/2.0)*(X[l,:]-Z[l,:])
-      U[l,:] = U[l,:]+(rho[l]/2.0)*(X[l,:]-Z[l,:])
-     #= OR =#   
-			#U[l,:] = HT * slice * ( H * vec(Z[l,:]) - vec(L[l,:]))		#UPDATE MULTIPLIERS
-    
-			#Step 3 done!
-
-		#CONVERGANCE TESTING!!!!!!!!!!!
-    # Evaluation:
-      eps_abs = 0.0    #Must be >= 0
-      eps_rel = 0.1  #Must be between 0 and 1
-      S = rho[l]*(Z[l,:]-Z_previous[l,:])
-      R = X[l,:]-Z[l,:]
-			tau_prim_previous = tau_prim[l]
-      tau_prim[l] = sqrt(num_tdf_times)*eps_abs + eps_rel*(maximum([ell2norm(X[l,:]),ell2norm(Z[l,:])]))
-			tau_dual_previous[l] = tau_dual[l]
-      tau_dual[l] = sqrt(num_tdf_times)*eps_abs + eps_rel*ell2norm(U[l,:])
-      eta = ell2norm(R)*tau_dual[l] / (ell2norm(S)*tau_prim[l])		#OPTION 1\
-		  #eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
-			phi_previous[l] = phi[l]
-			phi[l] = max(ell2norm(R/tau_prim[l]),ell2norm(S)/tau_dual[l])
-			if phi[l] <= 1.0
-				Con_Arr[l] = 1
+#Step 5: CONVERGANCE TESTING!!!!!!!!!!!
+   # Evaluation:
+    eps_abs = 0.0    #Must be >= 0
+    eps_rel = 0.1  #Must be between 0 and 1
+    S = rho*(Z-Z_previous)
+    R = X-Z
+		tau_prim_previous = tau_prim
+    tau_prim = sqrt(num_tdf_times)*eps_abs + eps_rel*(maximum([ell2norm(X),ell2norm(Z)]))
+		tau_dual_previous = tau_dual
+    tau_dual = sqrt(num_tdf_times)*eps_abs + eps_rel*ell2norm(U)
+    eta = ell2norm(R)*tau_dual / (ell2norm(S)*tau_prim)		#OPTION 1\
+	  #eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
+		phi_previous = phi
+		phi = max(ell2norm(R/tau_prim),ell2norm(S)/tau_dual)
+		if phi <= 1.0
+			Con_Arr = 1
+		end
+		if it == 2 
+			G = 1.5
+		end
+		if (1.0/tau <= eta) && (eta <= tau) || (phi < sigma*phi_previous)
+			#NOTHING HAPPENS IN HERE	
+		elseif eta < (1.0/tau)
+			rho_max = rho
+			if rho_min > 0.0
+				rho = sqrt(rho_min*rho_max)
+			else rho = rho_max/G 
 			end
-			if it == 2 
-				G = 1.5
+		elseif eta > tau
+			rho_min = rho
+			if rho_max < Inf
+				rho = sqrt(rho_min*rho_max)
+			else rho = rho_min*G
 			end
-			if (1.0/tau <= eta) && (eta <= tau) || (phi[l] < sigma*phi_previous[l])
-				#NOTHING HAPPENS IN HERE	
-			elseif eta < (1.0/tau)
-				rho_max[l] = rho[l]
-				if rho_min[l] > 0.0
-					rho[l] = sqrt(rho_min[l]*rho_max[l])
-				else rho[l] = rho_max[l]/G 
-				end
-			elseif eta > tau
-				rho_min[l] = rho[l]
-				if rho_max[l] < Inf
-					rho[l] = sqrt(rho_min[l]*rho_max[l])
-				else rho[l] = rho_min[l]*G
-				end
-			end
-      if sum(Con_Arr) == num_lines
-        converged = 1
-        #println("All lines Converged!!!") 
-      end 
+		end
+    if sum(Con_Arr) == num_lines
+	    converged = 1
+      #println("All lines Converged!!!") 
+    end 
   end
   it = it+1
 	end
-	Mod = Model(X[1,:],H) 
-	outarr = [it-1, Chi2(Mod,L[1,:],EL[1,:])/num_tdf_times]
+	Mod = Model(X,H) 
+	#outarr = [it-1, Chi2(Mod,L[1,:],EL[1,:])/num_tdf_times]
 	if converged != 1
 		println("Mu = ", mu," did not converge")
 	end
-	outarr
+	#outarr #NEED A NEW OUTPUT METHOD....FILES I SUSPECT
+	println("ADMM Call Completed")
 end
 
 

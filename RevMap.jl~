@@ -208,6 +208,7 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 		Q = HT * H + rho_T * DsT*Ds + (mu_smoo+rho_S+rho_T)*Gamma
 		B = HT * L + DsT*(U_T+rho_T*T)+U_P+rho_P*P+U_S+rho_S*S
 	  for l in 1:num_lines        #SPECTAL CHANNEL LOOP
+			b=
 		#MINIMIZATION ON X_v INDIVIDUALLY WITHIN THIS SPECTRAL LOOP. (THIS PART CAN BE DONE IN PARALLEL!!!!)			
 					
 		end

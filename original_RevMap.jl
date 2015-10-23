@@ -26,14 +26,14 @@ end
 #=IMPORTING FILES=#
 #SPECTRA
 wavelength_path = string(path,wavelength_filename)
-wavelength = readcsv(wavelength_path)                    #List of measured wavelengths
+wavelength = readcsv(wavelength_path)     	              #List of measured wavelengths
 spectrapath = string(path,spectra_filename)
-L = readcsv(spectrapath)                           #SPECTRAL FLUXES (L)
-num_lines = size(L,1)                                #NUMBER OF SPECTRAL LINES
+L = readcsv(spectrapath)                          			 	#SPECTRAL FLUXES (L)
+num_lines = size(L,1)                             		  	#NUMBER OF SPECTRAL LINES
 spectra_error_path = string(path,spectra_error_filename)
-EL = readcsv(spectra_error_path)                 #SPECTRAL FLUX ERRORS
+EL = readcsv(spectra_error_path)                 					#SPECTRAL FLUX ERRORS
 spectra_dates_path = string(path,spectra_dates_filename)
-spectra_dates = readcsv(spectra_dates_path)                   #SPECTRAL SAMPLING DATES
+spectra_dates = readcsv(spectra_dates_path)               #SPECTRAL SAMPLING DATES
 num_spectra_samples = length(spectra_dates)      				  #NUMBER OF DATA POINTS IN SPECTRA
 #CONTINUUM
 #println("Continuum: ",size(continuum_array))
@@ -249,7 +249,7 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 		println("Mu = ", mu," did not converge")
 	end
 	outarr
-end
+end 
 
 
 num_mus=1
