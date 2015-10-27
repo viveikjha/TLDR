@@ -2,8 +2,8 @@ include("RMLib.jl")
 clear()
 
 
-mode = 1 	#SYNTHETIC DATA MODE
-#mode = 2	#REAL DATA MODE
+#mode = 1 	#SYNTHETIC DATA MODE
+mode = 2	#REAL DATA MODE
 if mode == 1
 	path ="synth/"
 	wavelength_filename = "wavelengthS.csv"
@@ -76,9 +76,9 @@ for i in 1:num_tdf_times
 	end
 end
 DsT = Ds'
-Dv = zeros(num_spectra_samples,num_spectra_samples)
-for i in 1:num_spectra_samples
-	for j in 1:num_spectra_samples
+Dv = zeros(num_lines,num_lines)
+for i in 1:num_lines
+	for j in 1:num_lines
 		if (i+1) == j
 			Dv[i,j] = 1
 		end
@@ -108,15 +108,15 @@ HT = H'
 Gammatdf = eye(num_tdf_times)
 GammatdfT = Gammatdf'
 Gammaspe = eye(num_lines)
-GammaspeT = Gammaspec'
-DT = D'
+GammaspeT = Gammaspe'
+
 
 
 function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_dates,continuum_scale,continuum_flux,continuum_error_flux,num_continuum_dates)
-
-	
+	L = L'
+	EL = EL'
 	#= INITIALIZING ADMM PARAMETERS =#
-	nits = 500 #Number of ADMM Iterations (An upper limit if convergence is not reached)
+	nits = 20 #Number of ADMM Iterations (An upper limit if convergence is not reached)
 	final_it = nits
 	initial_psi = 0.0  #Initial value for PSI
 		#= REGULARIZATION WEIGHT =#
@@ -128,30 +128,30 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 	#ADMM ARRAYS:
 	Con_Arr = zeros(num_lines)
 	#IMAGE ARRAYS
-	X = zeros((num_tdf_times,num_spectra_samples))
+	X = zeros((num_tdf_times,num_lines))
 	fill!(X,initial_psi)
-	X_s = zeros((num_tdf_times,num_spectra_samples))
+	X_s = zeros((num_tdf_times,num_lines))
 	fill!(X_s,initial_psi)
  
-	Z = zeros((num_tdf_times,num_spectra_samples))
+	Z = zeros((num_tdf_times,num_lines))
 	fill!(Z,initial_psi)
-	Z_previous = zeros((num_tdf_times,num_spectra_samples)) 	#-> UNECESSARY????????? <-
-	Z_s = zeros((num_tdf_times,num_spectra_samples))
+	Z_previous = zeros((num_tdf_times,num_lines)) 	#-> UNECESSARY????????? <-
+	Z_s = zeros((num_tdf_times,num_lines))
 	fill!(Z_s,initial_psi)
 
-	P = zeros((num_tdf_times,num_spectra_samples))
+	P = zeros((num_tdf_times,num_lines))
 	fill!(P,initial_psi)
-	P_s = zeros((num_tdf_times,num_spectra_samples))
+	P_s = zeros((num_tdf_times,num_lines))
 	fill!(P_s,initial_psi)
 
-	T = zeros((num_tdf_times,num_spectra_samples))
+	T = zeros((num_tdf_times,num_lines))
 	fill!(T,initial_psi)
-	T_s = zeros((num_tdf_times,num_spectra_samples))
+	T_s = zeros((num_tdf_times,num_lines))
 	fill!(T_s,initial_psi)
 
-	V = zeros((num_tdf_times,num_spectra_samples))
+	V = zeros((num_tdf_times,num_lines))
 	fill!(V,initial_psi)
-	V_s = zeros((num_tdf_times,num_spectra_samples))
+	V_s = zeros((num_tdf_times,num_lines))
 	fill!(V_s,initial_psi)
 
 
@@ -173,10 +173,10 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 	rho_V_max = Inf
 
 #LAGRANGE MULTIPLIERS
-	U_Z = zeros((num_tdf_times,num_spectra_samples))
-	U_P = zeros((num_tdf_times,num_spectra_samples))
-	U_T = zeros((num_tdf_times,num_spectra_samples))
-	U_V = zeros((num_tdf_times,num_spectra_samples))
+	U_Z = zeros((num_tdf_times,num_lines))
+	U_P = zeros((num_tdf_times,num_lines))
+	U_T = zeros((num_tdf_times,num_lines))
+	U_V = zeros((num_tdf_times,num_lines))
 
 #CONVERGANCE ARRAYS
 	phi = zeros((size(L,1)))
@@ -191,47 +191,73 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 	fill!(X_act,initial_psi)
 	
 	#=  Calculate Initial Multipliers & RHO =#
+	println("H: ", size(H))
+	println("HT: ", size(HT))
+	println("W: ",size(squeeze(W[1,:,:],1)))
+	println("Z: ", size(Z))
+	println("L: ", size((L)))
+	#println("U: ", size(U))
+
+
 	for p in 1:num_lines
-	  U[p,:]=HT * squeeze(W[p,:,:],1) * ( H * vec(Z[p,:]) - vec(L[p,:]))
-		A =(vec(U[p,:])'*HT*squeeze(W[p,:,:],1)*H*vec(U[p,:]))
-		B =(vec(U[p,:])'*vec(U[p,:]))
-		rho[p] = A[1]/B[1]
+	  U_Z[:,p]=HT * squeeze(W[p,:,:],1) * ( H * vec(Z[:,p]) - vec(L[:,p]))
 	end
-	
+	U_T = U_Z
+	U_V = U_Z
+	U_P = U_Z
+#	rho_Z = U_Z'*HT*H*U_Z*inv(U_Z'*U_Z)
+	rho_Z = 1000.0
+	rho_T = rho_Z
+	rho_V = rho_Z
+	rho_P = rho_Z
 #NO IDEA WHAT TO DO FOR INITIALIZATOIN OF NEW MULTIPLIER'S AND WEIGHTS..........
-
-
+	Qinv = zeros(num_tdf_times,num_tdf_times)
+	B = zeros(num_tdf_times,num_lines)
 	converged = 0
 	it = 2
 	while it <= nits && converged==0        #ADMM ITERATION LOOP
-	  #println("Iteration: ", it, "  ", sum(Con_Arr), "/", num_lines, " Converged.")
+	 println("Iteration: ", it, "  ", sum(Con_Arr), "/", num_lines, " Converged.")
 
 	#Step 1: MINIMIZATION W.R.T. X
 	  for l in 1:num_lines        #SPECTAL CHANNEL LOOP
+			if it == 3
+				println(l)
+			end		
 		#MINIMIZATION ON X_v INDIVIDUALLY WITHIN THIS SPECTRAL LOOP. (THIS PART CAN BE DONE IN PARALLEL!!!!)			
 			W_slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
-			Qinv = inv(HT *W_slice* H + rho_T * DsT*Ds + (mu_smoo+rho_S+rho_T)*Gammatdf) #GAMMA MAY NOT BE CORRECT DIMS
-			B = HT* W_slice * L + DsT*(U_T+rho_T*T)+U_P+rho_P*P+U_S+rho_S*S
-			X[:,l] = Qinv*B[:,l] 
+			#println("##########")
+			#println(size(rho_T))
+			i = HT * W_slice*H
+			j = rho_T*DsT*Ds
+			k = (mu_smoo+rho_Z+rho_T)*Gammatdf
+			#Qinv = inv(HT *W_slice* H + rho_T * DsT*Ds + (mu_smoo+rho_Z+rho_T)*Gammatdf) #GAMMA MAY NOT BE CORRECT DIMS
+			#Qinv = inv(i+j+k)
+			Q = i+j+k			
+			#println("&&&&&&&&&&")
+			B = HT* W_slice * L + DsT*(U_T+rho_T*T)+U_P+rho_P*P+U_Z+rho_Z*Z
+			#println("@@@@@@@@@@")
+			X[:,l] = Q\B[:,l] 
+		 
 		end
 	#Step 1 done!
+	println("STEP 1 COMPLETE")
 	#Step 2: UPDATE REGULARIZATION TERMS
 		#A: POSITIVITY: P
-		P_s = X-U_p/rho_P
+		P_s = X-U_P/rho_P
 		P = pos_prox_op(P_s)
 		#B: THRESHOLD: T
-		T_s = D*X-U_T/rho_T
+		T_s = Ds*X-U_T/rho_T
 		T = ell1_prox_op(T_s,mu_temp,rho_T)
 		#C: FREQUENCY: V
-		V_s = Z*D - U_V/rho_V
+		V_s = Z*Dv - U_V/rho_V
 		V = ell1_prox_op(V_s,mu_spec,rho_V)
 	#Step 2: done!
-
+	println("STEP 2 COMPLETE")
 	#Step 3: MINIMIZATION W.R.T Z
 		#TIKHONOV SOLUTION
-		Z = (1.0/(rho_V+rho_S))(U_V+rho_V*V)*DvT-U_S+rho_S*X 
+		Z = (1.0/(rho_V+rho_Z))*(U_V+rho_V*V)*DvT-U_Z+rho_Z*X 
 	#Step 3: done!
-
+		println("STEP 3 COMPLETE")
 	#Step 4: UPDATE LAGRANGE MULTIPLIERS
 		#A: U_P
 		U_P = U_P+(rho_P/2.0)*(X-P)
@@ -247,12 +273,12 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
    # Evaluation:
     eps_abs = 0.0    #Must be >= 0
     eps_rel = 0.1  #Must be between 0 and 1
-    S = rho*(Z-Z_previous)
+    S = rho_Z*(Z-Z_previous)
     R = X-Z
 		tau_prim_previous = tau_prim
     tau_prim = sqrt(num_tdf_times)*eps_abs + eps_rel*(maximum([ell2norm(X),ell2norm(Z)]))
 		tau_dual_previous = tau_dual
-    tau_dual = sqrt(num_tdf_times)*eps_abs + eps_rel*ell2norm(U)
+    tau_dual = sqrt(num_tdf_times)*eps_abs + eps_rel*ell2norm(U_Z)
     eta = ell2norm(R)*tau_dual / (ell2norm(S)*tau_prim)		#OPTION 1\
 	  #eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
 		phi_previous = phi
@@ -263,28 +289,37 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 		if it == 2 
 			G = 1.5
 		end
-		if (1.0/tau <= eta) && (eta <= tau) || (phi < sigma*phi_previous)
+		#println("tau: ", (tau[1]))
+		#println("eta: ", (eta[1]))
+		#println("Phi: ", (phi[1]))
+		#println("sigma: ", sigma[1])
+		
+		if (1.0/tau[1] <= eta[1]) && (eta[1] <= tau[1]) || (phi[1] < sigma[1]*phi_previous[1])
 			#NOTHING HAPPENS IN HERE	
 		elseif eta < (1.0/tau)
-			rho_max = rho
-			if rho_min > 0.0
-				rho = sqrt(rho_min*rho_max)
-			else rho = rho_max/G 
+			rho_max = rho_Z
+			if rho_Z_min > 0.0
+				rho_Z = sqrt(rho_Z_min*rho_Z_max)
+			else rho_Z = rho_Z_max/G 
 			end
 		elseif eta > tau
-			rho_min = rho
-			if rho_max < Inf
-				rho = sqrt(rho_min*rho_max)
-			else rho = rho_min*G
+			rho_Z_min = rho_Z
+			if rho_Z_max < Inf
+				rho_Z = sqrt(rho_Z_min*rho_Z_max)
+			else rho_Z = rho_Z_min*G
 			end
 		end
+		rho_T = rho_Z
+		rho_V = rho_Z
+		rho_P = rho_Z
     if sum(Con_Arr) == num_lines
 	    converged = 1
       #println("All lines Converged!!!") 
     end 
+		it = it+1
   end
-  it = it+1
-	end
+  
+	
 	Mod = Model(X,H) 
 	#outarr = [it-1, Chi2(Mod,L[1,:],EL[1,:])/num_tdf_times]
 	if converged != 1
@@ -295,27 +330,26 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 end
 
 
-num_mus=500
-mu = linspace(40,120000.0,num_mus)   #A GOOD RANGE FOR SIGMA = 0.75 On SYNTH DATA : TDF == 0.04
+num_mus=1
+#mu = linspace(40,120000.0,num_mus)   #A GOOD RANGE FOR SIGMA = 0.75 On SYNTH DATA : TDF == 0.04
+mu = 10.0
 
-
-mu_spec = 1.0		#Spectral Regularization Weight
-mu_temp = 1.0		#Temporal Regularization Weight
-mu_smoo = 1.0		#Smoothing Regularization Weight
+mu_spec = 10.0		#Spectral Regularization Weight
+mu_temp = 10.0		#Temporal Regularization Weight
+mu_smoo = 10.0		#Smoothing Regularization Weight
 
 chi2 = zeros((num_mus))
 its = zeros((num_mus))
 
-for i in 1:num_mus
-	tmp = TLDR(mu[i],L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_dates,continuum_scale,continuum_flux,continuum_error_flux,num_continuum_dates)
-	chi2[i] = tmp[2]
-	its[i] = tmp[1]
-	println(i/num_mus)
-end
 
-outarr = [mu chi2 its]
+tmp = TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_dates,continuum_scale,continuum_flux,continuum_error_flux,num_continuum_dates)
+	#chi2[i] = tmp[2]
+	#its[i] = tmp[1]
+	#println(i/num_mus)
 
-writecsv("mu_test_mu.csv",outarr)
+#outarr = [mu chi2 its]
+
+#writecsv("mu_test_mu.csv",outarr)
 
 println("Done")
 

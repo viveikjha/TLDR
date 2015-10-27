@@ -75,9 +75,13 @@ function chigrad(Z,D,Sigma,rho,ICF)
   for i in collect(1:size(Z)[1])
     #chi2grad[i] = 2.0*sum((M-D)/Sigma^2. .* ICF[:,i])
     chi2grad[i] = sum(2.0*sum(D - sum(vec(Z).*vec(ICF[i,:])))-sum(ICF,2))
+		chi2grad[i] = sum(2.0*sum(D - sum(Z.* H))-sum(ICF))
   end
   chi2grad #Array Returned!
 end
+
+
+
 
 #=--------------------------------------------------=#
 #====================== Model =======================#
@@ -88,7 +92,8 @@ end
 function Model(X,H)
   #L = size(ICF)[1]
   #MF = zeros(L)
-  MF = H*vec(X)
+  #MF = H*vec(X)
+	MF = H*X
   MF #Array Returned!
 end
 
@@ -99,7 +104,8 @@ end
 # D should be the spectral data
 # Sigma should be the error on the spectral data
 function Chi2(M,D,Sigma)
-	  sum(   (vec(M)-vec(D)).^2  ./vec(Sigma) .^2)   #Value Returned!
+	  #sum(   (vec(M)-vec(D)).^2  ./vec(Sigma) .^2)   #Value Returned!
+		sum(   (M-D).^2 ./(Sigma).^2)
 		#sum(((vec(M)-vec(D))/vec(Sigma))^2)
 end
 
@@ -140,9 +146,13 @@ end
 #========= Positivity Proximal Operator  ============#
 #=--------------------------------------------------=#
 function pos_prox_op(X)
-	for i in collect(1:length(X))
-		X[i] = max([0,X[i]])
-	end	
+	for i in collect(1:size(X)[1])
+		for j in collect(1:size(X)[2])
+			if X[i,j] < 0.0
+				X[i,j] = 0.0
+			end
+		end	
+	end
 	X
 end
 
@@ -150,5 +160,6 @@ end
 #=================== Ell 2 Norm =====================#
 #=--------------------------------------------------=#
 function ell2norm(X)
-	sqrt(sum(vec(X).^2))   #Array Returned!
+	#sqrt(sum(vec(X).^2))   #Array Returned!
+	sqrt(sum(X).^2)
 end
