@@ -122,24 +122,30 @@ function ell1_prox_op(X,mu,rho)
   #elseif mu/rho == inf || mu/rho == inf
   #  println("Error in Proximal Operator: mu/rho = infinity")
   #end
-  for i in collect(1:length(X))
-    if X[i] > mu/rho
-      X[i] = X[i] - mu/rho
-    else
-      X[i] = 0
-    end
-  end
-  X #Array Returned!
+#  for i in collect(1:length(X))
+#    if X[i] > mu/rho
+#      X[i] = X[i] - mu/rho
+#    else
+#      X[i] = 0
+#    end
+#  end
+#  X #Array Returned!
+#end
+	
+	println("Length of X: ",length(X))
+	for i in collect(1:length(X))
+		X[i] = X[i]*maximum([0.0 ,(1.0-mu/(rho*abs(X[i])))])
+	end
+	X #array returned
 end
-
 #=--------------------------------------------------=#
 #============= ELL2 Proximal Operator ===============#
 #=--------------------------------------------------=#
 #Proximal operator for the L2 norm.
 #X is the current model TDF
 #mu is the regularization weight
-function ell2_prox_op(X,mu)
-	X_returned = 1.0/(1.0*2.0*mu).*X
+function ell2_prox_op(X,mu,rho)
+	X_returned = 1.0/(1.0+2.0*mu/rho).*X
 end
 
 #=--------------------------------------------------=#
@@ -148,7 +154,9 @@ end
 function pos_prox_op(X)
 	for i in collect(1:size(X)[1])
 		for j in collect(1:size(X)[2])
-			X[i,j] = max([0,X[i,j]])
+			if X[i,j] < 0.0
+				X[i,j] = 0.0
+			end
 		end	
 	end
 	X

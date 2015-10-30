@@ -1,4 +1,21 @@
 #=--------------------------------------------------=#
+#=================== RAND NORMAL	===================#
+#=--------------------------------------------------=#
+#http://www.johndcook.com/blog/2012/02/22/julia-random-number-generation/
+## return a random sample from a normal (Gaussian) distribution
+function rand_normal(mean, stdev)
+    if stdev <= 0.0
+        error("standard deviation must be positive")
+    end
+    u1 = rand()
+    u2 = rand()
+    r = sqrt( -2.0*log(u1) )
+    theta = 2.0*pi*u2
+    mean + stdev*r*sin(theta)
+end
+
+
+#=--------------------------------------------------=#
 #====================== CLEAR =======================#
 #=--------------------------------------------------=#
 function clear()
@@ -17,7 +34,7 @@ end
 function interp(x_DESIRED,x_DATA,y_DATA)
   y_DESIRED = zeros(length(x_DESIRED))
   index_DATA = linspace(1,length(x_DATA)-1,length(x_DATA)-1)
-  index_DESIRED = [1:length(x_DESIRED)]
+  index_DESIRED = collect(1:length(x_DESIRED))
   #println([1:length(x_DESIRED)])
   #println(index_DESIRED)
   minx = minimum(x_DATA)
@@ -66,7 +83,7 @@ end
 function Model(X,H)
   #L = size(ICF)[1]
   #MF = zeros(L)
-  MF = H*vec(X)
+  MF = H*X
   MF #Array Returned!
 end
 

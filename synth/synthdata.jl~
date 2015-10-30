@@ -60,15 +60,27 @@ initial_x = 0.04																#INITIAL VALUE FOR THE TDF
 fill!(X,initial_x)															#FILL TDF WITH INITIAL VALUE
 #=DONE SETTING UP TIME DELAY FUNCTION=#
 
-
 #= Creating Artificial Data Arrays =#
-num_lines = 1
+num_lines = 100
 num_spectra_samples = 100
 
-#For Wavlength:
+#=SET UP VELOCITY DELAY MAP=#
+num_tdf_times = 50
+VDM=zeros((num_tdf_times,num_lines))
+
+for i in 1:num_tdf_times
+	for j in 1:num_lines
+		VDM[i,j] = sin( (sin(j/100*pi)*i)/50*pi)
+	end
+end
+#=DONE SETTING UP VDM=#
+
+
+
+#For Wavelength:
 low = 450.0
 high = 1000.0
-Lrange = high - min
+Lrange = high - low
 wavelengths = Lrange * sort(rand(num_lines))+low
 
 
@@ -86,11 +98,11 @@ spectra_dates = range * sort(rand(num_spectra_samples))+beginning
 interpolation_points = zeros(num_spectra_samples,num_tdf_times)
 H = zeros(num_spectra_samples,num_tdf_times)
 HE= zeros(num_spectra_samples,num_tdf_times)
-for date in 1:num_spectra_samples
-	for delay in 1:num_tdf_times
+for date in collect(1:num_spectra_samples)
+	for delay in collect(1:num_tdf_times)
 		interpolation_points[date,delay]=spectra_dates[date]-tdf_times[delay]
   end
-  P = interpolation_points[date,:]
+  P = collect(interpolation_points[date,:])
   H[date,:] =interp(interpolation_points[date,:],continuum_dates,continuum_flux)
   HE[date,:] = interp(interpolation_points[date,:],continuum_dates,continuum_error_flux)
 end
@@ -99,9 +111,9 @@ end
 
 #println("Size of L: ", size(L))
 
-synthetic_data = Model(X,H)		
+synthetic_data = Model(VDM,H)		
 
-#= No have the synthetic spectral line (L) and the TDF (x).
+#= Now have the synthetic spectral line (L) and the TDF (x).
 Now need to build the output arrays to match the arp151 data. =#
 
 
@@ -113,7 +125,13 @@ println("NUM SPECTRA: ", num_spectra_samples)
 flx_arr = zeros(num_lines,num_spectra_samples)
 err_arr = zeros(num_lines,num_spectra_samples)
 TDF = zeros(num_tdf_times)
+#VDM = zeros(num_tdf_times,num_lines)
 
+#for i in 1:num_tdf_times
+#	for j in 1:num_lines
+#		VDM[i,j] = sin( (sin(j/100*pi)*i)/50*pi)
+#	end
+#end
 println("Data Array: ", size(flx_arr))
 
 
@@ -141,13 +159,15 @@ writecsv("rvm_dateS.csv",spectra_dates)
 writecsv("rvm_flxS.csv", flx_arr)
 writecsv("rvm_flx_errS.csv",err_arr)
 writecsv("continuumS.csv",continuum_array)
-writecsv("TDF.csv",X)
+writecsv("TDF.csv",VDM)
 #println(size(flx_arr),size(err_arr),size(continuum_array),size(TDF))
 #println(L[1,:])
 
 figure(1)
-plot(synthetic_data,"b") #PLOT MODEL
-plot(flx_arr[1,:]',"r*")		 #PLOT snyth noise
+#plot(synthetic_data,"b") #PLOT MODEL
+#plot(flx_arr[1,:]',"r*")		 #PLOT snyth noise
+imshow(flx_arr)
+colorbar()
 show()
 
 

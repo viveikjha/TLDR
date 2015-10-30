@@ -33,8 +33,9 @@ end
 #slope of the first and last sets of data points given.
 function interp(x_DESIRED,x_DATA,y_DATA)
   y_DESIRED = zeros(length(x_DESIRED))
-  index_DATA = linspace(1,length(x_DATA)-1,length(x_DATA)-1)
-  index_DESIRED = [1:length(x_DESIRED)]
+  #index_DATA = linspace(1,length(x_DATA)-1,length(x_DATA)-1)
+	index_DATA = collect(1:length(x_DATA)-1)
+  index_DESIRED = collect(1:length(x_DESIRED))
   #println([1:length(x_DESIRED)])
   #println(index_DESIRED)
   minx = minimum(x_DATA)
@@ -83,7 +84,7 @@ end
 function Model(X,H)
   #L = size(ICF)[1]
   #MF = zeros(L)
-  MF = H*vec(X)
+  MF = H*X
   MF #Array Returned!
 end
 
