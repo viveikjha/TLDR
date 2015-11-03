@@ -132,7 +132,7 @@ function ell1_prox_op(X,mu,rho)
 #  X #Array Returned!
 #end
 	
-	println("Length of X: ",length(X))
+	
 	for i in collect(1:length(X))
 		X[i] = X[i]*maximum([0.0 ,(1.0-mu/(rho*abs(X[i])))])
 	end
@@ -169,3 +169,51 @@ function ell2norm(X)
 	#sqrt(sum(vec(X).^2))   #Array Returned!
 	sqrt(sum(X).^2)
 end
+
+#=--------------------------------------------------=#
+#=============== Update Multipliers =================#
+#=--------------------------------------------------=#
+#X and Y are IMAGE structs
+#alpha is a throttling term on multiplier update.
+function LG_update(X,Y,alpha)
+	Y.U = Y.U + (Y.rho/alpha)*(X.vdm - Y.vdm)
+	Y
+end
+
+
+#=--------------------------------------------------=#
+#================= Update Penalty ===================#
+#=--------------------------------------------------=#
+function Pen_update(X,Y,P)
+	S = Y.rho*(Y.vdm-Y.vdm_previous)
+	R = X.vdm-Y.vdm
+	tau_prim_previous = Y.tau_prim
+  Y.tau_prim = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*(maximum([ell2norm(X.vdm),ell2norm(Y.vdm)]))
+	tau_dual_previous = Y.tau_dual
+  Y.tau_dual = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*ell2norm(Y.U)
+	eta = ell2norm(R)*Y.tau_dual / (ell2norm(S)*Y.tau_prim)		
+	#eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
+		phi_previous = Y.phi
+	Y.phi = max(ell2norm(R/Y.tau_prim),ell2norm(S)/Y.tau_dual)
+	
+	if (1.0/P.tau[1] <= eta[1]) && (eta[1] <= P.tau[1]) || (phi[1] < P.sigma[1]*phi_previous[1])
+		#NOTHING HAPPENS IN HERE	
+	elseif eta < (1.0/P.tau)
+		Y.rho_max = Y.rho
+		if Y.rho_min > 0.0
+			Y.rho = sqrt(Y.rho_min*Y.rho_max)
+		else Y.rho = Y.rho_max/P.G 
+		end
+	elseif eta > P.tau
+		Y.rho_min = Y.rho
+		if Y.rho_max < Inf
+			Y.rho = sqrt(Y.rho_min*Y.rho_max)
+		else Y.rho = Y.rho_min*P.G
+		end
+	end
+	Y
+end
+
+
+
+

@@ -1,4 +1,5 @@
 include("RMLib.jl")
+include("RMTypes.jl")
 using PyPlot
 clear()
 
@@ -135,184 +136,110 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 	#ADMM ARRAYS:
 	Con_Arr = zeros(num_lines)
 	#IMAGE ARRAYS
-	X = zeros((num_tdf_times,num_lines))
-	fill!(X,initial_psi)
-	X_s = zeros((num_tdf_times,num_lines))
-	fill!(X_s,initial_psi)
+	
+	Pars = init_Params()
+	Pars.it = 2
+	Pars.nits =100
+	Pars.tau = 1.2
+	Pars.sigma=0.9
+	Pars.G = 10.0
+	Pars.num_lines = num_lines
+	Pars.num_tdf_times = num_tdf_times
+	Pars.initial_psi = 0.5
+	Pars.mu_smoo = mu_smoo
+	Pars.mu_spec = mu_spec
+	Pars.mu_temp = mu_temp
+	Pars.eps_abs = 0.1	
+	Pars.eps_rel = 0.1
+	Pars.alpha = 8.0
+
+	rho0=100.0
+	X = init_IMAGE(rho0)
+	X.vdm = zeros((num_tdf_times,num_lines))
+	fill!(X.vdm,initial_psi)
+	X.vdm_squiggle = zeros((num_tdf_times,num_lines))
+	fill!(X.vdm_squiggle,initial_psi)
  
-	Z = zeros((num_tdf_times,num_lines))
-	fill!(Z,initial_psi)
-	Z_previous = zeros((num_tdf_times,num_lines)) 	#-> UNECESSARY????????? <-
-	Z_s = zeros((num_tdf_times,num_lines))
-	fill!(Z_s,initial_psi)
-
+	Z = init_IMAGE(rho0)
+	Z.vdm = zeros((num_tdf_times,num_lines))
+	fill!(Z.vdm,initial_psi)
+	Z.vdm_squiggle = zeros((num_tdf_times,num_lines))
+	fill!(Z.vdm_squiggle,initial_psi)
+	Z.U=zeros((num_tdf_times,num_lines))
 	
-	T = zeros((num_tdf_times,num_lines))
-	fill!(T,initial_psi)
-	T_s = zeros((num_tdf_times,num_lines))
-	fill!(T_s,initial_psi)
-
-	V = zeros((num_tdf_times,num_lines))
-	fill!(V,initial_psi)
-	V_s = zeros((num_tdf_times,num_lines))
-	fill!(V_s,initial_psi)
-
-
-	#Aug. Lagrangian Parameters
-	rho_Z = 1.0
-	rho_Z_min = 0.0
-	rho_Z_max = Inf
-
-	rho_T = 1.0
-	rho_T_min = 0.0
-	rho_T_max = Inf
-
-	rho_V = 1.0
-	rho_V_min = 0.0
-	rho_V_max = Inf
-
-#LAGRANGE MULTIPLIERS
-	U_Z = zeros((num_tdf_times,num_lines))
+	T = init_IMAGE(rho0)
+	T.vdm = zeros((num_tdf_times,num_lines))
+	fill!(T.vdm,initial_psi)
+	T.vdm_squiggle = zeros((num_tdf_times,num_lines))
+	fill!(T.vdm_squiggle,initial_psi)
+	T.U=zeros((num_tdf_times,num_lines))
 	
-	U_T = zeros((num_tdf_times,num_lines))
-	U_V = zeros((num_tdf_times,num_lines))
-
-#CONVERGANCE ARRAYS
-	phi = zeros((size(L,1)))
-	phi_previous = zeros((size(L,1)))
-	tau_prim = zeros((num_lines))
-	tau_prim_previous = zeros((num_lines))
-	tau_dual = zeros((num_lines))
-	tau_dual_previous = zeros((num_lines))
-
-#ACTUAL TDF ARRAY FOR PLOTTING
-	X_act = zeros((50))
-	fill!(X_act,initial_psi)
+	V = init_IMAGE(rho0)
+	V.vdm = zeros((num_tdf_times,num_lines))
+	fill!(V.vdm,initial_psi)
+	V.vdm_squiggle = zeros((num_tdf_times,num_lines))
+	fill!(V.vdm_squiggle,initial_psi)
+	V.U=zeros((num_tdf_times,num_lines))
 	
+
+
 	#=  Calculate Initial Multipliers & RHO =#
 	
-	#println("U: ", size(U))
-
-
 	for p in 1:num_lines
-	  U_Z[:,p]=HT * squeeze(W[p,:,:],1) * ( H * vec(Z[:,p]) - vec(L[:,p]))
+	  Z.U[:,p]=HT * squeeze(W[p,:,:],1) * ( H * vec(Z.vdm[:,p]) - vec(L[:,p]))
 	end
-	U_T = U_Z
-	U_V = U_Z
+	V.U = Z.U
+	T.U = Z.U
 	
-	#rho_Z = mean(U_Z'*HT*H*U_Z*inv(U_Z'*U_Z))
-#	rho_Z = 1000.0
-	#rho_T = rho_Z
-	#rho_V = rho_Z
-	#rho_P = rho_Z
 #NO IDEA WHAT TO DO FOR INITIALIZATOIN OF NEW MULTIPLIER'S AND WEIGHTS..........
 	Qinv = zeros(num_tdf_times,num_tdf_times)
 	B = zeros(num_tdf_times,num_lines)
 	converged = 0
-	it = 2
-	#figure()
-	#ion()
-	#show()
-	while it <= nits && converged==0        #ADMM ITERATION LOOP
-	 println("Iteration: ", it-1, "  ")
-
+	while Pars.it <= Pars.nits && converged==0        #ADMM ITERATION LOOP
+		println("Iteration: ", Pars.it-1, "  ")
+		X.vdm_previous = X.vdm
 	#Step 1: MINIMIZATION W.R.T. X
 	  for l in 1:num_lines        #SPECTAL CHANNEL LOOP
 		#MINIMIZATION ON X_v INDIVIDUALLY WITHIN THIS SPECTRAL LOOP. (THIS PART CAN BE DONE IN PARALLEL!!!!)			
 			W_slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
-			Q = HT * W_slice*H + rho_T*DsT*Ds + (mu_smoo+rho_Z+rho_T)*Gammatdf 
-			B = HT* W_slice * L + DsT*(U_T+rho_T*T)+U_Z+rho_Z*Z
-			X[:,l] = Q\B[:,l] 
+			Q = HT * W_slice*H + T.rho*DsT*Ds + (mu_smoo+Z.rho+T.rho)*Gammatdf 
+			B = HT* W_slice * L + DsT*(T.U+T.rho*T.vdm)+Z.U+Z.rho*Z.vdm
+			X.vdm[:,l] = Q\B[:,l] 
 		end
-	
-	#Step 1 done!
-	#println("STEP 1 COMPLETE")
-	#Step 2: UPDATE REGULARIZATION TERMS
-		#A: POSITIVITY: P
-		#P_s = X-U_P/rho_P
-		#P = pos_prox_op(P_s)
-		#B: THRESHOLD: T
-		T_s = Ds*X-U_T/rho_T
-		T = ell2_prox_op(T_s,mu_temp,rho_T)
-		#C: FREQUENCY: V
-	
-	#Step 2: done!
-	#println("STEP 2 COMPLETE")
-	#Step 3: MINIMIZATION W.R.T Z
-		#TIKHONOV SOLUTION
-		Rinv = inv(rho_V*Dv*DvT+rho_Z*Gammaspe)
-		C = (U_V+rho_V*V)*DvT-U_Z+rho_Z*X
-		Z = 	C*Rinv
-		#Z = (1.0/(rho_V+rho_Z))*(U_V+rho_V*V)*DvT-U_Z+rho_Z*X 
 
-		V_s = Z*Dv - U_V/rho_V
-		V = ell2_prox_op(V_s,mu_spec,rho_V)
-	#Step 3: done!
-		#println("STEP 3 COMPLETE")
-	#Step 4: UPDATE LAGRANGE MULTIPLIERS
-		#A: U_P
-		#U_P = U_P+(rho_P/2.0)*(X-P)
-		#B: U_T
-		U_T = U_T+(rho_T/8.0)*(X-T)
-		#C: U_V
-		U_V = U_V+(rho_V/8.0)*(X-V)
-		#D: U_S
-		U_Z = U_Z+(rho_Z/8.0)*(X-Z)
-	#Step 4: done!
-		println(" U_T: ", mean(U_T), " U_V: " ,mean(U_V), " U_Z: ", mean(U_Z))
-#Step 5: CONVERGANCE TESTING!!!!!!!!!!!
-   # Evaluation:
-    eps_abs = 0.1    #Must be >= 0
-    eps_rel = 0.1  #Must be between 0 and 1
-    S = rho_Z*(Z-Z_previous)
-    R = X-Z
-		println("X-Z: ", ell2norm(X-Z), " X-T: ", ell2norm(X-T), " X-V: ", ell2norm(X-V))	
+	#Step 2: UPDATE REGULARIZATION TERMS
+		T.vdm_squiggle = Ds*X.vdm-T.U/T.rho
+		T.vdm_previous = T.vdm
+		T.vdm = ell2_prox_op(T.vdm_squiggle,mu_temp,T.rho)
+
+		V.vdm_squiggle = Z.vdm*Dv - V.U/V.rho
+		V.vdm_previous = V.vdm
+		V.vdm = ell2_prox_op(V.vdm_squiggle,mu_spec,V.rho)
+
+		Rinv = inv(V.rho*Dv*DvT+Z.rho*Gammaspe)
+		C = (V.U+V.rho*V.vdm)*DvT-Z.U+Z.rho*X.vdm
+		Z.vdm_previous = Z.vdm
+		Z.vdm = 	C*Rinv
+
+		V.vdm_squiggle = Z.vdm*Dv - V.U/V.rho
+		V.vdm_previous = V.vdm
+		V.vdm = ell2_prox_op(V.vdm_squiggle,mu_spec,V.rho)
 	
-		tau_prim_previous = tau_prim
-    tau_prim = sqrt(num_tdf_times)*eps_abs + eps_rel*(maximum([ell2norm(X),ell2norm(Z)]))
-		tau_dual_previous = tau_dual
-    tau_dual = sqrt(num_tdf_times)*eps_abs + eps_rel*ell2norm(U_Z)
-    eta = ell2norm(R)*tau_dual / (ell2norm(S)*tau_prim)		#OPTION 1\
-	  #eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
-		phi_previous = phi
-		phi = max(ell2norm(R/tau_prim),ell2norm(S)/tau_dual)
-		#println("PHI: ", phi)
-		if phi <= 1.0
-			Con_Arr = 1
+	#Step 4: UPDATE LAGRANGE MULTIPLIERS	
+		T = LG_update(X,T,Pars.alpha)
+		V = LG_update(X,V,Pars.alpha)
+		Z = LG_update(X,Z,Pars.alpha)
+		println(" U_T: ", mean(T.U), " U_V: " ,mean(V.U), " U_Z: ", mean(Z.U))
+
+  	if Pars.it == 2 
+			Pars.G = 1.5
 		end
-		if it == 2 
-			G = 1.5
-		end
-		#println("tau: ", (tau[1]))
-		#println("eta: ", (eta[1]))
-		#println("Phi: ", (phi[1]))
-		#println("sigma: ", sigma[1])
-		
-#		if (1.0/tau[1] <= eta[1]) && (eta[1] <= tau[1]) || (phi[1] < sigma[1]*phi_previous[1])
-			#NOTHING HAPPENS IN HERE	
-#		elseif eta < (1.0/tau)
-#			rho_max = rho_Z
-#			if rho_Z_min > 0.0
-#				rho_Z = sqrt(rho_Z_min*rho_Z_max)
-#			else rho_Z = rho_Z_max/G 
-#			end
-#		elseif eta > tau
-#			rho_Z_min = rho_Z
-#			if rho_Z_max < Inf
-#				rho_Z = sqrt(rho_Z_min*rho_Z_max)
-#			else rho_Z = rho_Z_min*G
-#			end
-#		end
-#		rho_T = rho_Z
-#		rho_V = rho_Z
-#		rho_P = rho_Z
-#		println("Rho: ",rho_P)
-#    if sum(Con_Arr) == num_lines
-#	    converged = 1
-      #println("All lines Converged!!!") 
-#    end 
-		it = it+1
-	Mod = Model(X,H) 
+	#Step 5: Update Penalty Parameters
+		Z = Pen_update(X,Z,Pars)
+		T = Pen_update(X,T,Pars)
+		V = Pen_update(X,V,Pars)
+		Pars.it = Pars.it+1
+	Mod = Model(X.vdm,H) 
 	println("Chi2: ", Chi2(Mod,L,EL)/(num_tdf_times*num_lines))
 	#imshow(X)
 	#draw()
@@ -328,19 +255,19 @@ function TLDR(mu_smoo,mu_spec,mu_temp,L, num_lines, EL, spectra_dates, num_spect
 	println("ADMM Call Completed")
 	figure(figsize=(20,10))
 	subplot(221)
-	imshow(Z)
+	imshow(Z.vdm)
 	title("Z")
 	colorbar()
 	subplot(222)
-	imshow(X)
+	imshow(X.vdm)
 	title("X")
 	colorbar()
 	subplot(223)
-	imshow(T)
+	imshow(T.vdm)
 	title("T")
 	colorbar()
 	subplot(224)
-	imshow(V)
+	imshow(V.vdm)
 	title("V")
 	colorbar()
 
@@ -352,9 +279,9 @@ num_mus=1
 #mu = linspace(40,120000.0,num_mus)   #A GOOD RANGE FOR SIGMA = 0.75 On SYNTH DATA : TDF == 0.04
 mu = 10.0
 
-mu_spec = 10000.0		#Spectral Regularization Weight
-mu_temp = 10000.0		#Temporal Regularization Weight
-mu_smoo = 10000.0    #Smoothing Regularization Weight (TIKHONOV)
+mu_spec = 10.0		#Spectral Regularization Weight
+mu_temp = 100.0		#Temporal Regularization Weight
+mu_smoo = 0.000001    #Smoothing Regularization Weight (TIKHONOV)
 
 chi2 = zeros((num_mus))
 its = zeros((num_mus))
