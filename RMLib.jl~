@@ -196,7 +196,7 @@ function Pen_update(X,Y,P)
 		phi_previous = Y.phi
 	Y.phi = max(ell2norm(R/Y.tau_prim),ell2norm(S)/Y.tau_dual)
 	
-	if (1.0/P.tau[1] <= eta[1]) && (eta[1] <= P.tau[1]) || (phi[1] < P.sigma[1]*phi_previous[1])
+	if (1.0/P.tau[1] <= eta[1]) && (eta[1] <= P.tau[1]) || (Y.phi[1] < P.sigma[1]*phi_previous[1])
 		#NOTHING HAPPENS IN HERE	
 	elseif eta < (1.0/P.tau)
 		Y.rho_max = Y.rho
@@ -214,6 +214,18 @@ function Pen_update(X,Y,P)
 	Y
 end
 
-
+#=--------------------------------------------------=#
+#============= Generate ADMM Variable ===============#
+#=--------------------------------------------------=#
+#Intializes and fills the regularization terms for ADMM
+function Gen_Var(rhoi, num_tdf_times,num_lines,psi)
+	x = init_IMAGE(rhoi)
+	x.vdm = zeros((num_tdf_times,num_lines))
+	fill!(x.vdm,psi)
+	x.vdm_squiggle = zeros((num_tdf_times,num_lines))
+	fill!(x.vdm_squiggle,psi)
+	x.U=zeros((num_tdf_times,num_lines))
+	x
+end
 
 

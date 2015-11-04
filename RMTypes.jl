@@ -27,12 +27,54 @@ type Params
 	sigma::Real																							#12
 	G::Real																									#13
 	alpha::Real																							#14
+
+	tdf_times::Array{Float64}																#15
+	tdf_values::Array{Float64}															#16
 end
+
+type Data
+	wavelength::Array{Float64}
+	L::Array{Float64}
+	EL::Array{Float64}
+	num_lines::Int
+	num_spectra_samples::Int	
+	spectra_dates::Array{Float64}	
+
+	continuum_dates::Array{Float64}
+	continuum_flux::Array{Float64}
+	continuum_error_flux::Array{Float64}
+	num_continuum_dates::Int
+end
+	
+type Matrices_S
+	H::Array{Float64}
+	HE::Array{Float64}
+	HT::Array{Float64}
+	Ds::Array{Float64}
+	DsT::Array{Float64}
+	Dv::Array{Float64}
+	DvT::Array{Float64}
+	W::Array{Float64}
+	Gammatdf::Array{Float64}
+	GammatdfT::Array{Float64}
+	Gammaspe::Array{Float64}
+	GammaspeT::Array{Float64}
+end
+
 
 function init_IMAGE(rho)
 	ADMM_IMAGE([],[],[],[],rho,Inf,0.0,0.0,0.0,0.0)
 end
 
 function init_Params()
-	Params(0,0,0.0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0.0)
+	Params(0,0,0.0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0.0,[],[])
 end
+
+function init_Data()
+	Data([],[],[],0,0,[],[],[],[],0)
+end
+
+function init_Mats()
+	Matrices_S([],[],[],[],[],[],[],[],[],[],[],[])
+end
+

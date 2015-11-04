@@ -1,6 +1,25 @@
 include("RMLib.jl")
+using PyPlot
 clear()
 
+function ell2norm(X)
+	sqrt(sum(vec(X).^2))   #Array Returned!
+	#sqrt(sum(X).^2)
+end
+
+function Model(X,H)
+  #L = size(ICF)[1]
+  MF = zeros(L)
+  MF = H*vec(X)
+	#MF = H*X
+  MF #Array Returned!
+end
+
+function Chi2(M,D,Sigma)
+	  #sum(   (vec(M)-vec(D)).^2  ./vec(Sigma) .^2)   #Value Returned!
+#		sum(   (M-D).^2 ./(Sigma).^2)
+	sum(((vec(M)-vec(D))/vec(Sigma))^2)
+end
 
 mode = 1 	#SYNTHETIC DATA MODE
 #mode = 2	#REAL DATA MODE
@@ -68,17 +87,20 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	  HE[date,:] = interp(interpolation_points[date,:],continuum_dates,continuum_error_flux)
 	end
 	#=    PRECOMPUTING TIKHONOV MATRICES     =#
-	println("L: ", size(L))
-	println("H: ", size(H))
+	#println("L: ", size(L))
+	#println("H: ", size(H))
 
 	#Build Mapping Matrix
 	num_spectra_dates=size(spectra_dates)[1]
 	W = zeros((size(wavelength)[1],size(L)[2],size(L)[2]))
+
+	
 	for lam in collect(1:num_lines)
 	  T = eye(num_spectra_dates)
 	  for i in collect(1:num_spectra_dates)
 	    for j in collect(1:num_spectra_dates)
 	      if i == j
+					#println("!!", i, " " , j)
 	        T[i,j] =1.0/ EL[lam,i].^2
 	      end
 	    end
@@ -90,15 +112,15 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	GammaT = Gamma'
 	println("size of W:" ,size(W))
 	#= INITIALIZING ADMM PARAMETERS =#
-	nits = 1000 #Number of ADMM Iterations (An upper limit if convergence is not reached)
+	nits = 25 #Number of ADMM Iterations (An upper limit if convergence is not reached)
 	final_it = nits
 	initial_psi = 0.0  #Initial value for PSI
 		#= REGULARIZATION WEIGHT =#
 	#mu = 100.0 #Begins to work around 48 fails around 115000.0
 	  #= CONVERGANCE PARAMETERS =#
 	G = 10.0 # only for first iteration 1.5 otherwise
-	tau = 1.2
-	sigma = 4.0
+	tau = 1.1
+	sigma = 0.75
 	#ADMM ARRAYS:
 	Con_Arr = zeros(num_lines)
 	X =   zeros((size(L,1),num_tdf_times))
@@ -145,7 +167,8 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	it = 2	#DON'T CHANGE THIS
 	while it <= nits && converged==0        #ADMM ITERATION LOOP
 	  #println("Iteration: ", it, "  ", sum(Con_Arr), "/", num_lines, " Converged.")
-	  for l in collect(1:num_lines)        #SPECTAL CHANNEL LOOP
+	 for l in collect(1:num_lines)        #SPECTAL CHANNEL LOOP
+		#for l in collect(1:2)
 	    if Con_Arr[l] != 1
 	    #Step 1:
 	      X_s[l,:] = Z[l,:]-U[l,:]/rho[l]
@@ -157,11 +180,11 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	      #slice = squeeze(W[l,:,:],1)	#RESHAPE IS SUPPOSED TO BE FASTER THAN SQUEEZE!
 	      A =inv(HT*slice*H+rho[l]/2.0*GammaT*Gamma)
 #	      B = HT*slice*vec(L[l,:])+(rho[l]*GammaT*Gamma*vec(Z_s[l,:]))
-	      B = HT*slice*vec(L[l,:])+(rho[l]/2.0*vec(Z_s[l,:])) #Same as above but faster.
+	      #B = HT*slice*vec(L[l,:])+(rho[l]/2.0*vec(Z_s[l,:])) #Same as above but faster.
 				
 
 				#println( rho[l]*GammaT*Gamma*vec(Z_s[l,:]))
-#	      B = HT*slice*vec(L[l,:])
+	      B = HT*slice*vec(L[l,:])
 		    Z[l,:] = A * B
 	    #Step 2 done!
 	    #Step 3:
@@ -171,12 +194,13 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 				#U[l,:] = HT * slice * ( H * vec(Z[l,:]) - vec(L[l,:]))		#UPDATE MULTIPLIERS
 	    #Step 3 done!
 	    # Evaluation:
+	
 
-				Mod = Model(X[l,:],H) 
+				Mod = Model((X[l,:]),H) 
 				
 			
 	      eps_abs = 0.0    #Must be >= 0
-	      eps_rel = 0.001  #Must be between 0 and 1
+	      eps_rel = 0.1  #Must be between 0 and 1
 				
 				S = rho[l]*(Z[l,:]-Z_previous[l,:])
 	      R = X[l,:]-Z[l,:]
@@ -190,17 +214,17 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	      eta = ell2norm(R)*tau_dual[l] / (ell2norm(S)*tau_prim[l])		#OPTION 1\
 			  #eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
 
-				if (ell2norm(R)/tau_dual[l]) < (ell2norm(R_previous)/tau_dual_previous[l])
+				#if (ell2norm(R)/tau_dual[l]) < (ell2norm(R_previous)/tau_dual_previous[l])
 					Acol = :red
-				else
-					Acol = :green
-				end
+				#else
+					#Acol = :green
+				#end
 
-				if (ell2norm(S)/tau_prim[l]) < (ell2norm(S_previous)/tau_prim_previous[l])
+				#if (ell2norm(S)/tau_prim[l]) < (ell2norm(S_previous)/tau_prim_previous[l])
 					Bcol = :red
-				else
+				#else
 					Bcol = :green
-				end
+				#end
 				#Diagnostic Print Statements:
 				println("Chi2: ",Chi2(Mod,L[1,:],EL[1,:])/num_tdf_times)
 				println("Tau_prim: ", tau_prim[l],"   tau_dual: ", tau_dual[l])
@@ -248,30 +272,22 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	if converged != 1
 		println("Mu = ", mu," did not converge")
 	end
-	outarr
+	X
 end 
 
 
-num_mus=1
-#mu = linspace(10.0,100.0,num_mus)   #A GOOD RANGE FOR SIGMA = 0.75 On SYNTH DATA : TDF == 0.04
 mu = 2000.0
-chi2 = zeros((num_mus))
-its = zeros((num_mus))
+tmp = TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_dates,continuum_scale,continuum_flux,continuum_error_flux,num_continuum_dates)
 
-for i in collect(1:num_mus)
-	tmp = TLDR(mu[i],L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_dates,continuum_scale,continuum_flux,continuum_error_flux,num_continuum_dates)
-	chi2[i] = tmp[2]
-	its[i] = tmp[1]
-	println(chi2[i])
-end
+println(tmp[1,:])
 
-outarr = [mu chi2 its]
-
-writecsv("mu_test_mu.csv",outarr)
-
-print_rgb(0,255,255,"Done")
-
-
+figure(1)
+#y = vec(tmp[1,:])
+#x = collect(1:length(y))
+#plot(x,y,"r*")
+imshow(tmp)
+colorbar()
+show()
 
 
 

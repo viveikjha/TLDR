@@ -175,9 +175,9 @@ end
 #=--------------------------------------------------=#
 #X and Y are IMAGE structs
 #alpha is a throttling term on multiplier update.
-function LG_update(X,Y,alpha)
-	Y.U = Y.U + (Y.rho/alpha)*(X.vdm - Y.vdm)
-	Y
+function LG_update(U,Z,X,rho,alpha)
+	U = U + (rho/alpha)*(Z - X)
+	Z
 end
 
 
@@ -214,6 +214,18 @@ function Pen_update(X,Y,P)
 	Y
 end
 
-
+#=--------------------------------------------------=#
+#============= Generate ADMM Variable ===============#
+#=--------------------------------------------------=#
+#Intializes and fills the regularization terms for ADMM
+function Gen_Var(rhoi, num_tdf_times,num_lines,psi)
+	x = init_IMAGE(rhoi)
+	x.vdm = zeros((num_tdf_times,num_lines))
+	fill!(x.vdm,psi)
+	x.vdm_squiggle = zeros((num_tdf_times,num_lines))
+	fill!(x.vdm_squiggle,psi)
+	x.U=zeros((num_tdf_times,num_lines))
+	x
+end
 
 

@@ -92,10 +92,11 @@ tau = 50
 c = 1.0
 r = 15.0
 tau = np.linspace(0,20,50)
-Psi = RAN(tau,r)	#TDF from Blanford & McKee
+#Psi = RAN(tau,r)	#TDF from Blanford & McKee
 Psi = np.zeros(50)
-Psi.fill(0.04)
-#print '*******', len(Psi)
+
+Psi = np.sin(math.pi*tau/(20.0))
+
 
 
 
@@ -118,26 +119,18 @@ ICF = f(np.ravel(interpolation_points))			#Interpolates continuum over points
 ICF=np.reshape(ICF,(len(rvm_spectra_date),len(tau)))
 int_continuum_dates = interpolation_points					#only to make a matching set
 
-#print "REGULAR: ",interpolation_points
-#print "RAVELED: ",np.ravel(interpolation_points)
-
-#INTERPOLATION!!!
-#f= interp1d(continuum_date,continuum_flux)  
-#f = interp1d(data[0,:],data[1,:],bounds_error=False,fill_value=data[65,2])
-#ICF = f(data_flux_dates)
-#ICF[impulse_position]=impulse_value
 print 'ICF: ', ICF
 
 L = Model(Psi,ICF)
 LR=L
-percent_err = 0.0
+percent_err = 2.0
 print "data_errflux", len(data_errflux)
 print "L", len(L)
 
 for j in range(0,len(data_errflux)):
 	for h in range(0,len(L)):
-		#data_flux[j][h]=np.random.normal(L[h],0.02*L[h])
-		data_flux[j][h] = L[h] #USING NO NOISE FOR TESTING!
+		data_flux[j][h]=np.random.normal(L[h],0.02*L[h])
+		#data_flux[j][h] = L[h] #USING NO NOISE FOR TESTING!
 	data_errflux[j] = 1.0 #MAKE SIGMA AS SIMPLE AS POSSIBLE FOR TESTING!	
 	#data_errflux[j] = percent_err/100*L
 print data.shape
@@ -151,6 +144,10 @@ print "Wrote: rvm_flx_errS.csv"
 np.savetxt('continuumS.csv',data,delimiter=',')
 print "Wrote: continuumS.csv"
 np.savetxt('PsiS.txt',TDF,delimiter=',')
+
+print "Wrote: rvm_dateS.csv"
+np.savetxt('rvm_dateS.csv',rvm_spectra_date,delimiter=',')
+np.savetxt('wavelengthS.csv', rvm_spectra_lam, delimiter=',')
 
 plt.figure(2)
 #plt.plot(data_flux_dates,L)

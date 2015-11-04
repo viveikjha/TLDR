@@ -53,8 +53,8 @@ num_continuum_dates = length(continuum_dates)
 
 num_tdf_times = 50
 tdf_values = zeros(num_tdf_times)
-tdf_times = linspace(1,20,num_tdf_times)
-
+#tdf_times = linspace(1,20,num_tdf_times)
+tdf_times = collect(1.0:(19.0/Pars.num_tdf_times):20.0)
 X =   zeros((num_tdf_times))
 initial_x = 0.04																#INITIAL VALUE FOR THE TDF
 fill!(X,initial_x)															#FILL TDF WITH INITIAL VALUE
@@ -166,7 +166,7 @@ writecsv("TDF.csv",VDM)
 figure(1)
 #plot(synthetic_data,"b") #PLOT MODEL
 #plot(flx_arr[1,:]',"r*")		 #PLOT snyth noise
-imshow(flx_arr)
+imshow(VDM)
 colorbar()
 show()
 
