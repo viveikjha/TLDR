@@ -145,7 +145,7 @@ end
 #X is the current model TDF
 #mu is the regularization weight
 function ell2_prox_op(X,mu,rho)
-	X_returned = 1.0/(1.0+2.0*mu/rho).*X
+	X_returned = 1.0/(1.0+2.0*mu/rho)*X
 end
 
 #=--------------------------------------------------=#

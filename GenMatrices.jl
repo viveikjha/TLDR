@@ -19,26 +19,34 @@ function Gen_Mats(DATA,Params)
 	Mat.HE = HE
 	#= 		FINITE DIFFERENCES MATRICES			=#
 	Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
-	for i in 1:Params.num_tdf_times
-		for j in 1:Params.num_tdf_times
+	for i in collect(1:Params.num_tdf_times)
+		for j in collect(1:Params.num_tdf_times)
+			#CHANGED TO 2ND ORDER CENTRAL DIFFERENCES
+			if i == j
+				Ds[i,j]==-20
+			end
+
 			if (i+1) == j
-				Ds[i,j] = 1.
+				Ds[i,j] = 1.0
 			end
 			if (i-1) == j
-				Ds[i,j] = -1.
+				Ds[i,j] = 1.0
 			end
 		end
 	end
 	Mat.Ds = Ds
 	Mat.DsT = Ds'
 	Dv = zeros(DATA.num_lines,DATA.num_lines)
-	for i in 1:DATA.num_lines
-		for j in 1:DATA.num_lines
+	for i in collect(1:DATA.num_lines)
+		for j in collect(1:DATA.num_lines)
+			if i == j
+				Dv[i,j]==-2.0
+			end
 			if (i+1) == j
-				Dv[i,j] = 1.
+				Dv[i,j] = 1.0
 			end
 			if (i-1) == j
-				Dv[i,j] = -1.
+				Dv[i,j] = 1.0
 			end
 		end
 	end

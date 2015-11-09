@@ -64,13 +64,18 @@ num_spectra_samples = 100
 
 
 X =   zeros((num_tdf_times,num_lines))
-initial_x = 0.04																#INITIAL VALUE FOR THE TDF
-fill!(X,initial_x)															#FILL TDF WITH INITIAL VALUE
+#initial_x = 0.04																#INITIAL VALUE FOR THE TDF
+#fill!(X,initial_x)															#FILL TDF WITH INITIAL VALUE
 
 for i in collect(1:num_lines)
 	X[:,i] = tdf_values
 end
 
+#for i in collect(1:num_tdf_times)
+#	for j in collect(1:num_lines)
+#		X[i,j] = sin( (sin(j/num_lines*pi)*i)/num_tdf_times*pi)
+#	end
+#end
 
 #=DONE SETTING UP TIME DELAY FUNCTION=#
 

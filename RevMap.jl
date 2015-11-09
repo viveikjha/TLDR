@@ -16,8 +16,8 @@ vdm_act = readcsv(vdm_path)
 
 Pars = init_Params()
 Pars.it = 2
-Pars.nits =500
-Pars.tau = 1.1
+Pars.nits =60
+Pars.tau = 1.2
 Pars.sigma=0.75
 Pars.G = 10.0
 Pars.num_lines = DATA.num_lines
@@ -30,7 +30,7 @@ Pars.eps_abs = 0.0
 Pars.eps_rel = 0.1
 Pars.alpha = 1.0
 
-rho0=100.0
+rho0=500.0
 
 #=SETTING UP TIME DELAY FUNCTION=#
 Pars.num_tdf_times = 50
@@ -45,13 +45,13 @@ DATA.EL = DATA.EL'
 
 #println("vdm: ", size(vdm_act))
 #println("H: ", size(Mats.H))
-#Mod = Model(vdm_act,Mats.H) 
+Mod = Model(vdm_act,Mats.H) 
 #println("Mod: ", size(Mod))
 #println("L: ", size(DATA.L))
-#chi2_act = Chi2(Mod,DATA.L,DATA.EL)/(Pars.num_tdf_times*DATA.num_lines)
-#println("#####################################")
-#println("Chi2 on actual vdm: ", chi2_act)
-#println("#####################################")
+chi2_act = Chi2(Mod,DATA.L,DATA.EL)/(Pars.num_tdf_times*DATA.num_lines)
+println("#####################################")
+println("Chi2 on actual vdm: ", chi2_act)
+println("#####################################")
 
 function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 	
@@ -114,7 +114,7 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 
 		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
 		V.vdm_previous = V.vdm
-		V.vdm = ell1_prox_op(V.vdm_squiggle,mu_spec,V.rho)
+		V.vdm = ell2_prox_op(V.vdm_squiggle,mu_spec,V.rho)
 	
 	#Step 4: UPDATE LAGRANGE MULTIPLIERS	
 		T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
@@ -136,12 +136,9 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 	#draw()
   end
   #ioff()
+	println("MEAN V: ", mean(V.vdm))
 	
 	
-	#outarr = [it-1, Chi2(Mod,L[1,:],EL[1,:])/num_tdf_times]
-	if converged != 1
-		println("Mu = ", mu," did not converge")
-	end
 	#outarr #NEED A NEW OUTPUT METHOD....FILES I SUSPECT
 	println("ADMM Call Completed")
 	figure(figsize=(20,10))
@@ -168,19 +165,13 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 	colorbar()
 
 	show()
+	X
 end
 
 
-num_mus=1
-#mu = linspace(40,120000.0,num_mus)   #A GOOD RANGE FOR SIGMA = 0.75 On SYNTH DATA : TDF == 0.04
-mu = 10.0
-
-mu_spec = 10.0		#Spectral Regularization Weight
-mu_temp = 10.0		#Temporal Regularization Weight
-mu_smoo = 1.0    #Smoothing Regularization Weight (TIKHONOV)
-
-chi2 = zeros((num_mus))
-its = zeros((num_mus))
+mu_spec = 2.0		#Spectral Regularization Weight
+mu_temp = 2.0		#Temporal Regularization Weight
+mu_smoo = 2000.0    #Smoothing Regularization Weight (TIKHONOV)
 
 
 tmp = TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
@@ -191,6 +182,15 @@ tmp = TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 #outarr = [mu chi2 its]
 
 #writecsv("mu_test_mu.csv",outarr)
+
+println("#####################################")
+println("Chi2 on actual vdm: ", chi2_act)
+println("#####################################")
+
+figure(2)
+imshow(abs(tmp.vdm-vdm_act),aspect="auto")
+colorbar()
+show()
 
 println("Done")
 
