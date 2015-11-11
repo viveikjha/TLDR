@@ -29,11 +29,13 @@ end
 #=--------------------------------------------------=#
 #interp takes x and y data and desired x points
 #returns linearally interpolated y desired points
-#extrapolates off either end of x data using the
+#extrapolates off either end of x data using thex
 #slope of the first and last sets of data points given.
 function interp(x_DESIRED,x_DATA,y_DATA)
   y_DESIRED = zeros(length(x_DESIRED))
-  index_DATA = linspace(1,length(x_DATA)-1,length(x_DATA)-1)
+  #index_DATA = linspace(1,length(x_DATA)-1,length(x_DATA)-1)
+	index_DATA = collect(1:length(x_DATA))
+	println("ind_data: ", size(index_DATA))
   index_DESIRED = collect(1:length(x_DESIRED))
   #println([1:length(x_DESIRED)])
   #println(index_DESIRED)
@@ -96,6 +98,7 @@ end
 function Chi2(M,D,Sigma)
 	  sum(   (vec(M)-vec(D)).^2  ./vec(Sigma) .^2)   #Value Returned!
 		#sum(((vec(M)-vec(D))/vec(Sigma))^2)
+			sum(   (M-D).^2 ./(Sigma).^2)
 end
 
 

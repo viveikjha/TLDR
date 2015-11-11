@@ -68,11 +68,22 @@ num_spectra_samples = 100
 num_tdf_times = 50
 VDM=zeros((num_tdf_times,num_lines))
 
-for i in 1:num_tdf_times
-	for j in 1:num_lines
-		VDM[i,j] = sin( (sin(j/100*pi)*i)/50*pi)
-	end
-end
+
+#= CST data =#
+fill!(VDM, initial_x)
+
+#= 1D data =#
+
+
+
+#=2D data =#
+#for i in 1:num_tdf_times
+#	for j in 1:num_lines
+#		VDM[i,j] = sin( (sin(j/100.0*pi)*i)/50.0*pi)
+#	end
+#end
+
+println(VDM)
 #=DONE SETTING UP VDM=#
 
 
@@ -125,19 +136,13 @@ println("NUM SPECTRA: ", num_spectra_samples)
 flx_arr = zeros(num_lines,num_spectra_samples)
 err_arr = zeros(num_lines,num_spectra_samples)
 TDF = zeros(num_tdf_times)
-#VDM = zeros(num_tdf_times,num_lines)
 
-#for i in 1:num_tdf_times
-#	for j in 1:num_lines
-#		VDM[i,j] = sin( (sin(j/100*pi)*i)/50*pi)
-#	end
-#end
 println("Data Array: ", size(flx_arr))
 
 
 
 #FILL OUPUT ARRAYS!
-sigma = 5															#FOR ADDING ERROR
+sigma = 3.0															#FOR ADDING ERROR
 for j in 1:num_lines
 	for h in 1:num_spectra_samples
 		flx_arr[j,h] = synthetic_data[h]+sigma*randn(1)[1]		

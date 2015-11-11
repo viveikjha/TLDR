@@ -11,7 +11,7 @@ end
 
 function print_rgb(r, g, b, t)
            println("\e[1m\e[38;2;$r;$g;$b;249m",t)
-       end
+end
 #=--------------------------------------------------=#
 #==================INTERPOLATION=====================#
 #=--------------------------------------------------=#
@@ -21,8 +21,8 @@ function print_rgb(r, g, b, t)
 #slope of the first and last sets of data points given.
 function interp(x_DESIRED,x_DATA,y_DATA)
   y_DESIRED = zeros(length(x_DESIRED))
-#  index_DATA = linspace(1,length(x_DATA)-1,length(x_DATA)-1)
 	index_DATA = collect(1:length(x_DATA))
+	
   index_DESIRED = collect(1:length(x_DESIRED))
   #println([1:length(x_DESIRED)])
   #println(index_DESIRED)
@@ -104,6 +104,9 @@ end
 # D should be the spectral data
 # Sigma should be the error on the spectral data
 function Chi2(M,D,Sigma)
+		#println("M: ", size(M))
+		#println("D: ", size(D))
+		#println("Sigma: ", size(Sigma))
 	  #sum(   (vec(M)-vec(D)).^2  ./vec(Sigma) .^2)   #Value Returned!
 		sum(   (M-D).^2 ./(Sigma).^2)
 		#sum(((vec(M)-vec(D))/vec(Sigma))^2)
@@ -122,20 +125,19 @@ function ell1_prox_op(X,mu,rho)
   #elseif mu/rho == inf || mu/rho == inf
   #  println("Error in Proximal Operator: mu/rho = infinity")
   #end
-#  for i in collect(1:length(X))
-#    if X[i] > mu/rho
-#      X[i] = X[i] - mu/rho
-#    else
-#      X[i] = 0
-#    end
-#  end
-#  X #Array Returned!
-#end
+  for i in collect(1:length(X))
+    if X[i] > mu/rho
+      X[i] = X[i] - mu/rho
+    else
+      X[i] = 0
+    end
+  end
 	
 	
-	for i in collect(1:length(X))
-		X[i] = X[i]*maximum([0.0 ,(1.0-mu/(rho*abs(X[i])))])
-	end
+#	for i in collect(1:length(X))
+#		println((1.0-mu/(rho*abs(X[i]))), X[i])
+#		X[i] = X[i]*maximum([0.0 ,(1.0-mu/(rho*abs(X[i])))])	
+#	end
 	X #array returned
 end
 #=--------------------------------------------------=#
@@ -145,7 +147,8 @@ end
 #X is the current model TDF
 #mu is the regularization weight
 function ell2_prox_op(X,mu,rho)
-	X_returned = 1.0/(1.0+2.0*mu/rho)*X
+	#X_returned = 1.0/(1.0+2.0*mu/rho)*X			#TYPO in ref?
+	X_returned = 1.0/(1.0+2.0*mu)*X
 end
 
 #=--------------------------------------------------=#

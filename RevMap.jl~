@@ -3,7 +3,7 @@ include("RMTypes.jl")
 include("DataImport.jl")
 include("GenMatrices.jl")
 using PyPlot
-clear()
+#clear()
 
 
 
@@ -16,7 +16,7 @@ vdm_act = readcsv(vdm_path)
 
 Pars = init_Params()
 Pars.it = 2
-Pars.nits =60
+Pars.nits =50
 Pars.tau = 1.2
 Pars.sigma=0.75
 Pars.G = 10.0
@@ -36,35 +36,58 @@ rho0=500.0
 Pars.num_tdf_times = 50
 Pars.tdf_values = zeros(Pars.num_tdf_times)
 num_tdf_times = Pars.num_tdf_times
-Pars.tdf_times = collect(1.0:(19.0/Pars.num_tdf_times):20.0)
+#Pars.tdf_times = collect(1.0:(19.0/Pars.num_tdf_times)     :20.0)
+Pars.tdf_times=collect(1.0  :((20.0-1.0)/(num_tdf_times-1)):20.0)
+println(size(Pars.tdf_times))
 Mats = Gen_Mats(DATA,Pars)
 
-DATA.L = DATA.L'
-DATA.EL = DATA.EL'
+println("L Pre: ", size(DATA.L))
+#DATA.L = DATA.L'
+#DATA.EL = DATA.EL'
+println("L: ", size(DATA.L))
 
 
-#println("vdm: ", size(vdm_act))
-#println("H: ", size(Mats.H))
+println("vdm: ", size(vdm_act))
+println("H: ", size(Mats.H))
 Mod = Model(vdm_act,Mats.H) 
-#println("Mod: ", size(Mod))
-#println("L: ", size(DATA.L))
-chi2_act = Chi2(Mod,DATA.L,DATA.EL)/(Pars.num_tdf_times*DATA.num_lines)
+println("Mod: ", size(Mod))
+chi2_act = Chi2(Mod,DATA.L,DATA.EL)
 println("#####################################")
 println("Chi2 on actual vdm: ", chi2_act)
 println("#####################################")
+#writecsv("H.csv",Mats.H)
+#println(Mats.H[1:20])
+#println(vdm_act[1:20])
+#println(DATA.L[1:20])
+#println(DATA.EL[1:20])
+
+#figure(1)
+#imshow(Mats.H,aspect="auto")
+#title("H Matrix")
+
+#figure(2)
+#imshow(vdm_act,aspect="auto")
+#title("vdm")
+
+#figure(3)
+#imshow(Mod,aspect="auto")
+#title("Model")
+#show()
+
+#figure(4)
+#imshow(DATA.L,aspect="auto")
+#title("L")
+#show()
+
+
+
 
 function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 	
 	#= INITIALIZING ADMM PARAMETERS =#
-	nits = 10 #Number of ADMM Iterations (An upper limit if convergence is not reached)
-	final_it = nits
-	initial_psi = 0.0  #Initial value for PSI
-		#= REGULARIZATION WEIGHT =#
-	#mu = 100.0 #Begins to work around 48 fails around 115000.0
-	  #= CONVERGANCE PARAMETERS =#
-	G = 10.0 # only for first iteration 1.5 otherwise
-	tau = 1.2
-	sigma = 0.9
+	
+	initial_psi = 0.5  #Initial value for PSI
+	
 	#ADMM ARRAYS:
 	Con_Arr = zeros(DATA.num_lines)
 	#IMAGE ARRAYS
@@ -105,17 +128,12 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 
 		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
 		V.vdm_previous = V.vdm
-		V.vdm = ell1_prox_op(V.vdm_squiggle,mu_spec,V.rho)
-
-		Rinv = inv(V.rho*Mats.Dv*Mats.DvT+Z.rho*Mats.Gammaspe)
-		C = (V.U+V.rho*V.vdm)*Mats.DvT-Z.U+Z.rho*X.vdm
-		Z.vdm_previous = Z.vdm
-		Z.vdm = 	C*Rinv
-
-		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
-		V.vdm_previous = V.vdm
 		V.vdm = ell2_prox_op(V.vdm_squiggle,mu_spec,V.rho)
 	
+		Rinv = inv(V.rho*Mats.Dv*Mats.DvT+Z.rho*Mats.Gammaspe)
+		C = (V.U+V.rho*V.vdm)*Mats.DvT-Z.U+(Z.rho*X.vdm)
+		Z.vdm_previous = Z.vdm
+		Z.vdm = 	C*Rinv
 	#Step 4: UPDATE LAGRANGE MULTIPLIERS	
 		T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
 		V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
@@ -138,13 +156,11 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
   #ioff()
 	println("MEAN V: ", mean(V.vdm))
 	
-	#outarr = [it-1, Chi2(Mod,L[1,:],EL[1,:])/num_tdf_times]
-	if converged != 1
-		println("Mu = ", mu," did not converge")
-	end
+	
 	#outarr #NEED A NEW OUTPUT METHOD....FILES I SUSPECT
 	println("ADMM Call Completed")
 	figure(figsize=(20,10))
+	set_cmap("YlOrRd")
 	subplot(221)
 	#figure("Z")	
 	imshow((Z.vdm),aspect="auto")
@@ -153,7 +169,7 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 	
 	subplot(222)
 	#figure("X")
-	imshow((X.vdm),aspect="auto")
+	imshow((X.vdm).^2,aspect="auto")
 	title("X")
 	colorbar()
 	subplot(223)
@@ -172,27 +188,19 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 end
 
 
-mu_spec = 2.0		#Spectral Regularization Weight
-mu_temp = 2.0		#Temporal Regularization Weight
-mu_smoo = 2000.0    #Smoothing Regularization Weight (TIKHONOV)
+mu_spec = 1.0		#Spectral Regularization Weight
+mu_temp = 1.0		#Temporal Regularization Weight
+mu_smoo = 1.0    #Smoothing Regularization Weight (TIKHONOV)
 
 
 tmp = TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
-	#chi2[i] = tmp[2]
-	#its[i] = tmp[1]
-	#println(i/num_mus)
 
-#outarr = [mu chi2 its]
-
-#writecsv("mu_test_mu.csv",outarr)
 
 println("#####################################")
 println("Chi2 on actual vdm: ", chi2_act)
 println("#####################################")
 
-figure(2)
-imshow(abs(tmp.vdm-vdm_act),aspect="auto")
-colorbar()
+
 show()
 
 println("Done")

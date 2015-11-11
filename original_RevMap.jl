@@ -43,6 +43,11 @@ elseif mode == 2
 	continuum_array = readdlm(continuum_array_path)
 end
 #=IMPORTING FILES=#
+
+
+true_vdm = readcsv("synth/TDF.csv")
+
+
 #SPECTRA
 wavelength_path = string(path,wavelength_filename)
 wavelength = readcsv(wavelength_path)     	              #List of measured wavelengths
@@ -73,7 +78,8 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	#=SETTING UP TIME DELAY FUNCTION=#
 	num_tdf_times = 50
 	tdf_values = zeros(num_tdf_times)
-	tdf_times = linspace(1,20,num_tdf_times)
+	tdf_times = collect(1.0:((20.0-1.0)/(num_tdf_times-1)):20.0)
+
 	#= COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS =#
 	interpolation_points = zeros(num_spectra_samples,num_tdf_times)
 	H = zeros(num_spectra_samples,num_tdf_times)
@@ -86,6 +92,13 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	  H[date,:] =interp(interpolation_points[date,:],continuum_dates,continuum_flux)
 	  HE[date,:] = interp(interpolation_points[date,:],continuum_dates,continuum_error_flux)
 	end
+
+
+
+
+
+
+
 	#=    PRECOMPUTING TIKHONOV MATRICES     =#
 	#println("L: ", size(L))
 	#println("H: ", size(H))
@@ -112,7 +125,7 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	GammaT = Gamma'
 	println("size of W:" ,size(W))
 	#= INITIALIZING ADMM PARAMETERS =#
-	nits = 25 #Number of ADMM Iterations (An upper limit if convergence is not reached)
+	nits = 500 #Number of ADMM Iterations (An upper limit if convergence is not reached)
 	final_it = nits
 	initial_psi = 0.0  #Initial value for PSI
 		#= REGULARIZATION WEIGHT =#
@@ -120,14 +133,15 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	  #= CONVERGANCE PARAMETERS =#
 	G = 10.0 # only for first iteration 1.5 otherwise
 	tau = 1.1
-	sigma = 0.75
+	sigma = 0.9
 	#ADMM ARRAYS:
 	Con_Arr = zeros(num_lines)
 	X =   zeros((size(L,1),num_tdf_times))
 
-	println(size(X))
+	
 	X_s = zeros((size(L,1),num_tdf_times))
 	Z =   zeros((size(L,1),num_tdf_times))
+	
 	Z_previous = zeros((size(L,1),num_tdf_times))
 	Z_s = zeros((size(L,1),num_tdf_times))
 	rho = zeros((size(L,1)))
@@ -177,21 +191,12 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	    #Step 2:
 	      Z_s[l,:] = X[l,:]-U[l,:]/rho[l]
 	      slice = reshape(W[l,:,:],size(W[l,:,:])[2],size(W[l,:,:])[3])
-	      #slice = squeeze(W[l,:,:],1)	#RESHAPE IS SUPPOSED TO BE FASTER THAN SQUEEZE!
 	      A =inv(HT*slice*H+rho[l]/2.0*GammaT*Gamma)
-#	      B = HT*slice*vec(L[l,:])+(rho[l]*GammaT*Gamma*vec(Z_s[l,:]))
-	      #B = HT*slice*vec(L[l,:])+(rho[l]/2.0*vec(Z_s[l,:])) #Same as above but faster.
-				
-
-				#println( rho[l]*GammaT*Gamma*vec(Z_s[l,:]))
 	      B = HT*slice*vec(L[l,:])
 		    Z[l,:] = A * B
 	    #Step 2 done!
 	    #Step 3:
-	      #eq =U[l,:]+(rho[l]/2.0)*(X[l,:]-Z[l,:])
 	      U[l,:] = U[l,:]+(rho[l]/2.0)*(X[l,:]-Z[l,:])
-	      #= OR =#   
-				#U[l,:] = HT * slice * ( H * vec(Z[l,:]) - vec(L[l,:]))		#UPDATE MULTIPLIERS
 	    #Step 3 done!
 	    # Evaluation:
 	
@@ -267,11 +272,8 @@ function TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_
 	  end
 	  it = it+1
 	end
-	Mod = Model(X[1,:],H) 
-	outarr = [it-1, Chi2(Mod,L[1,:],EL[1,:])/num_tdf_times]
-	if converged != 1
-		println("Mu = ", mu," did not converge")
-	end
+
+
 	X
 end 
 
@@ -281,11 +283,14 @@ tmp = TLDR(mu,L, num_lines, EL, spectra_dates, num_spectra_samples,continuum_dat
 
 println(tmp[1,:])
 
+
+
+
+
 figure(1)
-#y = vec(tmp[1,:])
-#x = collect(1:length(y))
-#plot(x,y,"r*")
-imshow(tmp)
+imshow(tmp',aspect="auto")
+xlabel("lines")
+ylabel("delay")
 colorbar()
 show()
 

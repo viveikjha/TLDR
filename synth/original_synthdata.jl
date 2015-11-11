@@ -4,7 +4,8 @@ using PyPlot
 include("synthlib.jl")
 path="../data/"
 #path ="synth/"
-clear()
+#clear()
+
 
 
 
@@ -18,7 +19,7 @@ spectra_filename= "rvm_fluxes.csv"
 spectrapath = string(path,spectra_filename)
 L = readcsv(spectrapath)                           #SPECTRAL FLUXES (L)
 num_lines = size(L,1)                                #NUMBER OF SPECTRAL LINES
-
+println("L: ", size(L))
 spectra_error_filename = "rvm_errfluxes.csv"
 spectra_error_path = string(path,spectra_error_filename)
 EL = readcsv(spectra_error_path)                 #SPECTRAL FLUX ERRORS
@@ -54,9 +55,11 @@ num_continuum_dates = length(continuum_dates)
 
 num_tdf_times = 50
 
-tdf_times = linspace(1,20,num_tdf_times)
-tdf_values = sin(pi*tdf_times/20.0)
+tdf_times = collect(1.0:((20.0-1.0)/(num_tdf_times-1)):20.0)
 
+tdf_values = abs(sin(pi*(tdf_times+5.0)/20.0))
+#lines
+#tdf_values = abs(sin(pi*(lines)/num_lines))
 
 #= Creating Artificial Data Arrays =#
 num_lines = 10
@@ -64,18 +67,44 @@ num_spectra_samples = 100
 
 
 X =   zeros((num_tdf_times,num_lines))
-#initial_x = 0.04																#INITIAL VALUE FOR THE TDF
+#= CONSTANT =#
+#initial_x = 1.0																#INITIAL VALUE FOR THE TDF
 #fill!(X,initial_x)															#FILL TDF WITH INITIAL VALUE
 
-for i in collect(1:num_lines)
-	X[:,i] = tdf_values
+
+#for i in collect(1:num_lines)
+#	X[:,i] = tdf_values
+#end
+
+#= 2D SINE =#
+for i in collect(1:num_tdf_times)
+	for j in collect(1:num_lines)
+		X[i,j] = 1.0*sin( (sin(j/num_lines*pi)*i)/num_tdf_times*pi)
+	end
 end
 
+
+#= STRIPE 1 =#
 #for i in collect(1:num_tdf_times)
 #	for j in collect(1:num_lines)
-#		X[i,j] = sin( (sin(j/num_lines*pi)*i)/num_tdf_times*pi)
+#		if (j>=3 && j<=7)
+#			X[i,j] = 1.0
+#		else X[i,j]=0.00001
+#		end
 #	end
 #end
+
+#= STRIPE 2 =#
+#for i in collect(1:num_tdf_times)
+#	for j in collect(1:num_lines)
+#		if (i > 20 && i<30)
+#			X[i,j] = 1.0
+#		else X[i,j]=0.0000
+#		end
+#	end
+#end
+
+
 
 #=DONE SETTING UP TIME DELAY FUNCTION=#
 
@@ -99,10 +128,12 @@ spectra_dates = range * sort(rand(num_spectra_samples))+beginning
 #= COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS =#
 
 interpolation_points = zeros(num_spectra_samples,num_tdf_times)
+println("interpolation points:",size(interpolation_points))
 H = zeros(num_spectra_samples,num_tdf_times)
 HE= zeros(num_spectra_samples,num_tdf_times)
-for date in 1:num_spectra_samples
-	for delay in 1:num_tdf_times
+
+for date in collect(1:num_spectra_samples)
+	for delay in collect(1:num_tdf_times)
 		interpolation_points[date,delay]=spectra_dates[date]-tdf_times[delay]
   end
   P = interpolation_points[date,:]
@@ -111,12 +142,39 @@ for date in 1:num_spectra_samples
 end
 
 
+#H2 = zeros(num_spectra_samples,num_tdf_times)
+#for lns in 1:num_spectra_samples
+#  for tdf in 1:num_tdf_times
+#    if lns >= tdf
+#        H2[lns,tdf] = H[lns,tdf]
+#    end
+#  end
+#end
 
-#println("Size of L: ", size(L))
+
+
+
+
+figure(1)
+title("H Matrix")
+imshow(H,aspect="auto")
+
+
+
 
 synthetic_data = Model(X,H)		
+figure(2)
+title("synth data")
+imshow(synthetic_data,aspect="auto")
 
-#= No have the synthetic spectral line (L) and the TDF (x).
+figure(3)
+title("VDM")
+imshow(X,aspect="auto")
+
+
+
+
+#= Now have the synthetic spectral line (L) and the TDF (x).
 Now need to build the output arrays to match the arp151 data. =#
 
 
@@ -125,51 +183,80 @@ Now need to build the output arrays to match the arp151 data. =#
 
 println("NUM LINES: ",num_lines)
 println("NUM SPECTRA: ", num_spectra_samples)
-flx_arr = zeros(num_lines,num_spectra_samples)
-err_arr = zeros(num_lines,num_spectra_samples)
-TDF = zeros(num_tdf_times)
-
-println("Data Array: ", size(flx_arr))
+flx_arr = zeros(num_spectra_samples,num_lines)
+err_arr = zeros(num_spectra_samples,num_lines)
 
 
+println("synth_data: ",size(synthetic_data))
 
 #FILL OUPUT ARRAYS!
-sigma = 5															#FOR ADDING ERROR
+sigma = 0.05													#FOR ADDING ERROR
 for j in 1:num_lines
 	for h in 1:num_spectra_samples
-		flx_arr[j,h] = synthetic_data[h]+sigma*randn(1)[1]		
-		err_arr[j,h] = sigma
-		#flx_arr[j,:] = synd										#NO ERROR
- 		#err_arr[j,h] = 1.0											#NO ERROR 
+		#flx_arr[h,j] = synthetic_data[h,j]+sigma*randn(1)[1]		
+		#println(synthetic_data[h])
+		#err_arr[h,j] = sigma
+		flx_arr[h,j] = synthetic_data[h,j]										#NO ERROR
+ 		err_arr[h,j] = 1.0																	#NO ERROR 
 	end
 end
 
-#WRITE OUPUT FILES
 
-println("--------------------------")
-println(flx_arr[1,:])
-println("--------------------------")
+
+
+
+#WRITE OUPUT FILES
 
 #writecsv("filename.csv",array)
 writecsv("wavelengthS.csv",wavelengths)
 writecsv("rvm_dateS.csv",spectra_dates)
 #println("spectra_dates: ", size(spectra_dates))
+println("flx_arr: ", size(flx_arr))
+#println("err_arr: ", size(err_arr))
+#println("continuumS: ", size(continuum_array))
+#println("TDF: ", size(X))
+
+println("H: ", size(H))
+Modl = Model(X,H)
+println("Model: ", size(Modl))
+chi2 = Chi2(Modl,flx_arr,err_arr)
+println("Chi2 on the VDM: ",chi2 )
 
 
 writecsv("rvm_flxS.csv", flx_arr)
 writecsv("rvm_flx_errS.csv",err_arr)
 writecsv("continuumS.csv",continuum_array)
 writecsv("TDF.csv",X)
+writecsv("Hsy.csv",H)
+#println(H[1:20])
+#println(X[1:20])
+
 #println(size(flx_arr),size(err_arr),size(continuum_array),size(TDF))
 #println(L[1,:])
 
-figure(1)
-plot(synthetic_data,"b") #PLOT MODEL
-plot(flx_arr[1,:]',"r*")		 #PLOT snyth noise
+#figure(1)
+#plot(synthetic_data,"b") #PLOT MODEL
 
-figure(2)
-imshow(X)
-colorbar()
+#plot(flx_arr[1,:]',"r*")		 #PLOT snyth noise
+#plot(flx_arr[2,:]',"y*")		 #PLOT snyth noise
+#plot(flx_arr[3,:]',"g*")		 #PLOT snyth noise
+#plot(flx_arr[4,:]',"k*")		 #PLOT snyth noise
+#plot(flx_arr[5,:]',"m*")		 #PLOT snyth noise
+#plot(flx_arr[6,:]',"b*")		 #PLOT snyth noise
+
+
+
+#figure(2)
+#imshow(X,aspect="auto",cmap="YlOrRd")
+#xlabel("Lines")
+#ylabel("Delay")
+#colorbar()
+figure(4)
+title("L")
+imshow(flx_arr,aspect="auto")
+
+
+
 show()
 
 
