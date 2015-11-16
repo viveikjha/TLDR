@@ -4,12 +4,9 @@ include("DataImport.jl")
 include("GenMatrices.jl")
 using PyPlot
 #clear()
-
-
-
-
+ion()
 #Mode = 1 for synthdata Mode = 2 for real data!
-DATA = Import_Data(1)
+DATA = Import_Data(2)
 
 vdm_path = "synth/TDF.csv"
 vdm_act = readcsv(vdm_path)
@@ -23,9 +20,6 @@ Pars.G = 10.0
 Pars.num_lines = DATA.num_lines
 Pars.num_tdf_times = 50
 Pars.initial_psi = 0.5
-#Pars.mu_smoo = 0.0
-#Pars.mu_spec = mu_spec
-#Pars.mu_temp = mu_temp
 Pars.eps_abs = 0.0	
 Pars.eps_rel = 0.1
 Pars.alpha = 1.0
@@ -36,7 +30,6 @@ rho0=500.0
 Pars.num_tdf_times = 50
 Pars.tdf_values = zeros(Pars.num_tdf_times)
 num_tdf_times = Pars.num_tdf_times
-#Pars.tdf_times = collect(1.0:(19.0/Pars.num_tdf_times)     :20.0)
 Pars.tdf_times=collect(1.0  :((20.0-1.0)/(num_tdf_times-1)):20.0)
 println(size(Pars.tdf_times))
 Mats = Gen_Mats(DATA,Pars)
@@ -47,74 +40,42 @@ println("L Pre: ", size(DATA.L))
 println("L: ", size(DATA.L))
 
 
-println("vdm: ", size(vdm_act))
-println("H: ", size(Mats.H))
-Mod = Model(vdm_act,Mats.H) 
-println("Mod: ", size(Mod))
-chi2_act = Chi2(Mod,DATA.L,DATA.EL)
-println("#####################################")
-println("Chi2 on actual vdm: ", chi2_act)
-println("#####################################")
-#writecsv("H.csv",Mats.H)
-#println(Mats.H[1:20])
-#println(vdm_act[1:20])
-#println(DATA.L[1:20])
-#println(DATA.EL[1:20])
+#println("vdm: ", size(vdm_act))
+#println("H: ", size(Mats.H))
+#Mod = Model(vdm_act,Mats.H) 
+#println("Mod: ", size(Mod))
+#chi2_act = Chi2(Mod,DATA.L,DATA.EL)/(DATA.num_lines*Pars.num_tdf_times)
+#println("#####################################")
+#println("Chi2 on actual vdm: ", chi2_act)
+#println("#####################################")
 
-#figure(1)
-#imshow(Mats.H,aspect="auto")
-#title("H Matrix")
-
-#figure(2)
-#imshow(vdm_act,aspect="auto")
-#title("vdm")
-
-#figure(3)
-#imshow(Mod,aspect="auto")
-#title("Model")
-#show()
-
-#figure(4)
-#imshow(DATA.L,aspect="auto")
-#title("L")
-#show()
-
-
-
+figure()
 
 function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 	
 	#= INITIALIZING ADMM PARAMETERS =#
-	
-	initial_psi = 0.5  #Initial value for PSI
-	
-	#ADMM ARRAYS:
+		initial_psi = 0.5  #Initial value for PSI
+		#ADMM ARRAYS:
 	Con_Arr = zeros(DATA.num_lines)
 	#IMAGE ARRAYS
 	X = Gen_Var(rho0,num_tdf_times,DATA.num_lines,initial_psi)
 	Z = Gen_Var(rho0,num_tdf_times,DATA.num_lines,initial_psi)
 	T = Gen_Var(rho0,num_tdf_times,DATA.num_lines,initial_psi)
 	V = Gen_Var(rho0,num_tdf_times,DATA.num_lines,initial_psi)
-
-
 	#=  Calculate Initial Multipliers & RHO =#
-	
 	for p in 1:DATA.num_lines
 	  Z.U[:,p]=Mats.HT * squeeze(Mats.W[p,:,:],1) * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
 	end
 	V.U = Z.U
 	T.U = Z.U
-	
-#NO IDEA WHAT TO DO FOR INITIALIZATOIN OF NEW MULTIPLIER'S AND WEIGHTS..........
 	Qinv = zeros(num_tdf_times,num_tdf_times)
 	B = zeros(num_tdf_times,DATA.num_lines)
 	converged = 0
 	while Pars.it <= Pars.nits && converged==0        #ADMM ITERATION LOOP
-		println("Iteration: ", Pars.it-1, "  ")
 		X.vdm_previous = X.vdm
 	#Step 1: MINIMIZATION W.R.T. X
 	  for l in 1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-		#MINIMIZATION ON X_v INDIVIDUALLY WITHIN THIS SPECTRAL LOOP. (THIS PART CAN BE DONE IN PARALLEL!!!!)			
+	#MINIMIZATION ON X_v INDIVIDUALLY WITHIN THIS SPECTRAL LOOP. (THIS PART CAN BE DONE IN PARALLEL!!!!)			
 			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
 			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (mu_smoo+Z.rho+T.rho)*Mats.Gammatdf 
 			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+Z.U+Z.rho*Z.vdm
@@ -138,8 +99,7 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 		T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
 		V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
 		Z.U = LG_update(Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha)
-		#println(" U_T: ", mean(T.U), " U_V: " ,mean(V.U), " U_Z: ", mean(Z.U))
-
+		
   	if Pars.it == 2 
 			Pars.G = 1.5
 		end
@@ -147,18 +107,18 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 		Z = Pen_update(X,Z,Pars)
 		T = Pen_update(X,T,Pars)
 		V = Pen_update(X,V,Pars)
+	#Step 6: Check for Convergence
 		Pars.it = Pars.it+1
-	Mod = Model(X.vdm,Mats.H) 
-	println("Chi2: ", Chi2(Mod,DATA.L,DATA.EL)/(num_tdf_times*DATA.num_lines))
-	#imshow(X)
-	#draw()
+		Mod = Model(X.vdm,Mats.H) 
+		println("Iteration: ",Pars.it-1, " Chi2: ", Chi2(Mod,DATA.L,DATA.EL)/(num_tdf_times*DATA.num_lines))
+		imshow(X.vdm,aspect="auto",cmap="YlOrRd")
+		draw()
   end
-  #ioff()
-	println("MEAN V: ", mean(V.vdm))
-	
-	
+	iof()
 	#outarr #NEED A NEW OUTPUT METHOD....FILES I SUSPECT
 	println("ADMM Call Completed")
+	
+	#Final Plot
 	figure(figsize=(20,10))
 	set_cmap("YlOrRd")
 	subplot(221)
@@ -166,10 +126,9 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 	imshow((Z.vdm),aspect="auto")
 	title("Z")
 	colorbar()
-	
 	subplot(222)
 	#figure("X")
-	imshow((X.vdm).^2,aspect="auto")
+	imshow((X.vdm),aspect="auto")
 	title("X")
 	colorbar()
 	subplot(223)
@@ -188,7 +147,7 @@ function TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 end
 
 
-mu_spec = 1.0		#Spectral Regularization Weight
+mu_spec = 1000.0		#Spectral Regularization Weight
 mu_temp = 1.0		#Temporal Regularization Weight
 mu_smoo = 1.0    #Smoothing Regularization Weight (TIKHONOV)
 
@@ -196,9 +155,9 @@ mu_smoo = 1.0    #Smoothing Regularization Weight (TIKHONOV)
 tmp = TLDR(mu_smoo,mu_spec,mu_temp,DATA,Mats)
 
 
-println("#####################################")
-println("Chi2 on actual vdm: ", chi2_act)
-println("#####################################")
+#println("#####################################")
+#println("Chi2 on actual vdm: ", chi2_act)
+#println("#####################################")
 
 
 show()

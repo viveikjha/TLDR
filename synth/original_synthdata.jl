@@ -169,7 +169,7 @@ imshow(synthetic_data,aspect="auto")
 
 figure(3)
 title("VDM")
-imshow(X,aspect="auto")
+imshow(X,aspect="auto",cmap="YlOrRd")
 
 
 

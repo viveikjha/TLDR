@@ -193,11 +193,11 @@ println("synth_data: ",size(synthetic_data))
 sigma = 0.05													#FOR ADDING ERROR
 for j in 1:num_lines
 	for h in 1:num_spectra_samples
-		flx_arr[h,j] = synthetic_data[h,j]+sigma*randn(1)[1]		
+		#flx_arr[h,j] = synthetic_data[h,j]+sigma*randn(1)[1]		
 		#println(synthetic_data[h])
-		err_arr[h,j] = sigma
-		#flx_arr[h,j] = synthetic_data[h,j]										#NO ERROR
- 		#err_arr[h,j] = 1.0																	#NO ERROR 
+		#err_arr[h,j] = sigma
+		flx_arr[h,j] = synthetic_data[h,j]										#NO ERROR
+ 		err_arr[h,j] = 1.0																	#NO ERROR 
 	end
 end
 

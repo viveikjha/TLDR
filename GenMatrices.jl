@@ -16,7 +16,6 @@ function Gen_Mats(DATA,Params)
 	  H[date,:] =interp(interpolation_points[date,:],DATA.continuum_dates,DATA.continuum_flux)
 	  HE[date,:] = interp(interpolation_points[date,:],DATA.continuum_dates,DATA.continuum_error_flux)
 	end
-
 	Mat.H = H
 	Mat.HE = HE
 	#= 		FINITE DIFFERENCES MATRICES			=#
@@ -27,7 +26,6 @@ function Gen_Mats(DATA,Params)
 			if i == j
 				Ds[i,j]==-2.0
 			end
-
 			if (i+1) == j
 				Ds[i,j] = 1.0
 			end
@@ -55,15 +53,16 @@ function Gen_Mats(DATA,Params)
 	Mat.Dv = Dv
 	Mat.DvT = Dv'
 
+
+
+
+
+
+
+
 	#=    PRECOMPUTING TIKHONOV MATRICES     =#
-	#println("DATA.L: ", size(DATA.L))
-	#println("DATA.EL: ", size(DATA.EL))
-	#println(collect(1:DATA.num_lines))
 	num_spectra_dates=size(DATA.spectra_dates)[1]
-	#println("# spec dates: ", num_spectra_dates)
-	#println("num_lines: ", DATA.num_lines)
 	W = zeros((DATA.num_lines,size(DATA.L)[1],size(DATA.L)[1]))
-	#println(size(W))
 	for lam in collect(1:DATA.num_lines)
 	  T = eye(num_spectra_dates)
 	  for i in collect(1:num_spectra_dates)
@@ -76,9 +75,6 @@ function Gen_Mats(DATA,Params)
 	  end
 	  W[lam,:,:] = T
 	end
-
-	
-
 	Mat.W= W
 	Mat.HT = H'
 	Mat.Gammatdf = eye(Params.num_tdf_times)
