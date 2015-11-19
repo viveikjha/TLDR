@@ -62,8 +62,8 @@ tdf_values = abs(sin(pi*(tdf_times+5.0)/20.0))
 #tdf_values = abs(sin(pi*(lines)/num_lines))
 
 #= Creating Artificial Data Arrays =#
-num_lines = 10
-num_spectra_samples = 100
+num_lines = 1369
+num_spectra_samples = 86
 
 
 X =   zeros((num_tdf_times,num_lines))

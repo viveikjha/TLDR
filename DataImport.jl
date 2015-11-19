@@ -29,10 +29,10 @@ function Import_Data(mode)
 	wavelength_path = string(path,wavelength_filename)
 	Data_Arrs.wavelength = readcsv(wavelength_path)           			#List of measured wavelengths
 	spectrapath = string(path,spectra_filename)
-	Data_Arrs.L = (readcsv(spectrapath))'                       			#SPECTRAL FLUXES (L)
+	Data_Arrs.L = (readcsv(spectrapath))'                      			#SPECTRAL FLUXES (L)
 	Data_Arrs.num_lines = size(Data_Arrs.L,2)                  			#NUMBER OF SPECTRAL LINES
 	spectra_error_path = string(path,spectra_error_filename)
-	Data_Arrs.EL = (readcsv(spectra_error_path) )'              			#SPECTRAL FLUX ERRORS
+	Data_Arrs.EL = (readcsv(spectra_error_path))'            			#SPECTRAL FLUX ERRORS
 	spectra_dates_path = string(path,spectra_dates_filename)
 	Data_Arrs.spectra_dates = readcsv(spectra_dates_path)           #SPECTRAL SAMPLING DATES
 	Data_Arrs.num_spectra_samples = length(Data_Arrs.spectra_dates) #NUMBER OF DATA POINTS IN SPECTRA

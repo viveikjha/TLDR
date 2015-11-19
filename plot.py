@@ -1,5 +1,6 @@
 import pickle
 import numpy as np
+
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from scipy.interpolate import UnivariateSpline as UVS
@@ -7,8 +8,8 @@ from scipy.optimize import fmin_l_bfgs_b
 from scipy.optimize import minimize
 
 '''IMPORT DATA FILES'''
-inputfile = 'tdf.csv'
-tdf = np.loadtxt(open(inputfile,'rb'),delimiter=',',skiprows=0)
+inputfile = 'vdm.csv'
+tdf = np.transpose(np.loadtxt(open(inputfile,'rb'),delimiter=',',skiprows=0))
 print('TDF: ',tdf.shape)
 nlines = len(tdf) # length first axis
 
@@ -20,7 +21,7 @@ nlines2 = len(rvm_spectra_lam)
 
 
 #must correct for redshift to arp 151: z = 0.021091
-lamHB = 4861.3
+lamHB = 5500.0
 vmin = -4000.0
 c = 299792.458
 lammin = (vmin/c*lamHB)+lamHB
@@ -47,7 +48,7 @@ print tdf[324]
 
 
 fig, ax = plt.subplots(figsize=(6,8))
-ax.imshow(np.rot90(np.log(np.sqrt(arr)),1), cmap='Reds',extent=[-4000,4000,0, 20])
+ax.imshow(np.rot90((np.sqrt(arr)),1), cmap='Reds',extent=[-4000,4000,0, 20])
 Scale=1.5
 ax.set_aspect(Scale*8000.0/(20.0))
 ax.set_xlabel('V(km/s)')
@@ -55,10 +56,12 @@ ax.set_ylabel(r'$\tau$ (days)')
 plt.title(r'Velocity Delay Map of $H\beta$')
 
 fig, ax = plt.subplots(figsize=(12,8))
-ax.imshow(np.rot90(np.log(np.sqrt(tdf)),1), cmap='Reds',extent=[0,20,nlines-1, 0])
+ax.imshow(np.rot90((np.sqrt(tdf)),1), cmap='Reds',extent=[min(rvm_spectra_lam),max(rvm_spectra_lam),0, 50],aspect="auto")
 plt.title('TDF Reconstruction')
+ax.set_xlabel(r'$\lambda$ (nm)')
+ax.set_ylabel(r'$\tau$ (days)')
 print len(tdf[0])
-ax.set_aspect(0.01*len(tdf)/(4.0*nlines))
+ax.set_aspect(10)
 
 
 

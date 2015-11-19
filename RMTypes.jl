@@ -27,9 +27,12 @@ type Params
 	sigma::Real																							#12
 	G::Real																									#13
 	alpha::Real																							#14
+	rho0::Real																							#15
+	chi2::Real																							#16
+	tdf_times::Array{Float64}																#17
+	tdf_values::Array{Float64}															#18
+	
 
-	tdf_times::Array{Float64}																#15
-	tdf_values::Array{Float64}															#16
 end
 
 type Data
@@ -67,7 +70,7 @@ function init_IMAGE(rho)
 end
 
 function init_Params()
-	Params(0,0,0.0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0.0,[],[])
+	Params(0,0,0.0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0.0,0.0,Inf,[],[])
 end
 
 function init_Data()

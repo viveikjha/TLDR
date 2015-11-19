@@ -16,7 +16,8 @@ function Gen_Mats(DATA,Params)
 	  H[date,:] =interp(interpolation_points[date,:],DATA.continuum_dates,DATA.continuum_flux)
 	  HE[date,:] = interp(interpolation_points[date,:],DATA.continuum_dates,DATA.continuum_error_flux)
 	end
-	Mat.H = H
+	Mat.H = H./10000.0
+	writecsv("H.csv",Mat.H)
 	Mat.HE = HE
 	#= 		FINITE DIFFERENCES MATRICES			=#
 	Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
@@ -24,7 +25,7 @@ function Gen_Mats(DATA,Params)
 		for j in collect(1:Params.num_tdf_times)
 			#CHANGED TO 2ND ORDER CENTRAL DIFFERENCES
 			if i == j
-				Ds[i,j]==-2.0
+				Ds[i,j]= -2.0
 			end
 			if (i+1) == j
 				Ds[i,j] = 1.0
@@ -40,7 +41,7 @@ function Gen_Mats(DATA,Params)
 	for i in collect(1:DATA.num_lines)
 		for j in collect(1:DATA.num_lines)
 			if i == j
-				Dv[i,j]==-2.0
+				Dv[i,j]= -2.0
 			end
 			if (i+1) == j
 				Dv[i,j] = 1.0
@@ -53,6 +54,54 @@ function Gen_Mats(DATA,Params)
 	Mat.Dv = Dv
 	Mat.DvT = Dv'
 
+	#= 		Laplacian MATRICES			=#
+	Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
+	for i in collect(1:Params.num_tdf_times)
+		for j in collect(1:Params.num_tdf_times)
+			#CHANGED TO 2ND ORDER CENTRAL DIFFERENCES
+			if i == j
+				Ds[i,j]= -4.0
+			end
+			if (i+1) == j
+				Ds[i,j] = 1.0
+			end
+			if (i+3) == j
+				Ds[i,j] == 1.0
+			end
+			if (i-1) == j
+				Ds[i,j] = 1.0
+			end
+			if (i-3) == j
+				Ds[i,j] = 1.0
+			end
+		end
+	end
+	Mat.Ds = Ds
+	Mat.DsT = Ds'
+	Dv = zeros(DATA.num_lines,DATA.num_lines)
+	for i in collect(1:DATA.num_lines)
+		for j in collect(1:DATA.num_lines)
+			if i == j
+				Dv[i,j]= -4.0
+			end
+			if (i+1) == j
+				Dv[i,j] = 1.0
+			end
+			if (i+3) == j
+				Dv[i,j] == 1.0
+			end
+
+			if (i-1) == j
+				Dv[i,j] = 1.0
+			end
+			if (i-3) == j
+				Dv[i,j] = 1.0
+			end
+
+		end
+	end
+	Mat.Dv = Dv
+	Mat.DvT = Dv'
 
 
 

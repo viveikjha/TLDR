@@ -1,12 +1,20 @@
-type im
-	x::Array{Float64}
-	y::Array{Float64}
-end
+using FITSIO
 
-im1 = im
-im2 = im
 
-#im1.x = [1,2,3,4]
-#im1.y = [2,5,4,6]
 
-println(im1)
+
+x = readcsv("vdm.csv")
+
+
+
+Keys = ["Date"]
+vals = [string(Dates.today())]
+coms = ["date produced"]
+
+head = FITSHeader(Keys,vals,coms)
+
+
+#println(get_comment(head,"Comment"))
+
+f = FITS("vdm.fits","w")
+write(f,x, header=head)
