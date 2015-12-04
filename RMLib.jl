@@ -245,6 +245,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False")
 	if Plot_A == "True"
 		ion()
 		figure()
+
 		title("Active Reconstruction")
 		xlabel("Wavelength")
 		ylabel("Delay")
@@ -341,10 +342,10 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False")
 		#end
 		if abs(Pars.chi2 - chiprev) < (0.0001)
 			converged = 1
-			println("CONVERGED")
+			#println("CONVERGED")
 		end
 		if Plot_A == "True"
-			imshow(X.vdm,aspect="auto",origin="lower",cmap="YlOrRd")
+			imshow(log(X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,60.0],aspect="auto",origin="lower",cmap="YlOrRd")
 			draw()
 		end		
   end

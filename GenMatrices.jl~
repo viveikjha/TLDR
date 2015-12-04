@@ -16,7 +16,7 @@ function Gen_Mats(DATA,Params)
 	  H[date,:] =interp(interpolation_points[date,:],DATA.continuum_dates,DATA.continuum_flux)
 	  HE[date,:] = interp(interpolation_points[date,:],DATA.continuum_dates,DATA.continuum_error_flux)
 	end
-	Mat.H = H./100000.0
+	Mat.H = H./1.0
 	writecsv("H.csv",Mat.H)
 	Mat.HE = HE
 	#= 		FINITE DIFFERENCES MATRICES			=#

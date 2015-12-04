@@ -2,6 +2,7 @@ include("RMTypes.jl")
 function Import_Data(mode)
 		#mode = 1 	#SYNTHETIC DATA MODE
 		#mode = 2	#REAL DATA MODE
+		#mode =3 #SIMULATED DATA
 	if mode == 1
 		path ="synth/"
 		wavelength_filename = "wavelengthS.csv"
@@ -20,7 +21,19 @@ function Import_Data(mode)
 		continuum_array_filename = "arp151.b.dat"
 		continuum_array_path =string(path,continuum_array_filename)
 		continuum_array = readdlm(continuum_array_path)
+	elseif mode == 3 
+		path="simulation/"
+		wavelength_filename = "rvm_wavelengths.csv"
+		spectra_filename= "spectra_simulated.csv"
+		spectra_error_filename = "rvm_errfluxes.csv"
+		spectra_dates_filename = "rvm_dates.csv"
+		continuum_array_filename = "arp151.b.dat"
+		continuum_array_path =string(path,continuum_array_filename)
+		continuum_array = readdlm(continuum_array_path)
+
 	end
+
+
 
 	Data_Arrs = init_Data()
 

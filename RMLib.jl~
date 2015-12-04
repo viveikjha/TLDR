@@ -245,6 +245,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False")
 	if Plot_A == "True"
 		ion()
 		figure()
+		colorbar()
 		title("Active Reconstruction")
 		xlabel("Wavelength")
 		ylabel("Delay")
@@ -265,7 +266,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False")
 	Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	Z.vdm = init_vdm
 	T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	T.vdm = Mat.Ds*init_vdm
+	T.vdm = Mats.Ds*init_vdm
 	V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	V.vdm = init_vdm*Mats.Dv
 	P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
@@ -341,10 +342,10 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False")
 		#end
 		if abs(Pars.chi2 - chiprev) < (0.0001)
 			converged = 1
-			println("CONVERGED")
+			#println("CONVERGED")
 		end
 		if Plot_A == "True"
-			imshow(X.vdm,aspect="auto",origin="lower",cmap="YlOrRd")
+			imshow(log(X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,60.0],aspect="auto",origin="lower",cmap="YlOrRd")
 			draw()
 		end		
   end
