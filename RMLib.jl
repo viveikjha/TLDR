@@ -1,5 +1,23 @@
 using FITSIO
 #=--------------------------------------------------=#
+#===================== ALTCHI2 ======================#
+#=--------------------------------------------------=#
+function alt_chi2(DATA,MATS,x)
+	ls = MATS.H*x
+	total = 0.0
+	for l in 1:DATA.num_lines        #SPECTAL CHANNEL LOOP
+			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
+			res = (ls-DATA.L)[:,l]
+			bit = res'*W_slice*res
+			total += sum(bit)
+	end
+	total
+end
+
+
+
+
+#=--------------------------------------------------=#
 #====================== CLEAR =======================#
 #=--------------------------------------------------=#
 function clear()
@@ -9,9 +27,6 @@ function clear()
 end
 
 
-function print_rgb(r, g, b, t)
-           println("\e[1m\e[38;2;$r;$g;$b;249m",t)
-end
 #=--------------------------------------------------=#
 #==================INTERPOLATION=====================#
 #=--------------------------------------------------=#
@@ -99,9 +114,11 @@ end
 # D should be the spectral data
 # Sigma should be the error on the spectral data
 function Chi2(M,D,Sigma)
-	  #sum(   (vec(M)-vec(D)).^2  ./vec(Sigma) .^2)   #Value Returned!
-		sum(   (M-D).^2 ./(Sigma).^2)
-		#sum(((vec(M)-vec(D))/vec(Sigma))^2)
+#		println("M: ",size(M))
+#		println("D: ",size(D))
+#		println("S: ",size(Sigma))
+		#println(sum(M-D))
+		sum(   ((M-D)./(Sigma)).^2)
 end
 
 #=--------------------------------------------------=#
@@ -288,11 +305,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False")
 	  for l in 1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
 			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho)*Mats.Gammatdf 
-#			Q = Mats.HT*Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho)*Mats.Gammatdf 
-
 			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm
-#			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+Z.U+Z.rho*Z.vdm
-#			B = Mats.HT*DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+Z.U+Z.rho*Z.vdm
 
 			X.vdm[:,l] = Q\B[:,l] 
 		end
@@ -332,7 +345,10 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False")
 		Pars.it = Pars.it+1
 		Mod = Model(X.vdm,Mats.H) 
 		chiprev=Pars.chi2
-		Pars.chi2 = Chi2(Mod,DATA.L,DATA.EL)/(Pars.num_tdf_times*DATA.num_lines)
+#		Pars.chi2 = Chi2(Mod,DATA.L,DATA.EL)/(Pars.num_tdf_times*DATA.num_lines)
+		Pars.chi2 = Chi2(Mod,DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
+
+
 		#sqdiff = sum((X.vdm-vdm_act).^2)
 		#println("Iteration: ",Pars.it-1, " Chi2: ", chi2, " SQDiff: ", sqdiff)
 		println("Iteration: ",Pars.it-1, " Chi2: ", Pars.chi2)
@@ -340,12 +356,12 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False")
 			#diffbest = sqdiff
 			#difbit = Pars.it
 		#end
-		if abs(Pars.chi2 - chiprev) < (0.0001)
+		if abs(Pars.chi2 - chiprev) < (0.001)
 			converged = 1
 			#println("CONVERGED")
 		end
 		if Plot_A == "True"
-			imshow(log(X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,60.0],aspect="auto",origin="lower",cmap="YlOrRd")
+			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",cmap="Reds",interpolation="None")
 			draw()
 		end		
   end
@@ -359,22 +375,22 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False")
 		set_cmap("YlOrRd")
 		subplot(221)
 		#figure("Z")	
-		imshow((Z.vdm),aspect="auto",origin="lower")
+		imshow((Z.vdm),aspect="auto",origin="lower",interpolation="None")
 		title("Z")
 		colorbar()
 		subplot(222)
 		#figure("X")
-		imshow((X.vdm),aspect="auto",origin="lower")
+		imshow((X.vdm),aspect="auto",origin="lower",interpolation="None")
 		title("X")
 		colorbar()
 		subplot(223)
 		#figure("T")
-		imshow((T.vdm),aspect="auto",origin="lower")
+		imshow((T.vdm),aspect="auto",origin="lower",interpolation="None")
 		title("T")
 		colorbar()
 		subplot(224)
 		#figure("V")
-		imshow((V.vdm),aspect="auto",origin="lower")
+		imshow((V.vdm),aspect="auto",origin="lower",interpolation="None")
 		title("V")
 		colorbar()
 		show()

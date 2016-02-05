@@ -1,67 +1,116 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
-import math
 import PlotPretty
-
 PlotPretty.pp('white')
-
-
 def pol2cart(rho, phi):
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
     return(x, y)
-weight = 1.0 #LINE WEIGHT!
-r_o = 5.0
-r_i = 1.0
-r = 0.5*(r_o-r_i)+r_i
-stdev=0.50
-center = [0.0,0.0]
+    
+def spiral(phi,A,B,N):
+	#print phi, " ", B*np.tan(phi/(2.0*N))
+	r = A*1.0/(np.log(B*np.tan(phi/(2.0*N))))
+	return r
+weight = 1.0	
+nps = 500
+phi = np.linspace(0.2,8.0*np.pi/4.0,nps)
+r = np.array([])
+phi2 = np.array([])
 
-nps = 100000
+for i in range(0,len(phi)):
+	try:
+		r = np.append(r,spiral(phi[i],1.0,0.5,4.0))
+		phi2 = np.append(phi2,phi[i])
+	except:
+		print phi[i], " failed."
 
-#radii = np.random.normal(r,stdev,nps)
-radii = np.random.uniform(r_i,r_o,nps)
-angle = np.random.uniform(0.0,2.0*math.pi,nps)
+apn = 10
+r_n = np.array([])
+phi_n = np.array([])
+for i in range(0,len(r)):
+	new_rs = np.random.normal(np.abs(r[i]),np.abs(r[i])*0.08,apn)
+	new_phis = np.random.normal(phi[i],phi[i]*0.01,apn)
+	r_n = np.append(r_n,new_rs)
+	phi_n = np.append(phi_n,new_phis)
 
-X=np.zeros(nps)
-Y=np.zeros(nps)
-for i in range(0,nps):
-	X[i],Y[i]=pol2cart(radii[i],angle[i])	
-delay =  radii+(radii*np.cos(angle))
+r_n = np.append(r_n,r_n)
+phi_n = np.append(phi_n,phi_n+np.pi)+np.pi/4.0
+
+#for i in range(0,len(r_n)):
+#	print r_n[i], " ", phi_n[i]
 
 G = 5.702*10.0**-11.0 #light days (solar masses)^-1 (speed of light)^2
-M = 7.0e6 # solar masses
+M = 1.0e8 # solar masses
+c = 1.0
+X,Y = pol2cart(r_n,-phi_n)
 
+delay =  r_n+(r_n*np.cos(phi_n))
 
-sol = 299792.458 #km/s
-velocity =np.sqrt(G*M/radii)*sol
-LOSvel = velocity*np.cos((math.pi/2.0)-angle)
+velocity =np.sqrt(G*M/r_n)
+LOSvel = velocity*np.cos((np.pi/2.0)-phi_n)
 
-
-fig = plt.figure(figsize=(4,12))
+fig = plt.figure(figsize=(14,6))
 
 #ax = fig.add_subplot(121)
-ax = plt.subplot2grid((3,1),(0,0),colspan=1)
+ax = plt.subplot2grid((1,2),(0,0),rowspan=1)
 ax.set_title("BLR Geometry")
 col=LOSvel
 sizes = (delay/max(delay))*100.0
-ax.scatter(X,Y,c=-col,s=sizes,cmap="bwr",vmin=min(LOSvel),vmax=max(LOSvel))
-plt.minorticks_on()
-#ax.set_aspect('equal')
+ax.scatter(X,Y,c=col,s=sizes,edgecolor='k',cmap="seismic",vmin=min(LOSvel),vmax=max(LOSvel))
 
 
-c = 1.0
+#ISODELAY CURVES
+############################################
+t = 0.2
+theta = np.linspace(-0.935*np.pi,0.935*np.pi,200)
+r = c * t / (1.0+np.cos(theta))
 
-
-
-#CIRCLE AT RADIUS
-theta = np.linspace(0.0,2.0*math.pi,200)
 x = r * np.cos(theta)
 y = r * np.sin(theta)
 
-plt.plot(x,y,'c',linewidth=2.0)
+plt.plot(x,y,'k--',linewidth=weight)
+st = r'$\tau = $'+ str(t)
+plt.annotate(st, xy=(x[199]-0.55, y[199]-0.05))
+############################################
+############################################
+t = 1.0
+theta = np.linspace(-0.85*np.pi,0.85*np.pi,200)
+r = c * t / (1.0+np.cos(theta))
 
+x = r * np.cos(theta)
+y = r * np.sin(theta)
+
+plt.plot(x,y,'w--',linewidth=weight)
+st = r'$\tau = $'+ str(t)
+plt.annotate(st, xy=(x[199]-0.5, y[199]-0.05))
+############################################
+############################################
+t = 4.0
+theta = np.linspace(-0.67*np.pi,0.67*np.pi,200)
+
+r = c * t / (1.0+np.cos(theta))
+
+x = r * np.cos(theta)
+y = r * np.sin(theta)
+
+plt.plot(x,y,'k--',linewidth=weight)
+st = r'$\tau = $'+ str(t)
+plt.annotate(st, xy=(x[199]-0.5, y[199]-0.05))
+############################################
+
+############################################
+t = 10.0
+theta = np.linspace(-0.43*np.pi,0.43*np.pi,200)
+
+r = c * t / (1.0+np.cos(theta))
+
+x = r * np.cos(theta)
+y = r * np.sin(theta)
+
+plt.plot(x,y,'k--',linewidth=weight)
+st = r'$\tau = $'+ str(t)
+plt.annotate(st, xy=(x[199]-0.5, y[199]-0.05))
+############################################
 #LABELS
 xmin = -15.0
 xmax = 8.0
@@ -75,70 +124,18 @@ ax.annotate(dirstr, xy=(xmin, 0.02))
 plt.plot([0],[0],'ko',markersize=6)
 ax.set_xlim(xmin,xmax)
 
-#ISODELAY CURVES
-############################################
-t = 0.2
-theta = np.linspace(-0.935*math.pi,0.935*math.pi,200)
-r = c * t / (1.0+np.cos(theta))
 
-x = r * np.cos(theta)
-y = r * np.sin(theta)
 
-plt.plot(x,y,'c--',linewidth=weight)
-st = r'$\tau = $'+ str(t)
-plt.annotate(st, xy=(x[199]-0.55, y[199]-0.05))
-############################################
-############################################
-t = 1.0
-theta = np.linspace(-0.85*math.pi,0.85*math.pi,200)
-r = c * t / (1.0+np.cos(theta))
-
-x = r * np.cos(theta)
-y = r * np.sin(theta)
-
-plt.plot(x,y,'c--',linewidth=weight)
-st = r'$\tau = $'+ str(t)
-plt.annotate(st, xy=(x[199]-0.5, y[199]-0.05))
-############################################
-############################################
-t = 4.0
-theta = np.linspace(-0.67*math.pi,0.67*math.pi,200)
-
-r = c * t / (1.0+np.cos(theta))
-
-x = r * np.cos(theta)
-y = r * np.sin(theta)
-
-plt.plot(x,y,'c--',linewidth=weight)
-st = r'$\tau = $'+ str(t)
-plt.annotate(st, xy=(x[199]-0.5, y[199]-0.05))
-############################################
-
-############################################
-t = 10.0
-theta = np.linspace(-0.43*math.pi,0.43*math.pi,200)
-
-r = c * t / (1.0+np.cos(theta))
-
-x = r * np.cos(theta)
-y = r * np.sin(theta)
-
-plt.plot(x,y,'c--',linewidth=weight)
-st = r'$\tau = $'+ str(t)
-plt.annotate(st, xy=(x[199]-0.5, y[199]-0.05))
-############################################
-
-ax.set_xlim(xmin,xmax)
-ax.set_ylim(-10.0,10.0)
 
 
 #ax=fig.add_subplot(122)
-ax = plt.subplot2grid((3,1),(1,0),colspan=1)
+ax = plt.subplot2grid((1,2),(0,1),rowspan=2)
 ax.set_title("Velocity Delay Map")
-ax.set_xlabel("L.O.S. Velocity (km/s)")
+ax.set_xlabel("L.O.S. Velocity (c)")
 ax.set_ylabel("Delay")
-ax.scatter(LOSvel,delay,c=-col,cmap="bwr",vmin=min(LOSvel),vmax=max(LOSvel))
-plt.minorticks_on()
+#ax.set_xlim(-0.5,0.5)
+ax.scatter(LOSvel,delay,c=-col,edgecolor='k',cmap="seismic",vmin=min(LOSvel),vmax=max(LOSvel))
+
 
 ###########################################
 #RELATIVE SIGNAL STRENTGTH
@@ -178,8 +175,8 @@ ax.set_xlabel("Binned L.O.S. Velocity (km/s)" )
 
 
 plt.tight_layout()
-plt.savefig('disk.png', format='png')
-#plt.show()
+#plt.savefig('disk.png', format='png')
+plt.show()
 
 Ha =6563.0 
 sol = 299792.458 #km/s
@@ -206,3 +203,4 @@ np.savetxt('simulated_vdm.csv',Fim,delimiter=',')
 
 
 
+plt.show()

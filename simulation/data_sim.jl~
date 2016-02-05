@@ -1,9 +1,0 @@
-using PyPlot
-
-
-vdm = readcsv("simulated_vdm.csv")
-
-
-figure()
-imshow(log(vdm),aspect="auto",origin="lower")
-show()

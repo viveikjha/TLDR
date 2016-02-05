@@ -23,14 +23,15 @@ function Import_Data(mode)
 		continuum_array = readdlm(continuum_array_path)
 	elseif mode == 3 
 		path="simulation/"
-		wavelength_filename = "rvm_wavelengths.csv"
+#		wavelength_filename = "rvm_wavelengths.csv"
+		wavelength_filename = "simulated_vdm.csv"
 		spectra_filename= "spectra_simulated.csv"
-		spectra_error_filename = "rvm_errfluxes.csv"
+#		spectra_error_filename = "rvm_errfluxes.csv"
+		spectra_error_filename = "errspectra_simulated.csv"
 		spectra_dates_filename = "rvm_dates.csv"
 		continuum_array_filename = "arp151.b.dat"
 		continuum_array_path =string(path,continuum_array_filename)
 		continuum_array = readdlm(continuum_array_path)
-
 	end
 
 
@@ -43,7 +44,10 @@ function Import_Data(mode)
 	Data_Arrs.wavelength = readcsv(wavelength_path)           			#List of measured wavelengths
 	spectrapath = string(path,spectra_filename)
 	Data_Arrs.L = (readcsv(spectrapath))'                      			#SPECTRAL FLUXES (L)
+	println("AT IMPORT: ",size(Data_Arrs.L))
 	Data_Arrs.num_lines = size(Data_Arrs.L,2)                  			#NUMBER OF SPECTRAL LINES
+#	Data_Arrs.num_lines = size(Data_Arrs.L,1)                  			#NUMBER OF SPECTRAL LINES
+	
 	spectra_error_path = string(path,spectra_error_filename)
 	Data_Arrs.EL = (readcsv(spectra_error_path))'            			#SPECTRAL FLUX ERRORS
 	spectra_dates_path = string(path,spectra_dates_filename)
@@ -57,7 +61,11 @@ function Import_Data(mode)
 	Data_Arrs.continuum_flux = continuum_array[:,2]*continuum_scale
 	Data_Arrs.continuum_error_flux = continuum_array[:,3]*continuum_scale
 	Data_Arrs.num_continuum_dates = length(Data_Arrs.continuum_dates)
-
+	
+println("Imported Data Arrays:")
+println( "		Wavelengths: ", length(Data_Arrs.wavelength))
+println( "		Spectra: ", size(Data_Arrs.L))
+println( "		Continuum: ", size(Data_Arrs.continuum_flux))
 	Data_Arrs
 end
 
