@@ -206,7 +206,7 @@ end
 
 
 #WRITE OUPUT FILES
-
+"""
 #writecsv("filename.csv",array)
 writecsv("wavelengthS.csv",wavelengths)
 writecsv("rvm_dateS.csv",spectra_dates)
@@ -230,7 +230,7 @@ writecsv("TDF.csv",X)
 writecsv("Hsy.csv",H)
 #println(H[1:20])
 #println(X[1:20])
-
+"""
 #println(size(flx_arr),size(err_arr),size(continuum_array),size(TDF))
 #println(L[1,:])
 
@@ -251,13 +251,13 @@ writecsv("Hsy.csv",H)
 #xlabel("Lines")
 #ylabel("Delay")
 #colorbar()
-figure(4)
-title("L")
-imshow(flx_arr,aspect="auto")
+#figure(4)
+#title("L")
+#imshow(flx_arr,aspect="auto")
 
 
 
-show()
+#show()
 
 
 println("Done")

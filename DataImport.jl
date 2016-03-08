@@ -24,7 +24,7 @@ function Import_Data(mode)
 	elseif mode == 3 
 		path="simulation/"
 #		wavelength_filename = "rvm_wavelengths.csv"
-		wavelength_filename = "simulated_vdm.csv"
+		wavelength_filename = "new_wavelengths.csv"
 		spectra_filename= "spectra_simulated.csv"
 #		spectra_error_filename = "rvm_errfluxes.csv"
 		spectra_error_filename = "errspectra_simulated.csv"

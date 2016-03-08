@@ -31,8 +31,6 @@ type Params
 	chi2::Real																							#16
 	tdf_times::Array{Float64}																#17
 	tdf_values::Array{Float64}															#18
-	
-
 end
 
 type Data
@@ -42,7 +40,6 @@ type Data
 	num_lines::Int
 	num_spectra_samples::Int	
 	spectra_dates::Array{Float64}	
-
 	continuum_dates::Array{Float64}
 	continuum_flux::Array{Float64}
 	continuum_error_flux::Array{Float64}
@@ -64,13 +61,15 @@ type Matrices_S
 	GammaspeT::Array{Float64}
 end
 
-
 function init_IMAGE(rho)
 	ADMM_IMAGE([],[],[],[],rho,Inf,0.0,0.0,0.0,0.0)
 end
 
 function init_Params()
-	Params(0,0,0.0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0.0,0.0,Inf,[],[])
+#	Params(0,0 ,0.0,0  ,0 ,0.0,0.0,0.0,0.0,0.0,0.0,0.0 ,0   ,0.0,0.0 ,Inf,[],[])
+#  Params(2,50,1.2,0.0,50,0.1,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((max_delay-1.0)/(Pars.num_tdf_times-1)):max_delay),zeros(Pars.num_tdf_times))
+  Params(2,50,1.2,0.0,50,0.1,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50))
+
 end
 
 function init_Data()
