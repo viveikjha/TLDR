@@ -132,7 +132,7 @@ function ell1_prox_op(X,XS,mu,rho)
     else
       X[i] = 0
     end
-  end	
+  end
 	X #array returned
 end
 
@@ -190,9 +190,9 @@ function min_wrt_x(X,T,P,Z,Pars,DATA,Mats)
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
 			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho)*Mats.Gammatdf #ORIGINAL PAPER VERSION
-		
+
 			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm
-			vdm[:,l] = Q\B[:,l] 
+			vdm[:,l] = Q\B[:,l]
 	end
 	#toc()
 	X.vdm=sdata(vdm) #sdata() pulls the underlying shared array
@@ -201,7 +201,7 @@ function min_wrt_x(X,T,P,Z,Pars,DATA,Mats)
 
 
 #	QC = T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho)*Mats.Gammatdf
-	
+
 #  @parallel for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 #			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
 #			Q = Mats.HT * W_slice * Mats.H + QC
@@ -213,12 +213,12 @@ function min_wrt_x(X,T,P,Z,Pars,DATA,Mats)
 #			UP_slice = 	vec(P.U[:,l])
 #			Z_slice = 	vec(Z.vdm[:,l])
 #			UZ_slice = 	vec(Z.U[:,l])
-			
+
 #			Bl = Mats.HT*W_slice*L_slice + DsT_slice.*(UT_slice+T.rho*T_slice)+UP_slice+P.rho*P_slice+UZ_slice+Z.rho*Z_slice
-#			vdm[:,l] = Q\Bl 
+#			vdm[:,l] = Q\Bl
 #	end
 #	X.vdm=sdata(vdm) #sdata() pulls the underlying shared array
-	
+
 #	X.vdm
 end
 
@@ -235,28 +235,29 @@ end
 #=--------------------------------------------------=#
 #================= Update Penalty ===================#
 #=--------------------------------------------------=#
-function Pen_update(X,Y,P)
-	scale=4.5
-	S = Y.rho*(Y.vdm-Y.vdm_previous)
-	R = X.vdm-Y.vdm
+#function Pen_update(X,Y,P)
+#	scale=4.5
+#	#println(size(Y.vdm),"-",size(Y.vdm_previous))
+#	S = Y.rho*(Y.vdm-Y.vdm_previous)
+#	R = X.vdm-Y.vdm
 #	tau_prim_previous = Y.tau_prim
 #  Y.tau_prim = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*(maximum([ell2norm(X.vdm),ell2norm(Y.vdm)]))
 #	tau_dual_previous = Y.tau_dual
 #  Y.tau_dual = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*ell2norm(Y.U)
-#	eta = ell2norm(R)*Y.tau_dual / (ell2norm(S)*Y.tau_prim)		
+#	eta = ell2norm(R)*Y.tau_dual / (ell2norm(S)*Y.tau_prim)
 	#eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
 #	phi_previous = Y.phi
 #	Y.phi = max(ell2norm(R/Y.tau_prim),ell2norm(S)/Y.tau_dual)
-	if ell2norm(R) > scale*ell2norm(S)
-		Y.rho=Y.rho*P.tau
-	elseif ell2norm(R)*scale < ell2norm(S)
-		Y.rho=Y.rho/P.tau
-	else
+#	if ell2norm(R) > scale*ell2norm(S)
+#		Y.rho=Y.rho*P.tau
+#	elseif ell2norm(R)*scale < ell2norm(S)
+#		Y.rho=Y.rho/P.tau
+#	else
 		#nothin.
-	end
-	Y
-end
-"""
+#	end
+#	Y
+#end
+
 
 #=--------------------------------------------------=#
 #================= Update Penalty ===================#
@@ -268,17 +269,17 @@ function Pen_update(X,Y,P)
   Y.tau_prim = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*(maximum([ell2norm(X.vdm),ell2norm(Y.vdm)]))
 	tau_dual_previous = Y.tau_dual
   Y.tau_dual = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*ell2norm(Y.U)
-	eta = ell2norm(R)*Y.tau_dual / (ell2norm(S)*Y.tau_prim)		
-	#eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
+	eta = ell2norm(R)*Y.tau_dual / (ell2norm(S)*Y.tau_prim)
+#	eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
 	phi_previous = Y.phi
 	Y.phi = max(ell2norm(R/Y.tau_prim),ell2norm(S)/Y.tau_dual)
 	if (1.0/P.tau[1] <= eta[1]) && (eta[1] <= P.tau[1]) || (Y.phi[1] < P.sigma[1]*phi_previous[1])
-		#NOTHING HAPPENS IN HERE	
+		#NOTHING HAPPENS IN HERE
 	elseif eta < (1.0/P.tau)
 		Y.rho_max = Y.rho
 		if Y.rho_min > 0.0
 			Y.rho = sqrt(Y.rho_min*Y.rho_max)
-		else Y.rho = Y.rho_max/P.G 
+		else Y.rho = Y.rho_max/P.G
 		end
 	elseif eta > P.tau
 		Y.rho_min = Y.rho
@@ -289,7 +290,7 @@ function Pen_update(X,Y,P)
 	end
 	Y
 end
-"""
+
 
 #=--------------------------------------------------=#
 #============= Generate ADMM Variable ===============#
@@ -363,19 +364,19 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 	if vdmact != "None"
 		vdm_path = vdmact
 		vdm_act = readcsv(vdm_path)
-		init_vdm =vdm_act	
+		init_vdm =vdm_act
 	else
 			init_vdm=ones(Pars.num_tdf_times,DATA.num_lines)*initial_psi
 	end
 
 	#println("!!!!!",sum(init_vdm))
 	#init_vdm = Tik_Init(1.0,Mats,DATA)
-	#init_vdm =vdm_act	
+	#init_vdm =vdm_act
 
-	init_vdm=randn(size(init_vdm))
-	
+	init_vdm=randn(size(init_vdm)) #Start from Random
+
 	X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	X.vdm = init_vdm	
+	X.vdm = init_vdm
 	Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	Z.vdm = init_vdm
 	T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
@@ -385,7 +386,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 	P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	#println("Initial J: ", J(X,P,T,V,DATA,Mats,Pars))
 	#	P.vdm = pos_prox_op(init_vdm)
-	#Z.rho=1.0		
+	#Z.rho=1.0
 	#T.rho=5.0
 	#V.rho=2.0
 	#P.rho=1.0
@@ -413,7 +414,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		X.vdm = min_wrt_x(X,T,P,Z,Pars,DATA,Mats)
 		#X.vdm = pos_prox_op(X.vdm)
 	#Step 2: UPDATE REGULARIZATION TERMS
-		P.vdm_squiggle = X.vdm - P.U/P.rho	
+		P.vdm_squiggle = X.vdm - P.U/P.rho
 		P.vdm_previous = P.vdm
 		P.vdm = pos_prox_op(P.vdm_squiggle)
 
@@ -421,38 +422,39 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		T.vdm_previous = T.vdm
 		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Pars.mu_temp,T.rho)
 
-		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
-		V.vdm_previous = V.vdm
-		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
-	
-		Rinv = inv(V.rho*Mats.Dv*Mats.DvT+Z.rho*Mats.Gammaspe)
+		#V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
+		#V.vdm_previous = V.vdm
+		#V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
+
+		#Rinv = inv(V.rho*Mats.Dv*Mats.DvT+Z.rho*Mats.Gammaspe)
 #		C = (V.U+V.rho*V.vdm)*Mats.DvT+Z.U+(Z.rho*X.vdm)
 #		C = (-V.U+V.rho*V.vdm)*Mats.DvT-Z.U+(Z.rho*X.vdm)
-		C = (V.U+V.rho*V.vdm)*Mats.DvT-Z.U+(Z.rho*X.vdm)	#ORIGINAL PAPER VERSION
+		#C = (V.U+V.rho*V.vdm)*Mats.DvT-Z.U+(Z.rho*X.vdm)	#ORIGINAL PAPER VERSION
 		Z.vdm_previous = Z.vdm
-		Z.vdm = 	C*Rinv
+		#Z.vdm = 	C*Rinv
 		#Z.vdm = C/(V.rho+Z.rho)
-	#Step 4: UPDATE LAGRANGE MULTIPLIERS	
+		Z.vdm = X.vdm-(Z.U/Z.rho)	#Z regularization removed.
+	#Step 4: UPDATE LAGRANGE MULTIPLIERS
 		T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
-		V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
+		#V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
 		P.U = LG_update(P.U,P.vdm,X.vdm,P.rho,Pars.alpha)
 		Z.U = LG_update(Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha)
-		
-  	if Pars.it == 2 
+
+  	if Pars.it == 2
 			Pars.G = 1.5
 		end
 	#Step 5: Update Penalty Parameters
 #		Z = Pen_update(X,Z,Pars)
-		Z.rho=1.0
+		Z.rho=200.0
 #		T = Pen_update(X,T,Pars)
-		T.rho=5.0
+		T.rho=2000.0 #5.0
 #		V = Pen_update(X,V,Pars)
-		V.rho=2.0
+		#V.rho=2.0
 #		P = Pen_update(X,P,Pars)
-		P.rho=1.0
+		P.rho=400.0
 	#Step 6: Check for Convergence
 		Pars.it = Pars.it+1
-		
+
 		true_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
 		chiprev = Pars.chi2
 		Pars.chi2= true_chi2
@@ -466,28 +468,29 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		Jstring=@sprintf "\tJ: %0.3f" J(X,P,T,V,DATA,Mats,Pars)
 		L2xstring=@sprintf "\tL2x: %0.0f" regX(X,Pars)
 		L1Tstring=@sprintf "\tL1T: %0.1f" regT(T,Pars)
-		L1Vstring=@sprintf "\tL1V: %0.1f" regV(V,Pars)
+		#L1Vstring=@sprintf "\tL1V: %0.1f" regV(V,Pars)
 		chi2xstring=@sprintf "\tChi2x: %0.3f" Pars.chi2
 		chi2zstring=@sprintf "\tChi2z: %0.3f" chiz
-		sstring=@sprintf "\ts: %0.3f" ell2norm(X.rho*(X.vdm-X.vdm_previous))	
-		
-		
+		sstring=@sprintf "\ts: %0.3f" ell2norm(X.rho*(X.vdm-X.vdm_previous))
+
+
 		rastring=@sprintf "\trP: %0.1f" ell2norm(P.vdm-X.vdm)
 		rbstring=@sprintf "\trZ: %0.1f" ell2norm(Z.vdm-X.vdm)
-		rcstring=@sprintf "\trV: %0.1f" ell2norm(V.vdm-Z.vdm*Mats.Dv)
+		#rcstring=@sprintf "\trV: %0.1f" ell2norm(V.vdm-Z.vdm*Mats.Dv)
 		rdstring=@sprintf "\trT: %0.1f" ell2norm(T.vdm-Mats.Ds*X.vdm)
-		
+
 		rhozstring=@sprintf "\tZro: %0.1f" Z.rho
 		rhopstring=@sprintf "\tPro: %0.1f" P.rho
 		rhotstring=@sprintf "\tTro: %0.1f" T.rho
-		rhovstring=@sprintf "\tVro: %0.1f" V.rho
+		#rhovstring=@sprintf "\tVro: %0.1f" V.rho
 
 
 
 
 
 
-		println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,L1Vstring,chi2xstring,sstring,rastring, rbstring,rcstring,rdstring,rhozstring,rhopstring,rhotstring,rhovstring)
+		#println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,L1Vstring,chi2xstring,sstring,rastring, rbstring,rcstring,rdstring,rhozstring,rhopstring,rhotstring,rhovstring)
+		println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,chi2xstring,sstring,rastring, rbstring,rdstring)
 		#if sqdiff < diffbest
 			#diffbest = sqdiff
 			#difbit = Pars.it
@@ -497,9 +500,9 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 			#println("CONVERGED")
 		end
 		if Plot_A == "True" && (Pars.it%50 == 3)
-			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",cmap="Reds",vmin=0,vmax=2.0,interpolation="None")
+			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",cmap="Reds",interpolation="None")
 			draw()
-		end		
+		end
   end
 	if Plot_A == "True"
 		ioff()
@@ -510,7 +513,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		title("Final Reconstruction")
 		set_cmap("YlOrRd")
 		subplot(221)
-		#figure("Z")	
+		#figure("Z")
 		imshow((Z.vdm),aspect="auto",origin="lower",interpolation="None")
 		title("Z")
 		colorbar()
@@ -530,6 +533,9 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		title("V")
 		colorbar()
 		show()
+		writecsv("UnitTests/Ds.csv",Mats.Ds)
+		writecsv("UnitTests/T.csv",T.vdm)
+		writecsv("UnitTests/X.csv",T.vdm)
 	end
 	X,Pars
 end
@@ -570,7 +576,8 @@ end
 #================== THE FUNCTION ====================#
 #=--------------------------------------------------=#
 function J(X,P,T,V,DATA,Mats,Pars)
-	0.5*(Pars.chi2*DATA.num_spectra_samples*DATA.num_lines)+Pars.mu_smoo*0.5*ell2norm(X.vdm).^2+Pars.mu_spec*ell1norm(T.vdm)+Pars.mu_temp*ell1norm(V.vdm)
+#	0.5*(Pars.chi2*DATA.num_spectra_samples*DATA.num_lines)+Pars.mu_smoo*0.5*ell2norm(X.vdm).^2+Pars.mu_temp*ell1norm(T.vdm)+Pars.mu_spec*ell1norm(V.vdm)
+		0.5*(Pars.chi2*DATA.num_spectra_samples*DATA.num_lines)+Pars.mu_smoo*0.5*ell2norm(X.vdm).^2+Pars.mu_temp*ell1norm(T.vdm)
 end
 
 function regX(X,Pars)
@@ -578,9 +585,9 @@ function regX(X,Pars)
 end
 
 function regT(T,Pars)
-	Pars.mu_spec*ell1norm(T.vdm)
+	Pars.mu_temp*ell1norm(T.vdm)
 end
 
 function regV(V,Pars)
-	Pars.mu_temp*ell1norm(V.vdm)
+	Pars.mu_spec*ell1norm(V.vdm)
 end

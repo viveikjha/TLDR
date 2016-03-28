@@ -28,7 +28,7 @@ function Import_DataN(path="data/",waves="rvm_wavelengths.csv",spectra="rvm_flux
 	println("Read: ",spectrapath, " size: ",size(Data_Arrs.L))
 	Data_Arrs.num_lines = size(Data_Arrs.L,2)                  			#NUMBER OF SPECTRAL LINES
 #	Data_Arrs.num_lines = size(Data_Arrs.L,1)                  			#NUMBER OF SPECTRAL LINES
-	
+
 	spectra_error_path = string(path,spectra_error_filename)
 	Data_Arrs.EL = (readcsv(spectra_error_path))'            			#SPECTRAL FLUX ERRORS
 	println("Read: ",spectra_error_path, " size: ",size(Data_Arrs.EL))
@@ -48,11 +48,10 @@ function Import_DataN(path="data/",waves="rvm_wavelengths.csv",spectra="rvm_flux
 	Data_Arrs.continuum_flux = continuum_array[:,2]*continuum_scale
 	Data_Arrs.continuum_error_flux = continuum_array[:,3]*continuum_scale
 	Data_Arrs.num_continuum_dates = length(Data_Arrs.continuum_dates)
-	
+
 	println("Import Summary:")
 	println( "		Wavelengths: ", length(Data_Arrs.wavelength))
 	println( "		Spectra: ", size(Data_Arrs.L))
 	println( "		Continuum: ", size(Data_Arrs.continuum_flux))
 	Data_Arrs
 end
-
