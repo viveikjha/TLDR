@@ -222,6 +222,13 @@ function min_wrt_x(X,T,P,Z,Pars,DATA,Mats)
 #	X.vdm
 end
 
+function min_wrt_z(X,V,Z,Pars,DATA,Mats)
+  	Rinv = inv(V.rho*Mats.Dv*Mats.DvT+Z.rho*Mats.Gammaspe)
+    C = (V.U+V.rho*V.vdm)*Mats.DvT-Z.U+(Z.rho*X.vdm)	#ORIGINAL PAPER VERSION
+    Z.vdm = 	C*Rinv
+end
+
+
 #=--------------------------------------------------=#
 #=============== Update Multipliers =================#
 #=--------------------------------------------------=#
@@ -422,21 +429,18 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		T.vdm_previous = T.vdm
 		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Pars.mu_temp,T.rho)
 
-		#V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
-		#V.vdm_previous = V.vdm
-		#V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
+		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
+		V.vdm_previous = V.vdm
+		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
 
-		#Rinv = inv(V.rho*Mats.Dv*Mats.DvT+Z.rho*Mats.Gammaspe)
-#		C = (V.U+V.rho*V.vdm)*Mats.DvT+Z.U+(Z.rho*X.vdm)
-#		C = (-V.U+V.rho*V.vdm)*Mats.DvT-Z.U+(Z.rho*X.vdm)
-		#C = (V.U+V.rho*V.vdm)*Mats.DvT-Z.U+(Z.rho*X.vdm)	#ORIGINAL PAPER VERSION
 		Z.vdm_previous = Z.vdm
-		#Z.vdm = 	C*Rinv
-		#Z.vdm = C/(V.rho+Z.rho)
-		Z.vdm = X.vdm-(Z.U/Z.rho)	#Z regularization removed.
+		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats)
+
+
+
 	#Step 4: UPDATE LAGRANGE MULTIPLIERS
 		T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
-		#V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
+		V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
 		P.U = LG_update(P.U,P.vdm,X.vdm,P.rho,Pars.alpha)
 		Z.U = LG_update(Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha)
 
@@ -449,9 +453,9 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 #		T = Pen_update(X,T,Pars)
 		T.rho=2000.0 #5.0
 #		V = Pen_update(X,V,Pars)
-		#V.rho=2.0
+		V.rho=2000.0
 #		P = Pen_update(X,P,Pars)
-		P.rho=400.0
+		P.rho=2000.0
 	#Step 6: Check for Convergence
 		Pars.it = Pars.it+1
 
@@ -468,7 +472,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		Jstring=@sprintf "\tJ: %0.3f" J(X,P,T,V,DATA,Mats,Pars)
 		L2xstring=@sprintf "\tL2x: %0.0f" regX(X,Pars)
 		L1Tstring=@sprintf "\tL1T: %0.1f" regT(T,Pars)
-		#L1Vstring=@sprintf "\tL1V: %0.1f" regV(V,Pars)
+		L1Vstring=@sprintf "\tL1V: %0.1f" regV(V,Pars)
 		chi2xstring=@sprintf "\tChi2x: %0.3f" Pars.chi2
 		chi2zstring=@sprintf "\tChi2z: %0.3f" chiz
 		sstring=@sprintf "\ts: %0.3f" ell2norm(X.rho*(X.vdm-X.vdm_previous))
@@ -476,21 +480,21 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 
 		rastring=@sprintf "\trP: %0.1f" ell2norm(P.vdm-X.vdm)
 		rbstring=@sprintf "\trZ: %0.1f" ell2norm(Z.vdm-X.vdm)
-		#rcstring=@sprintf "\trV: %0.1f" ell2norm(V.vdm-Z.vdm*Mats.Dv)
+		rcstring=@sprintf "\trV: %0.1f" ell2norm(V.vdm-Z.vdm*Mats.Dv)
 		rdstring=@sprintf "\trT: %0.1f" ell2norm(T.vdm-Mats.Ds*X.vdm)
 
 		rhozstring=@sprintf "\tZro: %0.1f" Z.rho
 		rhopstring=@sprintf "\tPro: %0.1f" P.rho
 		rhotstring=@sprintf "\tTro: %0.1f" T.rho
-		#rhovstring=@sprintf "\tVro: %0.1f" V.rho
+		rhovstring=@sprintf "\tVro: %0.1f" V.rho
 
 
 
 
 
 
-		#println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,L1Vstring,chi2xstring,sstring,rastring, rbstring,rcstring,rdstring,rhozstring,rhopstring,rhotstring,rhovstring)
-		println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,chi2xstring,sstring,rastring, rbstring,rdstring)
+		println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,L1Vstring,chi2xstring,sstring,rastring, rbstring,rcstring,rdstring,rhozstring,rhopstring,rhotstring,rhovstring)
+		#println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,chi2xstring,sstring,rastring, rbstring,rdstring)
 		#if sqdiff < diffbest
 			#diffbest = sqdiff
 			#difbit = Pars.it
@@ -499,7 +503,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 			#converged = 1
 			#println("CONVERGED")
 		end
-		if Plot_A == "True" && (Pars.it%50 == 3)
+		if Plot_A == "True" && (Pars.it%20 == 3)
 			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",cmap="Reds",interpolation="None")
 			draw()
 		end

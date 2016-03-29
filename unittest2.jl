@@ -37,8 +37,8 @@ println("For Vertical Stripe, ", total_lit*ntimes, " pixels lit.")
 #Initialize ADMM Parameters
 Pars = init_Params()
 																								#Initial Penalty Parameters
-Pars.mu_spec = 0.10#1.0															#Spectral Regularization Weight
-Pars.mu_temp = 1.0#0.5															#Temporal Regularization Weight
+Pars.mu_spec = 5.0#1.0															#Spectral Regularization Weight
+Pars.mu_temp = 5.0#0.5															#Temporal Regularization Weight
 Pars.mu_smoo = 10.0#0.001															#Smoothing Regularization Weight (TIKHONOV)1
 Pars.nits=400
 max_delay=50
