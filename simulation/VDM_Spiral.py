@@ -6,12 +6,12 @@ def pol2cart(rho, phi):
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
     return(x, y)
-    
+
 def spiral(phi,A,B,N):
 	#print phi, " ", B*np.tan(phi/(2.0*N))
 	r = A*1.0/(np.log(B*np.tan(phi/(2.0*N))))
 	return r
-weight = 1.0	
+weight = 1.0
 nps = 500
 phi = np.linspace(0.2,8.0*np.pi/4.0,nps)
 r = np.array([])
@@ -157,14 +157,14 @@ for j in range(0,len(LOSvel)): #ind
 		for n in range(0,pixlen): #T
 			if (LOSvel[j] > pixbinV[n]) and (LOSvel[j] <= pixbinV[n+1]) and (delay[j] > pixbinT[m]) and (delay[j] <=pixbinT[m+1]):
 				if m == 0 and n == 0:
-					c+=1		
+					c+=1
 				Fim[m,n] = Fim[m,n]+RF
 				pts = pts+1
 print c
 print "Max Signal: ", np.max(Fim)
 
 
-		
+
 ax = plt.subplot2grid((3,1),(2,0),colspan=1)
 ax.imshow((Fim),cmap='Reds',origin='lower',extent=[min(LOSvel),max(LOSvel),0,12],aspect='auto')
 plt.minorticks_on()
@@ -178,11 +178,11 @@ plt.tight_layout()
 #plt.savefig('disk.png', format='png')
 plt.show()
 
-Ha =6563.0 
+Ha =6563.0
 sol = 299792.458 #km/s
 #H-Alpha:
 DL_a = Ha*LOSvel/sol
-newl_a = Ha+DL_a 
+newl_a = Ha+DL_a
 wavelengths = newl_a
 
 print "min: ", min(newl_a)," max: ", max(newl_a)
@@ -191,13 +191,13 @@ plt.imshow(np.log(Fim), origin="lower", extent=[min(newl_a),max(newl_a),0,12],as
 plt.show()
 
 
-np.savetxt('LOSvel.csv',LOSvel,delimiter=',')	
-np.savetxt('Fim.csv',(Fim/np.max(Fim)),delimiter=',')	
-np.savetxt('X.csv',X,delimiter=',')	
-np.savetxt('Y.csv',Y,delimiter=',')	
-np.savetxt('radii.csv',radii,delimiter=',')	
-np.savetxt('delay.csv',delay,delimiter=',')	
-np.savetxt('angle.csv',angle,delimiter=',')	
+np.savetxt('LOSvel.csv',LOSvel,delimiter=',')
+np.savetxt('Fim.csv',(Fim/np.max(Fim)),delimiter=',')
+np.savetxt('X.csv',X,delimiter=',')
+np.savetxt('Y.csv',Y,delimiter=',')
+#np.savetxt('radii.csv',radii,delimiter=',')
+#np.savetxt('delay.csv',delay,delimiter=',')
+#np.savetxt('angle.csv',angle,delimiter=',')	
 np.savetxt('new_wavelengths.csv',newl_a,delimiter=',')
 np.savetxt('simulated_vdm.csv',Fim,delimiter=',')
 

@@ -537,9 +537,10 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		title("V")
 		colorbar()
 		show()
-		writecsv("UnitTests/Ds.csv",Mats.Ds)
-		writecsv("UnitTests/T.csv",T.vdm)
-		writecsv("UnitTests/X.csv",T.vdm)
+		#writecsv("UnitTests/Ds.csv",Mats.Ds)
+		#writecsv("UnitTests/T.csv",T.vdm)
+		#writecsv("UnitTests/X.csv",T.vdm)
+		#savefig("Spiral_rec.png")
 	end
 	X,Pars
 end

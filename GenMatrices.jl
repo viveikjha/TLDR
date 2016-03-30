@@ -41,15 +41,15 @@ function Gen_Mats(DATA,Params)
 
 	Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
 	for i in 1:Params.num_tdf_times
-		if i == 1  
+		if i == 1
 			Ds[i,i]=-1
 			Ds[i,i+1]=1
 		elseif i == Params.num_tdf_times
 			Ds[i,i] = -1
 			Ds[i,i-1]= 1
-		else		
+		else
 			Ds[i,i+1]=-0.5
-			Ds[i,i-1]= 0.5	
+			Ds[i,i-1]= 0.5
 		end
 	end
 	s=size(Ds)
@@ -74,15 +74,15 @@ function Gen_Mats(DATA,Params)
 
 	Dv = zeros(DATA.num_lines,DATA.num_lines)
 	for i in 1:DATA.num_lines
-		if i == 1  
+		if i == 1
 			Dv[i,i]=-1
 			Dv[i,i+1]=1
 		elseif i == DATA.num_lines
 			Dv[i,i] = -1
 			Dv[i,i-1]= 1
-		else		
+		else
 			Dv[i,i+1]=-0.5
-			Dv[i,i-1]= 0.5	
+			Dv[i,i-1]= 0.5
 		end
 	end
 	Dv=Dv'
@@ -95,7 +95,7 @@ function Gen_Mats(DATA,Params)
 	#=    PRECOMPUTING TIKHONOV MATRICES     =#
 	num_spectra_dates=size(DATA.spectra_dates)[1]
 	W = zeros((DATA.num_lines,size(DATA.L)[1],size(DATA.L)[1]))
-#	println("AT W Generation: ", size(W))
+	println("AT W Generation: ", size(W))
 	for lam in collect(1:DATA.num_lines)
 	  T = eye(num_spectra_dates)
 	  for i in collect(1:num_spectra_dates)
@@ -111,6 +111,3 @@ function Gen_Mats(DATA,Params)
 	Mat.GammaspeT = Mat.Gammaspe'
 	Mat #Return Data Structure
 end
-
-
-	
