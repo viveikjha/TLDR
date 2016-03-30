@@ -419,7 +419,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		X.vdm_previous = X.vdm
 	#Step 1: MINIMIZATION W.R.T. X
 		X.vdm = min_wrt_x(X,T,P,Z,Pars,DATA,Mats)
-		#X.vdm = pos_prox_op(X.vdm)
+
 	#Step 2: UPDATE REGULARIZATION TERMS
 		P.vdm_squiggle = X.vdm - P.U/P.rho
 		P.vdm_previous = P.vdm
@@ -456,6 +456,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		V.rho=2000.0
 #		P = Pen_update(X,P,Pars)
 		P.rho=2000.0
+
 	#Step 6: Check for Convergence
 		Pars.it = Pars.it+1
 
@@ -463,12 +464,11 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		chiprev = Pars.chi2
 		Pars.chi2= true_chi2
 
+
+
+		#Reporting
 		chiz = Chi2(Model((Z.vdm),Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
 
-		#sqdiff = sum((X.vdm-vdm_act).^2)
-		#println("Iteration: ",Pars.it-1, " Chi2: ", chi2, " SQDiff: ", sqdiff)
-		#println(V.vdm[1:20])
-	#	println("It: ",Pars.it-1, "\tJ:", J(X,P,T,V,DATA,Mats,Pars),"\t L2x: ",regX(X,Pars),"\tL1T: ",regT(T,Pars),"\tL1V: ",regV(V,Pars) ,"\tChi2x: ",round(Pars.chi2,3), "\tChi2Z: ",round(chiz,3), "\ts: ",round(ell2norm(X.rho*(X.vdm-X.vdm_previous)),1), "\tr: ",round(ell2norm(X.vdm-Z.vdm),1), "\tZ.rho: ",round(Z.rho,1), "\tP.rho: ",round(P.rho,1), "\tT.rho: ",round(T.rho,1), "\tV.rho: ",round(V.rho,1))
 		Jstring=@sprintf "\tJ: %0.3f" J(X,P,T,V,DATA,Mats,Pars)
 		L2xstring=@sprintf "\tL2x: %0.0f" regX(X,Pars)
 		L1Tstring=@sprintf "\tL1T: %0.1f" regT(T,Pars)
@@ -503,6 +503,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 			#converged = 1
 			#println("CONVERGED")
 		end
+		#Plotting
 		if Plot_A == "True" && (Pars.it%20 == 3)
 			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",cmap="Reds",interpolation="None")
 			draw()
@@ -517,22 +518,18 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		title("Final Reconstruction")
 		set_cmap("YlOrRd")
 		subplot(221)
-		#figure("Z")
 		imshow((Z.vdm),aspect="auto",origin="lower",interpolation="None")
 		title("Z")
 		colorbar()
 		subplot(222)
-		#figure("X")
 		imshow((X.vdm),aspect="auto",origin="lower",interpolation="None")
 		title("X")
 		colorbar()
 		subplot(223)
-		#figure("T")
 		imshow((T.vdm),aspect="auto",origin="lower",interpolation="None")
 		title("T")
 		colorbar()
 		subplot(224)
-		#figure("V")
 		imshow((V.vdm),aspect="auto",origin="lower",interpolation="None")
 		title("V")
 		colorbar()
@@ -581,8 +578,8 @@ end
 #================== THE FUNCTION ====================#
 #=--------------------------------------------------=#
 function J(X,P,T,V,DATA,Mats,Pars)
-#	0.5*(Pars.chi2*DATA.num_spectra_samples*DATA.num_lines)+Pars.mu_smoo*0.5*ell2norm(X.vdm).^2+Pars.mu_temp*ell1norm(T.vdm)+Pars.mu_spec*ell1norm(V.vdm)
-		0.5*(Pars.chi2*DATA.num_spectra_samples*DATA.num_lines)+Pars.mu_smoo*0.5*ell2norm(X.vdm).^2+Pars.mu_temp*ell1norm(T.vdm)
+	0.5*(Pars.chi2*DATA.num_spectra_samples*DATA.num_lines)+Pars.mu_smoo*0.5*ell2norm(X.vdm).^2+Pars.mu_temp*ell1norm(T.vdm)+Pars.mu_spec*ell1norm(V.vdm)
+#	0.5*(Pars.chi2*DATA.num_spectra_samples*DATA.num_lines)+Pars.mu_smoo*0.5*ell2norm(X.vdm).^2+Pars.mu_temp*ell1norm(T.vdm)
 end
 
 function regX(X,Pars)
