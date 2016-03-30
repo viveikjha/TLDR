@@ -20,17 +20,18 @@ type Params
 	num_tdf_times::Int																			#5
 	initial_psi::Real																				#6
 	mu_smoo::Real		#Tik Smoothing Weight										#7
-	mu_spec::Real		#Spectral Reg Weight										#8
-	mu_temp::Real		#Temporal Reg Weight										#9
-	eps_abs::Real																						#10
-	eps_rel::Real																						#11
-	sigma::Real																							#12
-	G::Real																									#13
-	alpha::Real																							#14
-	rho0::Real																							#15
-	chi2::Real																							#16
-	tdf_times::Array{Float64}																#17
-	tdf_values::Array{Float64}															#18
+	mu_l1::Real			#Ell1 Reg weight												#8
+	mu_spec::Real		#Spectral Reg Weight										#9
+	mu_temp::Real		#Temporal Reg Weight										#10
+	eps_abs::Real																						#11
+	eps_rel::Real																						#12
+	sigma::Real																							#13
+	G::Real																									#14
+	alpha::Real																							#15
+	rho0::Real																							#16
+	chi2::Real																							#17
+	tdf_times::Array{Float64}																#18
+	tdf_values::Array{Float64}															#19
 end
 
 type Data
@@ -38,14 +39,14 @@ type Data
 	L::Array{Float64}
 	EL::Array{Float64}
 	num_lines::Int
-	num_spectra_samples::Int	
-	spectra_dates::Array{Float64}	
+	num_spectra_samples::Int
+	spectra_dates::Array{Float64}
 	continuum_dates::Array{Float64}
 	continuum_flux::Array{Float64}
 	continuum_error_flux::Array{Float64}
 	num_continuum_dates::Int
 end
-	
+
 type Matrices_S
 	H::Array{Float64}
 	HE::Array{Float64}
@@ -68,8 +69,7 @@ end
 function init_Params()
 #	Params(0,0 ,0.0,0  ,0 ,0.0,0.0,0.0,0.0,0.0,0.0,0.0 ,0   ,0.0,0.0 ,Inf,[],[])
 #  Params(2,50,1.2,0.0,50,0.1,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((max_delay-1.0)/(Pars.num_tdf_times-1)):max_delay),zeros(Pars.num_tdf_times))
-  Params(2,50,1.2,0.0,50,0.1,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50))
-
+  Params(2,50,1.2,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50))
 end
 
 function init_Data()
@@ -79,4 +79,3 @@ end
 function init_Mats()
 	Matrices_S([],[],[],[],[],[],[],[],[],[],[],[])
 end
-

@@ -180,7 +180,7 @@ end
 #=--------------------------------------------------=#
 #=============== Minimization wrt X =================#
 #=--------------------------------------------------=#
-function min_wrt_x(X,T,P,Z,Pars,DATA,Mats)
+function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 	#println("!")
 	s = size(X.vdm)
 	#println("size: ", s)
@@ -189,9 +189,9 @@ function min_wrt_x(X,T,P,Z,Pars,DATA,Mats)
 	#tic()
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
-			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho)*Mats.Gammatdf #ORIGINAL PAPER VERSION
+			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #ORIGINAL PAPER VERSION
 
-			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm
+			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm+N.U+N.rho*N.vdm
 			vdm[:,l] = Q\B[:,l]
 	end
 	#toc()
@@ -391,8 +391,10 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 	V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	V.vdm = init_vdm*Mats.Dv
 	P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	#println("Initial J: ", J(X,P,T,V,DATA,Mats,Pars))
-	#	P.vdm = pos_prox_op(init_vdm)
+	P.vdm = pos_prox_op(init_vdm)
+	N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	N.vdm = init_vdm
+
 	#Z.rho=1.0
 	#T.rho=5.0
 	#V.rho=2.0
@@ -412,13 +414,14 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 	V.U = Z.U
 	T.U = Z.U
 	P.U = Z.U
+	N.U = Z.U
 	Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)
 	B = zeros(Pars.num_tdf_times,DATA.num_lines)
 	converged = 0
 	while Pars.it <= Pars.nits && converged==0        #ADMM ITERATION LOOP
 		X.vdm_previous = X.vdm
 	#Step 1: MINIMIZATION W.R.T. X
-		X.vdm = min_wrt_x(X,T,P,Z,Pars,DATA,Mats)
+		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 
 	#Step 2: UPDATE REGULARIZATION TERMS
 		P.vdm_squiggle = X.vdm - P.U/P.rho
@@ -433,6 +436,10 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		V.vdm_previous = V.vdm
 		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
 
+		N.vdm_squiggle = N.vdm - N.U/N.rho
+		N.vdm_previous = N.vdm
+		N.vdm = ell1_prox_op(N.vdm,N.vdm_squiggle,Pars.mu_l1,N.rho)
+
 		Z.vdm_previous = Z.vdm
 		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats)
 
@@ -442,6 +449,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
 		V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
 		P.U = LG_update(P.U,P.vdm,X.vdm,P.rho,Pars.alpha)
+		N.U = LG_update(N.U,N.vdm,X.vdm,N.rho,Pars.alpha)
 		Z.U = LG_update(Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha)
 
   	if Pars.it == 2
@@ -456,6 +464,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		V.rho=2000.0
 #		P = Pen_update(X,P,Pars)
 		P.rho=2000.0
+		N.rho=1.0
 
 	#Step 6: Check for Convergence
 		Pars.it = Pars.it+1
@@ -482,18 +491,21 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		rbstring=@sprintf "\trZ: %0.1f" ell2norm(Z.vdm-X.vdm)
 		rcstring=@sprintf "\trV: %0.1f" ell2norm(V.vdm-Z.vdm*Mats.Dv)
 		rdstring=@sprintf "\trT: %0.1f" ell2norm(T.vdm-Mats.Ds*X.vdm)
+		restring=@sprintf "\trN: %0.1f" ell2norm(N.vdm-X.vdm)
 
 		rhozstring=@sprintf "\tZro: %0.1f" Z.rho
 		rhopstring=@sprintf "\tPro: %0.1f" P.rho
 		rhotstring=@sprintf "\tTro: %0.1f" T.rho
 		rhovstring=@sprintf "\tVro: %0.1f" V.rho
+		rhonstring=@sprintf "\tNro: %0.1f" N.rho
 
 
 
 
 
+		println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,L1Vstring,chi2xstring,sstring,rastring, rbstring,rcstring,rdstring,restring)
 
-		println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,L1Vstring,chi2xstring,sstring,rastring, rbstring,rcstring,rdstring,rhozstring,rhopstring,rhotstring,rhovstring)
+		#println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,L1Vstring,chi2xstring,sstring,rastring, rbstring,rcstring,rdstring,restring,rhozstring,rhopstring,rhotstring,rhovstring,rhonstring)
 		#println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,chi2xstring,sstring,rastring, rbstring,rdstring)
 		#if sqdiff < diffbest
 			#diffbest = sqdiff
