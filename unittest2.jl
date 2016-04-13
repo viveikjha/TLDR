@@ -24,7 +24,7 @@ total_lit=0
 for i in 1:ntimes
 	for j in 1:nlams
 		if i >= (ntimes/2)-(spread/2) && i<(ntimes/2)+spread/2 && j > ((nlams/2)-(spread/2)) && j<=((nlams/2)+(spread/2))
-			vdm_vert[i,j]=2.00/1000.0
+			vdm_vert[i,j]=2.00
 			total_lit+=1
 		end
 	end
@@ -37,11 +37,11 @@ println("For Box, ", total_lit, " pixels lit.")
 #Initialize ADMM Parameters
 Pars = init_Params()
 																								#Initial Penalty Parameters
-Pars.mu_spec = 0.01#1.0															#Spectral Regularization Weight
-Pars.mu_temp = 0.01#0.5															#Temporal Regularization Weight
-Pars.mu_smoo = 10000000.0#0.001														#Smoothing Regularization Weight (TIKHONOV)1
-Pars.mu_l1 = 0.0000001																		#Ell1 Smoothing Regularization Weight
-Pars.nits=100
+Pars.mu_smoo = 10.0														#Smoothing Regularization Weight (TIKHONOV)1
+Pars.mu_spec = 5.0															#Spectral Regularization Weight
+Pars.mu_temp = 5.0															#Temporal Regularization Weight
+Pars.mu_l1 = 5.0#0.0000001																		#Ell1 Smoothing Regularization Weight
+Pars.nits=400
 max_delay=50
 
 

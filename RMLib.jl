@@ -122,19 +122,30 @@ end
 #mu is the regularization weight
 #rho is the current hyperparameter
 function ell1_prox_op(X,XS,mu,rho)
-  for i in collect(1:length(X))
-    if abs(XS[i]) > mu/rho
-			if XS[i] >= mu/rho
-				X[i] = XS[i] - mu/rho
-			else
-				X[i] = XS[i]+mu/rho
-			end
-    else
+#  for i in collect(1:length(X))
+#    if abs(XS[i]) > mu/rho
+#			if XS[i] >= mu/rho
+#				X[i] = XS[i] - mu/rho
+#			else
+#				X[i] = XS[i]+mu/rho
+#			end
+#    else
 		#	println("!!!!!!!")
-      X[i] = 0
-    end
-  end
-	X #array returned
+#      X[i] = 0
+#    end
+#  end
+#	X #array returned
+	for i in collect(1:length(X))
+		Lam = mu/rho
+  	if XS[i] >= Lam
+			X[i] = XS[i] - Lam
+		elseif XS[i] <= -Lam
+			X[i] = XS[i] + Lam
+		else
+			X[i] = 0.0
+		end
+	end
+	X
 end
 
 
@@ -192,10 +203,10 @@ function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 	#tic()
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
-			#Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho+N.rho)*Mats.Gammatdf
-			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho)*Mats.Gammatdf
-			#B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm+N.U+N.rho*N.vdm
-			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm
+			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+			#Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho)*Mats.Gammatdf
+			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+			#B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm
 			vdm[:,l] = Q\B[:,l]
 	end
 	#toc()
@@ -441,7 +452,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		V.vdm_previous = V.vdm
 		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
 
-		N.vdm_squiggle = N.vdm - N.U/N.rho
+		N.vdm_squiggle = X.vdm - N.U/N.rho
 		N.vdm_previous = N.vdm
 		N.vdm = ell1_prox_op(N.vdm,N.vdm_squiggle,Pars.mu_l1,N.rho)
 
@@ -463,14 +474,14 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		end
 	#Step 5: Update Penalty Parameters
 		#Z = Pen_update(X,Z,Pars)
-		Z.rho=500000.0#2000.0
+		Z.rho=200.0#2000.0
 #		T = Pen_update(X,T,Pars)
-		T.rho=200000.0#2000.0 #5.0
+		T.rho=2000.0#2000.0 #5.0
 #		V = Pen_update(X,V,Pars)
-		V.rho=200000.0#2000.0
+		V.rho=2000.0#2000.0
 #		P = Pen_update(X,P,Pars)
-		P.rho=100000.0#2000.0
-		N.rho=200.0
+		P.rho=2000.0#2000.0
+		N.rho=2000.0
 
 	#Step 6: Check for Convergence
 		Pars.it = Pars.it+1
