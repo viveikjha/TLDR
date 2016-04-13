@@ -4,7 +4,7 @@ TLDR
 The Time Lag - Delay Reconstructing algorithm for reverberation mapping
 
 ##Installing Prerequisites
-The use of TLDR requires Julia, Python, and OIFITS for output files.
+The use of TLDR requires Julia with the PyPlot and FITS packages installed.
 
 Currently TLDR can only be obtained from the Git repository so you will need it.
 
