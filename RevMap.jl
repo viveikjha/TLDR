@@ -9,10 +9,12 @@ using PyPlot
 
 #Mode = 1 for synthdata Mode = 2 for real data!
 #mode = 3 for simulated data.
-mode = 2
-DATA = Import_Data(mode)
+#mode = 2
+#DATA = Import_Data(mode)
 println("---------2nd Import----------")
-#DATAN = Import_DataN("simulation/","new_wavelengths.csv","spectra_simulated.csv", "errspectra_simulated.csv","rvm_dates.csv","data/arp151.b.dat")
+DATA = Import_DataN("data/","rvm_wavelengths_trimmed.csv","rvm_fluxes_trimmed.csv", "rvm_errfluxes_trimmed.csv","data/rvm_dates.csv","data/arp151.b.dat")
+#DATA = Import_DataN("data/","rvm_wavelengths.csv","rvm_fluxes.csv", "rvm_errfluxes.csv","data/rvm_dates.csv","data/arp151.b.dat")
+
 
 
 
@@ -20,12 +22,13 @@ println("---------2nd Import----------")
 #Initialize ADMM Parameters
 Pars = init_Params()
 #Initial Penalty Parameters
-Pars.mu_spec = 5.0#1.0															#Spectral Regularization Weight
-Pars.mu_temp = 5.0#0.5															#Temporal Regularization Weight
-Pars.mu_smoo = 10.0#0.001														#Smoothing Regularization Weight (TIKHONOV)1
-Pars.mu_l1 = 1.0																		#Ell1 Smoothing Regularization Weight
-Pars.nits=400
+Pars.mu_spec = 1000.0#1.0															#Spectral Regularization Weight
+Pars.mu_temp = 1000.0#0.5															#Temporal Regularization Weight
+Pars.mu_smoo = 100000000.0#0.001														#Smoothing Regularization Weight (TIKHONOV)1
+Pars.mu_l1 = 0.001																		#Ell1 Smoothing Regularization Weight
+Pars.nits=800
 max_delay=50
+Pars.tau=2.0
 
 
 

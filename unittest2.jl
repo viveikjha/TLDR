@@ -24,24 +24,24 @@ total_lit=0
 for i in 1:ntimes
 	for j in 1:nlams
 		if i >= (ntimes/2)-(spread/2) && i<(ntimes/2)+spread/2 && j > ((nlams/2)-(spread/2)) && j<=((nlams/2)+(spread/2))
-			vdm_vert[i,j]=1.0
+			vdm_vert[i,j]=2.00/1000.0
 			total_lit+=1
 		end
 	end
 end
 writecsv("UnitTests/vdm_vert.csv",vdm_vert)
 println("Wrote vdm_vert.csv with dimensions: ", size(vdm_vert))
-println("For Vertical Stripe, ", total_lit*ntimes, " pixels lit.")
+println("For Box, ", total_lit, " pixels lit.")
 #Create VDM Horizontal Stripe
 
 #Initialize ADMM Parameters
 Pars = init_Params()
 																								#Initial Penalty Parameters
-Pars.mu_spec = 5.0#1.0															#Spectral Regularization Weight
-Pars.mu_temp = 5.0#0.5															#Temporal Regularization Weight
-Pars.mu_smoo = 10.0#0.001														#Smoothing Regularization Weight (TIKHONOV)1
-Pars.mu_l1 = 1.0																		#Ell1 Smoothing Regularization Weight
-Pars.nits=400
+Pars.mu_spec = 0.01#1.0															#Spectral Regularization Weight
+Pars.mu_temp = 0.01#0.5															#Temporal Regularization Weight
+Pars.mu_smoo = 10000000.0#0.001														#Smoothing Regularization Weight (TIKHONOV)1
+Pars.mu_l1 = 0.0000001																		#Ell1 Smoothing Regularization Weight
+Pars.nits=100
 max_delay=50
 
 
@@ -65,7 +65,7 @@ println("-----------")
 dims = size(Spectra_Vert)
 println("dimensions:", dims)
 #Create fake sigmas.
-sigma = 2.0
+sigma = 2.0/1000.0
 println("Using a sigma of: ",sigma)
 
 n = randn((dims))*sigma #GENERATE NOISE

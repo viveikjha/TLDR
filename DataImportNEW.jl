@@ -24,7 +24,7 @@ function Import_DataN(path="data/",waves="rvm_wavelengths.csv",spectra="rvm_flux
 	println("Read: ", wavelength_path, " size: ", size(Data_Arrs.wavelength))
 	spectrapath = string(path,spectra_filename)
 
-	Data_Arrs.L = (readcsv(spectrapath))'                      			#SPECTRAL FLUXES (L)
+	Data_Arrs.L = 1.0*(readcsv(spectrapath))'                      			#SPECTRAL FLUXES (L)
 	println("Read: ",spectrapath, " size: ",size(Data_Arrs.L))
 	Data_Arrs.num_lines = size(Data_Arrs.L,2)                  			#NUMBER OF SPECTRAL LINES
 #	Data_Arrs.num_lines = size(Data_Arrs.L,1)                  			#NUMBER OF SPECTRAL LINES
@@ -34,7 +34,7 @@ function Import_DataN(path="data/",waves="rvm_wavelengths.csv",spectra="rvm_flux
 	println("Read: ",spectra_error_path, " size: ",size(Data_Arrs.EL))
 
 
-	spectra_dates_path = spectra_dates_filename#string(path,spectra_dates_filename)
+	spectra_dates_path = spectra_dates_filename #string(path,spectra_dates_filename)
 	Data_Arrs.spectra_dates = readcsv(spectra_dates_path)           #SPECTRAL SAMPLING DATES
 	println("Read: ",spectra_dates_path, " size: ",size(Data_Arrs.spectra_dates))
 

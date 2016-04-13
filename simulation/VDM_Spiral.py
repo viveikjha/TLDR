@@ -49,10 +49,10 @@ delay =  r_n+(r_n*np.cos(phi_n))
 velocity =np.sqrt(G*M/r_n)
 LOSvel = velocity*np.cos((np.pi/2.0)-phi_n)
 
-fig = plt.figure(figsize=(14,6))
+fig = plt.figure(figsize=(4,12))
 
 #ax = fig.add_subplot(121)
-ax = plt.subplot2grid((1,2),(0,0),rowspan=1)
+ax = plt.subplot2grid((3,1),(0,0),rowspan=1)
 ax.set_title("BLR Geometry")
 col=LOSvel
 sizes = (delay/max(delay))*100.0
@@ -129,7 +129,7 @@ ax.set_xlim(xmin,xmax)
 
 
 #ax=fig.add_subplot(122)
-ax = plt.subplot2grid((1,2),(0,1),rowspan=2)
+ax = plt.subplot2grid((3,1),(0,1),rowspan=2)
 ax.set_title("Velocity Delay Map")
 ax.set_xlabel("L.O.S. Velocity (c)")
 ax.set_ylabel("Delay")
@@ -176,7 +176,8 @@ ax.set_xlabel("Binned L.O.S. Velocity (km/s)" )
 
 plt.tight_layout()
 #plt.savefig('disk.png', format='png')
-plt.show()
+plt.savefig("Spiral_Geometry.png")
+#plt.show()
 
 Ha =6563.0
 sol = 299792.458 #km/s
@@ -197,7 +198,7 @@ np.savetxt('X.csv',X,delimiter=',')
 np.savetxt('Y.csv',Y,delimiter=',')
 #np.savetxt('radii.csv',radii,delimiter=',')
 #np.savetxt('delay.csv',delay,delimiter=',')
-#np.savetxt('angle.csv',angle,delimiter=',')	
+#np.savetxt('angle.csv',angle,delimiter=',')
 np.savetxt('new_wavelengths.csv',newl_a,delimiter=',')
 np.savetxt('simulated_vdm.csv',Fim,delimiter=',')
 
