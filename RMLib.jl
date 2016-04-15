@@ -391,12 +391,12 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 			init_vdm=ones(Pars.num_tdf_times,DATA.num_lines)*initial_psi
 	end
 
-
-	#init_vdm = Tik_Init(1.0,Mats,DATA)
-	#init_vdm =vdm_act
+	Ini = inv(Mats.H'*Mats.H+Pars.mu_smoo^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
+	init_vdm =Ini.*(Ini.>0.0) #FILTER OUT NEGATIVE VALUES
+	imshow(init_vdm,aspect="auto",origin="lower")
 
 	#init_vdm=randn(size(init_vdm)) #Start from Random
-	init_vdm=0.0*randn(size(init_vdm)) #Start from Random
+	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 
 	X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	X.vdm = init_vdm
@@ -411,7 +411,12 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 	N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	N.vdm = init_vdm
 
-	Z.rho=1000000.0
+	Z.rho=1000.0
+	T.rho=1000.0
+	V.rho=1000.0
+	P.rho=1000.0
+	N.rho=1000.0
+
 	#T.rho=5.0
 	#V.rho=2.0
 	#P.rho=1.0
@@ -427,6 +432,8 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 	  #Z.U[:,p]=Mats.HT * squeeze(Mats.W[p,:,:],1) * ( vec(DATA.L[:,p])-Mats.H * vec(Z.vdm[:,p]))
 #		Z.U[:,p]=Mats.HT * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
 	end
+	println("INITIAL MULTIPLIERS: ",mean(Z.U))
+	Z.U=zeros(size(Z.U))
 	V.U = Z.U
 	T.U = Z.U
 	P.U = Z.U
@@ -466,7 +473,6 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
 		N.U = LG_update(N.U,N.vdm,X.vdm,N.rho,Pars.alpha)
 		P.U = LG_update(P.U,P.vdm,X.vdm,P.rho,Pars.alpha)
-
 		Z.U = LG_update(Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha)
 
   	if Pars.it == 2
@@ -474,14 +480,15 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 		end
 	#Step 5: Update Penalty Parameters
 		#Z = Pen_update(X,Z,Pars)
-		Z.rho=200.0#2000.0
+		flx_scale= 1.0
+		Z.rho=2000.0/flx_scale#2000.0
 #		T = Pen_update(X,T,Pars)
-		T.rho=2000.0#2000.0 #5.0
+		T.rho=2000.0/flx_scale#2000.0 #5.0
 #		V = Pen_update(X,V,Pars)
-		V.rho=2000.0#2000.0
+		V.rho=2000.0/flx_scale#2000.0
 #		P = Pen_update(X,P,Pars)
-		P.rho=2000.0#2000.0
-		N.rho=2000.0
+		P.rho=2000.0/flx_scale#2000.0
+		N.rho=2000.0/flx_scale
 
 	#Step 6: Check for Convergence
 		Pars.it = Pars.it+1
@@ -529,12 +536,12 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 			#diffbest = sqdiff
 			#difbit = Pars.it
 		#end
-		if abs(Pars.chi2 - chiprev) < (0.001)
+		if abs(Pars.chi2 - chiprev) < (0.000001)
 			#converged = 1
 			#println("CONVERGED")
 		end
 		#Plotting
-		if Plot_A == "True" && (Pars.it%2 == 0)
+		if Plot_A == "True" && (Pars.it%10 == 0)
 			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",cmap="Reds",interpolation="None")
 			draw()
 		end
@@ -577,15 +584,7 @@ function TLDR(DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
 end
 
 
-#=--------------------------------------------------=#
-#================== Initial VDM =====================#
-#=--------------------------------------------------=#
-function Tik_Init(beta,M,D)
-	gamma = eye(size(M.HT)[1])
-	W_slice = reshape(Mats.W[1,:,:],size(Mats.W[1,:,:])[2],size(Mats.W[1,:,:])[3])
-	x = inv(M.HT*W_slice*M.H+beta.*gamma)*M.HT*D.L
-	x
-end
+
 #=--------------------------------------------------=#
 #================== DATA REPORT =====================#
 #=--------------------------------------------------=#

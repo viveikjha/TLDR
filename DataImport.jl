@@ -21,7 +21,7 @@ function Import_Data(mode)
 		continuum_array_filename = "arp151.b.dat"
 		continuum_array_path =string(path,continuum_array_filename)
 		continuum_array = readdlm(continuum_array_path)
-	elseif mode == 3 
+	elseif mode == 3
 		path="simulation/"
 #		wavelength_filename = "rvm_wavelengths.csv"
 		wavelength_filename = "new_wavelengths.csv"
@@ -39,17 +39,18 @@ function Import_Data(mode)
 	Data_Arrs = init_Data()
 
 	#=IMPORTING FILES=#
+	scale=1000.0
 	#SPECTRA
 	wavelength_path = string(path,wavelength_filename)
 	Data_Arrs.wavelength = readcsv(wavelength_path)           			#List of measured wavelengths
 	spectrapath = string(path,spectra_filename)
-	Data_Arrs.L = (readcsv(spectrapath))'                      			#SPECTRAL FLUXES (L)
+	Data_Arrs.L = scale*(readcsv(spectrapath))'                      			#SPECTRAL FLUXES (L)
 	println("AT IMPORT: ",size(Data_Arrs.L))
 	Data_Arrs.num_lines = size(Data_Arrs.L,2)                  			#NUMBER OF SPECTRAL LINES
 #	Data_Arrs.num_lines = size(Data_Arrs.L,1)                  			#NUMBER OF SPECTRAL LINES
-	
+
 	spectra_error_path = string(path,spectra_error_filename)
-	Data_Arrs.EL = (readcsv(spectra_error_path))'            			#SPECTRAL FLUX ERRORS
+	Data_Arrs.EL = scale*(readcsv(spectra_error_path))'            			#SPECTRAL FLUX ERRORS
 	spectra_dates_path = string(path,spectra_dates_filename)
 	Data_Arrs.spectra_dates = readcsv(spectra_dates_path)           #SPECTRAL SAMPLING DATES
 	Data_Arrs.num_spectra_samples = length(Data_Arrs.spectra_dates) #NUMBER OF DATA POINTS IN SPECTRA
@@ -61,11 +62,10 @@ function Import_Data(mode)
 	Data_Arrs.continuum_flux = continuum_array[:,2]*continuum_scale
 	Data_Arrs.continuum_error_flux = continuum_array[:,3]*continuum_scale
 	Data_Arrs.num_continuum_dates = length(Data_Arrs.continuum_dates)
-	
+
 println("Imported Data Arrays:")
 println( "		Wavelengths: ", length(Data_Arrs.wavelength))
 println( "		Spectra: ", size(Data_Arrs.L))
 println( "		Continuum: ", size(Data_Arrs.continuum_flux))
 	Data_Arrs
 end
-

@@ -22,15 +22,25 @@ DATA = Import_DataN("data/","rvm_wavelengths_trimmed.csv","rvm_fluxes_trimmed.cs
 #Initialize ADMM Parameters
 Pars = init_Params()
 #Initial Penalty Parameters
-Pars.mu_spec = 1000.0#1.0															#Spectral Regularization Weight
-Pars.mu_temp = 1000.0#0.5															#Temporal Regularization Weight
-Pars.mu_smoo = 100000000.0#0.001														#Smoothing Regularization Weight (TIKHONOV)1
-Pars.mu_l1 = 0.001																		#Ell1 Smoothing Regularization Weight
-Pars.nits=800
+#flx_scale=1.0/100
+#Pars.mu_smoo = 10.0/flx_scale														#Smoothing Regularization Weight (TIKHONOV)1
+#Pars.mu_spec = 5.0/flx_scale															#Spectral Regularization Weight
+#Pars.mu_temp = 5.0/flx_scale															#Temporal Regularization Weight
+#Pars.mu_l1 = 5.0/flx_scale																		#Ell1 Smoothing Regularization WeightPars.nits=800
+#Pars.nits=400
+#max_delay=50
+#Pars.tau=2.0
+
+
+#Initial Penalty Parameters
+maxl=maximum(DATA.L)
+Pars.mu_smoo = round(2000.0/maxl)													#Smoothing Regularization Weight (TIKHONOV)1
+println("µ initialized as: ", Pars.mu_smoo)
+Pars.mu_spec = Pars.mu_smoo/2.0															#Spectral Regularization Weight
+Pars.mu_temp = Pars.mu_smoo/2.0															#Temporal Regularization Weight
+Pars.mu_l1 = Pars.mu_smoo/2.0																		#Ell1 Smoothing Regularization Weight
+Pars.nits=100
 max_delay=50
-Pars.tau=2.0
-
-
 
 #Initialize Matrices
 Mats = Gen_Mats(DATA,Pars)

@@ -5,6 +5,7 @@ include("DataImportNEW.jl")
 
 include("GenMatrices.jl")
 
+# a=500.0; X=inv(H'*H+a^2*eye(size(H)[2]))*(H'*L); imshow(X.*(X.>0.0),origin="lower",aspect="auto",cmap="Reds")
 
 using PyPlot
 
@@ -19,12 +20,15 @@ println("Wrote UT_wavelengths.csv with dimensions: ",size(lam))
 #Create VDM Vertical Stripe
 spread=10.0
 ntimes=50
+
+flx_scale=1.0
+
 vdm_vert = zeros(ntimes,nlams)
 total_lit=0
 for i in 1:ntimes
 	for j in 1:nlams
 		if i >= (ntimes/2)-(spread/2) && i<(ntimes/2)+spread/2 && j > ((nlams/2)-(spread/2)) && j<=((nlams/2)+(spread/2))
-			vdm_vert[i,j]=2.00
+			vdm_vert[i,j]=1.00*flx_scale
 			total_lit+=1
 		end
 	end
@@ -36,13 +40,7 @@ println("For Box, ", total_lit, " pixels lit.")
 
 #Initialize ADMM Parameters
 Pars = init_Params()
-																								#Initial Penalty Parameters
-Pars.mu_smoo = 10.0														#Smoothing Regularization Weight (TIKHONOV)1
-Pars.mu_spec = 5.0															#Spectral Regularization Weight
-Pars.mu_temp = 5.0															#Temporal Regularization Weight
-Pars.mu_l1 = 5.0#0.0000001																		#Ell1 Smoothing Regularization Weight
-Pars.nits=400
-max_delay=50
+
 
 
 
@@ -65,7 +63,7 @@ println("-----------")
 dims = size(Spectra_Vert)
 println("dimensions:", dims)
 #Create fake sigmas.
-sigma = 2.0/1000.0
+sigma = 1.0*flx_scale
 println("Using a sigma of: ",sigma)
 
 n = randn((dims))*sigma #GENERATE NOISE
@@ -95,6 +93,15 @@ println("-------------------------------------------")
 DATA=Import_DataN("UnitTests/","UT_wavelengths.csv","SpectraN_V.csv", "errspectra.csv","data/rvm_dates.csv","data/arp151.b.dat")
 data_report(DATA)
 Mats = Gen_Mats(DATA,Pars)
+maxl=maximum(DATA.L)
+#Initial Penalty Parameters
+Pars.mu_smoo = 2000.0/maxl													#Smoothing Regularization Weight (TIKHONOV)1
+Pars.mu_spec = Pars.mu_smoo/2.0															#Spectral Regularization Weight
+Pars.mu_temp = Pars.mu_smoo/2.0															#Temporal Regularization Weight
+Pars.mu_l1 = Pars.mu_smoo/2.0																		#Ell1 Smoothing Regularization Weight
+Pars.nits=100
+max_delay=50
+
 ###############################
 #Checking actual chi2
 vdm_path = "UnitTests/vdm_vert.csv"

@@ -19,18 +19,19 @@ function Import_DataN(path="data/",waves="rvm_wavelengths.csv",spectra="rvm_flux
 
 
 	#SPECTRA
+	scale=1.0
 	wavelength_path = string(path,wavelength_filename)
 	Data_Arrs.wavelength = readcsv(wavelength_path)           			#List of measured wavelengths
 	println("Read: ", wavelength_path, " size: ", size(Data_Arrs.wavelength))
 	spectrapath = string(path,spectra_filename)
 
-	Data_Arrs.L = 1.0*(readcsv(spectrapath))'                      			#SPECTRAL FLUXES (L)
+	Data_Arrs.L = scale.*(readcsv(spectrapath))'                      			#SPECTRAL FLUXES (L)
 	println("Read: ",spectrapath, " size: ",size(Data_Arrs.L))
 	Data_Arrs.num_lines = size(Data_Arrs.L,2)                  			#NUMBER OF SPECTRAL LINES
 #	Data_Arrs.num_lines = size(Data_Arrs.L,1)                  			#NUMBER OF SPECTRAL LINES
 
 	spectra_error_path = string(path,spectra_error_filename)
-	Data_Arrs.EL = (readcsv(spectra_error_path))'            			#SPECTRAL FLUX ERRORS
+	Data_Arrs.EL = scale.*(readcsv(spectra_error_path))'            			#SPECTRAL FLUX ERRORS
 	println("Read: ",spectra_error_path, " size: ",size(Data_Arrs.EL))
 
 
