@@ -1,4 +1,5 @@
 include("RMLib.jl")
+include("RMLibMore.jl")
 include("RMTypes.jl")
 include("DataImport.jl")
 include("DataImportNEW.jl")
@@ -21,7 +22,7 @@ println("Wrote UT_wavelengths.csv with dimensions: ",size(lam))
 spread=10.0
 ntimes=50
 
-flx_scale=1.0
+flx_scale=2.0#/10000.0
 
 vdm_vert = zeros(ntimes,nlams)
 total_lit=0
@@ -63,7 +64,7 @@ println("-----------")
 dims = size(Spectra_Vert)
 println("dimensions:", dims)
 #Create fake sigmas.
-sigma = 1.0*flx_scale
+sigma = flx_scale/5.0
 println("Using a sigma of: ",sigma)
 
 n = randn((dims))*sigma #GENERATE NOISE
@@ -75,7 +76,6 @@ Noisy_Spectra_V = Spectra_Vert+n #ADD NOISE
 #Noisy_Spectra_H = Spectra_Horz+n
 
 sig_arr = ones(dims)*sigma
-
 
 writecsv("UnitTests/SpectraN_V.csv", Noisy_Spectra_V')
 println("Wrote SpectraN_V.csv with dimensions: ", size(Noisy_Spectra_V'))
@@ -95,11 +95,12 @@ data_report(DATA)
 Mats = Gen_Mats(DATA,Pars)
 maxl=maximum(DATA.L)
 #Initial Penalty Parameters
-Pars.mu_smoo = 2000.0/maxl													#Smoothing Regularization Weight (TIKHONOV)1
-Pars.mu_spec = Pars.mu_smoo/2.0															#Spectral Regularization Weight
-Pars.mu_temp = Pars.mu_smoo/2.0															#Temporal Regularization Weight
-Pars.mu_l1 = Pars.mu_smoo/2.0																		#Ell1 Smoothing Regularization Weight
-Pars.nits=100
+
+Pars.mu_smoo = 40.0/flx_scale^2													#Smoothing Regularization Weight (TIKHONOV)1
+Pars.mu_spec = 10.0/flx_scale															#Spectral Regularization Weight
+Pars.mu_temp = 10.0/flx_scale															#Temporal Regularization Weight
+Pars.mu_l1 = 10.0/flx_scale																		#Ell1 Smoothing Regularization Weight
+Pars.nits=150
 max_delay=50
 
 ###############################
@@ -112,4 +113,4 @@ println("Chi2: ",chi2)
 
 
 
-tmp,P = TLDR(DATA,Mats,Pars,"True","True","UnitTests/vdm_vert.csv")
+tmp,P = TLDR(flx_scale,DATA,Mats,Pars,"True","True","UnitTests/vdm_vert.csv")

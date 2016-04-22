@@ -39,7 +39,7 @@ function Import_Data(mode)
 	Data_Arrs = init_Data()
 
 	#=IMPORTING FILES=#
-	scale=1000.0
+	scale=1.0
 	#SPECTRA
 	wavelength_path = string(path,wavelength_filename)
 	Data_Arrs.wavelength = readcsv(wavelength_path)           			#List of measured wavelengths
