@@ -315,7 +315,7 @@ end
 #=================== Final Plot =====================#
 #=--------------------------------------------------=#
 function plotfin(Plot_F,X,Z,T,V)
-  if Plot_F == "True"
+  if Plot_F == true
   		figure(figsize=(20,10))
   		title("Final Reconstruction")
   		set_cmap("YlOrRd")

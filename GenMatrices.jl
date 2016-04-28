@@ -1,4 +1,4 @@
-include("RMLib.jl")
+#include("RMLib.jl")
 include("RMTypes.jl")
 
 function Gen_Mats(DATA,Params)
@@ -95,7 +95,7 @@ function Gen_Mats(DATA,Params)
 	#=    PRECOMPUTING TIKHONOV MATRICES     =#
 	num_spectra_dates=size(DATA.spectra_dates)[1]
 	W = zeros((DATA.num_lines,size(DATA.L)[1],size(DATA.L)[1]))
-	println("AT W Generation: ", size(W))
+	#println("AT W Generation: ", size(W))
 	for lam in collect(1:DATA.num_lines)
 	  T = eye(num_spectra_dates)
 	  for i in collect(1:num_spectra_dates)

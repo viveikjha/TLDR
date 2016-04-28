@@ -1,12 +1,68 @@
 using FITSIO
+using PyPlot
 include("RMLibMore.jl")
+include("RMTypes.jl")
+include("DataImport.jl")
+include("DataImportNEW.jl")
+
+include("GenMatrices.jl")
+
+#=--------------------------------------------------=#
+#================= TLDR LAUNCHER ====================#
+#=--------------------------------------------------=#
+#1. FILES REQUIRED - FILES_ARR = [WAVELENGTHS,SPECTRA,ERRSPECTRA,DATES,CONTINUUM]
+#2. IS THIS A TEST? TRUE VDM FILE? -> OPTIONAL
+#3. mus: mu_smoo required. others optional?
+
+#Tvdm file: Optional file imput of the real tdf. Used for testing puroposes.
+#mu_spec, mu_l1, and mu_temp flags are options for providing individual regularization weights
+#otherwise, the values are based on those for mu_smoo.
+#Plot_Live option shows the active reconstruction every so many iterations.
+#Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
+function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true)
+  #IMPORT DATA FROM FILES_ARR
+  wavelengths=FILES_ARR[1]
+  spectra = FILES_ARR[2]
+  errspectra = FILES_ARR[3]
+  dates = FILES_ARR[4]
+  continuum = FILES_ARR[5]
+  DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
+	if scale != 1.0
+		DATA.L = scale.*DATA.L
+		DATA.EL = scale.*DATA.EL
+	end
+  #data_report(DATA)
+  Pars = init_Params()
+	Pars.nits=nits
+  Mats=Gen_Mats(DATA,Pars)
+
+  #SET RECONSTRUCTION PARAMETERS
+  if mu_temp != false
+    Pars.mu_temp = mu_temp
+  else
+    Pars.mu_temp = 0.25*mu_smoo/scale
+  end
+  if mu_spec != false
+    Pars.mu_spec = mu_spec
+  else
+    Pars.mu_spec = 0.25*mu_smoo/scale
+  end
+  if mu_l1 != false
+    Pars.mu_l1 = mu_temp
+  else
+    Pars.mu_l1 = 0.25*mu_smoo/scale
+  end
+  Pars.mu_smoo=mu_smoo/scale^2
+  tmp,P = TLDR(scale,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF)
+end
+
 
 #=--------------------------------------------------=#
 #================ ADMM Algorithm ====================#
 #=--------------------------------------------------=#
-function TLDR(flx_scale,DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None")
+function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true)
 	Pars.tau=2.0
-	if Plot_A == "True"
+	if Plot_A == true
 		ion()
 		figure()
 		title("Active Reconstruction")
@@ -24,23 +80,19 @@ function TLDR(flx_scale,DATA,Mats,Pars,Plot_F="True",Plot_A="False",vdmact="None
 	Con_Arr = zeros(DATA.num_lines)
 
 	#INITIALIZATION FROM TIKHONOV SOLUTION
-println("a: ",flx_scale^2*Pars.mu_smoo)
+	#println("a: ",flx_scale^2*Pars.mu_smoo)
 
-vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
-for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-		W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
-		Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-		B = Mats.HT* W_slice * DATA.L
-		vdm[:,l] = Q\B[:,l]
-end
-Ini=vdm #sdata() pulls the underlying shared array
-
-
-
-
+	vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
+	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
+			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
+			Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+			B = Mats.HT* W_slice * DATA.L
+			vdm[:,l] = Q\B[:,l]
+		end
+	Ini=vdm #sdata() pulls the underlying shared array
 	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Pars.mu_smoo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
 	init_vdm =Ini.*(Ini.>0.0) #FILTER OUT NEGATIVE VALUES
-	if Plot_A == "True"
+	if Plot_A == true
 		imshow(init_vdm,aspect="auto",origin="lower",cmap="Reds")
 		#colorbar()
 		#show()
@@ -56,8 +108,10 @@ Ini=vdm #sdata() pulls the underlying shared array
 	P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 
+
+
 	#When loading a known TDF
-	if vdmact != "None"
+	if vdmact != ""
 		vdm_path = vdmact
 		vdm_act = readcsv(vdm_path)
 		X.vdm = vdm_act
@@ -67,6 +121,7 @@ Ini=vdm #sdata() pulls the underlying shared array
 		P.vdm = pos_prox_op(vdm_act)
 		N.vdm = vdm_act
 		act_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
+		println("actual chi2: ",act_chi2)
 		Pars.chi2=act_chi2
 		Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -True_VDM-")
 	end
@@ -81,7 +136,7 @@ Ini=vdm #sdata() pulls the underlying shared array
 	#Initiailize Penalty Parameters.
 	#flx_scale= 5.0
 	#flx_scale=1.0
-	println("Z: ",Z.rho,"P: ",P.rho,"T: ",T.rho,"V: ",V.rho,"N: ",N.rho)
+	#println("Z: ",Z.rho,"P: ",P.rho,"T: ",T.rho,"V: ",V.rho,"N: ",N.rho)
 	Z.rho=4000000.0/flx_scale^2#20.0*Pars.mu_smoo#2000.0/flx_scale#2000.0
 	P.rho=200.00/flx_scale^2
 	T.rho=200.00/flx_scale^2
@@ -164,8 +219,9 @@ N.rho=8000.0/flx_scale^2#20.0*Pars.mu_l1#2000.0/flx_scale
 		Pars.chi2= true_chi2
 
 		#Reporting
-		Report(X,Z,P,T,V,N,DATA,Mats,Pars,Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,s=true,Pres=true,Zres=true,Tres=true,Vres=true,Nres=true)
-
+		if RepIt==true
+			Report(X,Z,P,T,V,N,DATA,Mats,Pars,Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,s=true,Pres=true,Zres=true,Tres=true,Vres=true,Nres=true)
+		end
 		#println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,L1Vstring,chi2xstring,sstring,rastring, rbstring,rcstring,rdstring,restring,rhozstring,rhopstring,rhotstring,rhovstring,rhonstring)
 		#println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,chi2xstring,sstring,rastring, rbstring,rdstring)
 		#if sqdiff < diffbest
@@ -177,12 +233,16 @@ N.rho=8000.0/flx_scale^2#20.0*Pars.mu_l1#2000.0/flx_scale
 			#println("CONVERGED")
 		end
 		#Plotting
-		if Plot_A == "True" && (Pars.it%10 == 0)
+		if Plot_A == true && (Pars.it%10 == 0)
 			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",cmap="Reds",interpolation="None")
 			draw()
 		end
   end
-	if Plot_A == "True"
+	if RepF==true
+		Report(X,Z,P,T,V,N,DATA,Mats,Pars,Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,s=true,Pres=true,Zres=true,Tres=true,Vres=true,Nres=true,Msg=" -Final-")
+	end
+
+	if Plot_A == true
 		ioff()
 	end
 	#Final Plot

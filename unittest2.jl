@@ -106,7 +106,7 @@ max_delay=50
 ###############################
 #Checking actual chi2
 vdm_path = "UnitTests/vdm_vert.csv"
-vdm_act = readcsv(vdm_path)
+vdm_act = readcsv(vdm_path)[]
 chi2 = Chi2(Model((vdm_act),Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
 println("Chi2: ",chi2)
 ###############################
