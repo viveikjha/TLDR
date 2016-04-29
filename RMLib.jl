@@ -21,22 +21,25 @@ include("GenMatrices.jl")
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
 function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true)
   #IMPORT DATA FROM FILES_ARR
-  wavelengths=FILES_ARR[1]
-  spectra = FILES_ARR[2]
-  errspectra = FILES_ARR[3]
-  dates = FILES_ARR[4]
-  continuum = FILES_ARR[5]
-  DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
-	if scale != 1.0
-		DATA.L = scale.*DATA.L
-		DATA.EL = scale.*DATA.EL
-	end
-  #data_report(DATA)
-  Pars = init_Params()
-	Pars.nits=nits
-  Mats=Gen_Mats(DATA,Pars)
+	wavelengths=FILES_ARR[1]
+	spectra = FILES_ARR[2]
+	errspectra = FILES_ARR[3]
+	dates = FILES_ARR[4]
+	continuum = FILES_ARR[5]
+	DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
+	DATA.L=scale*DATA.L
+	DATA.EL=scale*DATA.EL
 
-  #SET RECONSTRUCTION PARAMETERS
+
+	#data_report(DATA)
+	Pars = init_Params()
+	Pars.num_tdf_times=50
+
+	Mats=Gen_Mats(DATA,Pars)
+
+	Pars.nits=nits
+	#SET RECONSTRUCTION PARAMETERS
+	scale=1.0
   if mu_temp != false
     Pars.mu_temp = mu_temp
   else
@@ -48,12 +51,12 @@ function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,s
     Pars.mu_spec = 0.25*mu_smoo/scale
   end
   if mu_l1 != false
-    Pars.mu_l1 = mu_temp
+    Pars.mu_l1 = mu_l1
   else
     Pars.mu_l1 = 0.25*mu_smoo/scale
   end
   Pars.mu_smoo=mu_smoo/scale^2
-  tmp,P = TLDR(scale,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF)
+  tmp,P = TLDR(1.0,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF)
 end
 
 
@@ -135,13 +138,18 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 
 	#Initiailize Penalty Parameters.
 	#flx_scale= 5.0
-	#flx_scale=1.0
+	#flx_scale=1.0/10000.0
 	#println("Z: ",Z.rho,"P: ",P.rho,"T: ",T.rho,"V: ",V.rho,"N: ",N.rho)
 	Z.rho=4000000.0/flx_scale^2#20.0*Pars.mu_smoo#2000.0/flx_scale#2000.0
 	P.rho=200.00/flx_scale^2
 	T.rho=200.00/flx_scale^2
 	V.rho=200.00/flx_scale^2
-	N.rho=200.00/flx_scale^2
+	#N.rho=4000000.0/flx_scale^2
+	N.rho=2000.00/flx_scale^2
+
+	siglvl=abs(median(DATA.L))
+	println("Signal Level: ",siglvl, " - ", Pars.mu_smoo/Z.rho)
+	println("ρZ:", Z.rho," μsmoo/ρZ: ",Pars.mu_smoo/Z.rho, " ρN:", N.rho, " μ l1: ",Pars.mu_l1, " μl1/ρN: ", Pars.mu_l1/N.rho)
 #	T.rho=2000#20.0*Pars.mu_temp#2000.0/flx_scale#2000.0 #5.0
 #	V.rho=2000#20.0*Pars.mu_spec#2000.0/flx_scale#2000.0
 #	P.rho=2000#2000.0/(flx_scale)#2000.0
