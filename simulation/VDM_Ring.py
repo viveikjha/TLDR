@@ -145,6 +145,8 @@ plt.minorticks_on()
 IFE = 1.0
 
 RF = IFE/1.0
+Emissivity = delay/max(delay)
+RF = Emissivity*IFE #ADD EMISSIVITY AS FUNCTION OF MAXIMUM DELAY.
 
 pixlen =50
 Fim = np.zeros([pixlen,pixlen],dtype='float')
@@ -161,7 +163,7 @@ for j in range(0,len(LOSvel)): #ind
 			if (LOSvel[j] > pixbinV[n]) and (LOSvel[j] <= pixbinV[n+1]) and (delay[j] > pixbinT[m]) and (delay[j] <=pixbinT[m+1]):
 				if m == 0 and n == 0:
 					c+=1
-				Fim[m,n] = Fim[m,n]+RF
+				Fim[m,n] = Fim[m,n]+RF[j]
 				pts = pts+1
 print c
 print "Max Signal: ", np.max(Fim)
@@ -200,12 +202,12 @@ plt.imshow(np.log(Fim), origin="lower", extent=[min(newl_a),max(newl_a),0,12],as
 plt.show()
 
 
-np.savetxt('LOSvel.csv',LOSvel,delimiter=',')
-np.savetxt('Fim.csv',(Fim/np.max(Fim)),delimiter=',')
-np.savetxt('X.csv',X,delimiter=',')
-np.savetxt('Y.csv',Y,delimiter=',')
-#np.savetxt('radii.csv',radii,delimiter=',')
-#np.savetxt('delay.csv',delay,delimiter=',')
-#np.savetxt('angle.csv',angle,delimiter=',')	
-np.savetxt('new_wavelengths.csv',newl_a,delimiter=',')
-np.savetxt('simulated_vdm.csv',Fim,delimiter=',')
+np.savetxt('Ring/LOSvel.csv',LOSvel,delimiter=',')
+np.savetxt('Ring/Fim.csv',(Fim/np.max(Fim)),delimiter=',')
+np.savetxt('Ring/X.csv',X,delimiter=',')
+np.savetxt('Ring/Y.csv',Y,delimiter=',')
+np.savetxt('Ring/radii.csv',radii,delimiter=',')
+np.savetxt('Ring/delay.csv',delay,delimiter=',')
+np.savetxt('Ring/angle.csv',angle,delimiter=',')
+np.savetxt('Ring/new_wavelengths.csv',newl_a,delimiter=',')
+np.savetxt('Ring/simulated_vdm.csv',Fim,delimiter=',')
