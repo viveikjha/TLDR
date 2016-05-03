@@ -27,9 +27,11 @@ function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,s
 	dates = FILES_ARR[4]
 	continuum = FILES_ARR[5]
 	DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
-	DATA.L=scale*DATA.L
-	DATA.EL=scale*DATA.EL
 
+	DATA.L=scale*(DATA.L)
+	DATA.EL=scale*(DATA.EL)
+	DATA.continuum_flux=scale*DATA.continuum_flux
+	DATA.continuum_error_flux=scale*DATA.continuum_error_flux
 
 	#data_report(DATA)
 	Pars = init_Params()
@@ -96,11 +98,11 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Pars.mu_smoo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
 	init_vdm =Ini.*(Ini.>0.0) #FILTER OUT NEGATIVE VALUES
 	if Plot_A == true
-		imshow(init_vdm,aspect="auto",origin="lower",cmap="Reds")
+		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Blues")
 		#colorbar()
 		#show()
 	end
-
+	writecsv("tiksol.csv",init_vdm)
 	#init_vdm=randn(size(init_vdm)) #Start from Random
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 
@@ -242,7 +244,9 @@ N.rho=8000.0/flx_scale^2#20.0*Pars.mu_l1#2000.0/flx_scale
 		end
 		#Plotting
 		if Plot_A == true && (Pars.it%10 == 0)
-			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",cmap="Reds",interpolation="None")
+			clf()
+			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",interpolation="None")
+			colorbar()
 			draw()
 		end
   end

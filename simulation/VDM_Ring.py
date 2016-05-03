@@ -201,9 +201,10 @@ plt.figure()
 plt.imshow(np.log(Fim), origin="lower", extent=[min(newl_a),max(newl_a),0,12],aspect="auto",interpolation="None")
 plt.show()
 
+print Fim
 
 np.savetxt('Ring/LOSvel.csv',LOSvel,delimiter=',')
-np.savetxt('Ring/Fim.csv',(Fim/np.max(Fim)),delimiter=',')
+np.savetxt('Ring/Fim.csv',(Fim),delimiter=',')
 np.savetxt('Ring/X.csv',X,delimiter=',')
 np.savetxt('Ring/Y.csv',Y,delimiter=',')
 np.savetxt('Ring/radii.csv',radii,delimiter=',')
