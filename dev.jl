@@ -25,7 +25,7 @@ function getdata(FILES_ARR)
 end
 
 #function gen_tiksol(DATA,Pars,Mats;scale=1.0,mu_smoo=40.0)
-function gen_tiksol(f;scale=1.0,mu_smoo=40.0)
+function gen_tiksol(f;scale=1.0,mu_smoo=40.0,plotting=true,save=true)
   DATA=getdata(f)
   println("Scale: ",scale)
   DATA.L = scale.*DATA.L
@@ -44,13 +44,17 @@ function gen_tiksol(f;scale=1.0,mu_smoo=40.0)
     vdm[:,l] = Q\B[:,l]
   end
   vdm =vdm.*(vdm.>0.0) #FILTER OUT NEGATIVE VALUES
-  writecsv("devsol.csv",vdm)
-  figure()
-  imshow(vdm,origin="lower",cmap="Greens",interpolation="None",aspect="auto")
-  xlabel("Spectral Channel")
-  ylabel("Delay Time")
-  titlestring=string("Tikhonov Image for µ=",Pars.mu_smoo, " and scale=",scale)
-  title(titlestring)
-  show()
+  if save==true
+    writecsv("devsol.csv",vdm)
+  end
+  if plotting==true
+    figure()
+    imshow(vdm,origin="lower",cmap="Greens",interpolation="None",aspect="auto")
+    xlabel("Spectral Channel")
+    ylabel("Delay Time")
+    titlestring=string("Tikhonov Image for µ=",Pars.mu_smoo, " and scale=",scale)
+    title(titlestring)
+    show()
+  end
   vdm
 end
