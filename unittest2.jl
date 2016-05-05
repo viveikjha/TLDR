@@ -64,15 +64,15 @@ println("-----------")
 dims = size(Spectra_Vert)
 println("dimensions:", dims)
 #Create fake sigmas.
-#sigma = flx_scale/10.0
+#sigma = ........?
 #println("Using a sigma of: ",sigma)
 
 
-#n = randn((dims))*sigma #GENERATE NOISE
+n = randn((dims))*sigma #GENERATE NOISE
 #GENERATE NOISE BY RANDOMLY SAMPLING REAL DATA ERROR
-nbase=vec(readcsv("data/rvm_errfluxes.csv"))
-n = rand(nbase,length(Spectra_Vert)).*rand([-1.0,1.0],length(Spectra_Vert))
-n= reshape(n,size(Spectra_Vert))
+#nbase=vec(readcsv("data/rvm_errfluxes.csv"))
+#n = rand(nbase,length(Spectra_Vert)).*rand([-1.0,1.0],length(Spectra_Vert))
+#n= reshape(n,size(Spectra_Vert))
 println("-----------")
 
 
@@ -129,6 +129,6 @@ println("\n Done setting up unit test files! \n")
 #println("Chi2: ",chi2)
 ###############################
 
-f=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"]
+#f=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"]
 
-tmp,P = LAUNCH(f;mu_smoo=40.0,nits=50,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true)
+#tmp,P = LAUNCH(f;mu_smoo=40.0,nits=50,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true)

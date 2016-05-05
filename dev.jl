@@ -25,7 +25,7 @@ function getdata(FILES_ARR)
 end
 
 #function gen_tiksol(DATA,Pars,Mats;scale=1.0,mu_smoo=40.0)
-function gen_tiksol(f;scale=1.0,mu_smoo=40.0,plotting=true,save=true)
+function gen_tiksol(f;scale=1.0,mu_smoo=40.0,plotting=true,save=false)
   DATA=getdata(f)
   println("Scale: ",scale)
   DATA.L = scale.*DATA.L

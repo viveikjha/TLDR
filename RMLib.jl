@@ -126,9 +126,11 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		P.vdm = pos_prox_op(vdm_act)
 		N.vdm = vdm_act
 		act_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
-		println("actual chi2: ",act_chi2)
+		#println("actual chi2: ",act_chi2)
 		Pars.chi2=act_chi2
-		Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -True_VDM-")
+		if RepIt==true
+			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -True_VDM-")
+		end
 	end
 
 	X.vdm = init_vdm
@@ -150,8 +152,8 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	N.rho=2000.00/flx_scale^2
 
 	siglvl=abs(median(DATA.L))
-	println("Signal Level: ",siglvl, " - ", Pars.mu_smoo/Z.rho)
-	println("ρZ:", Z.rho," μsmoo/ρZ: ",Pars.mu_smoo/Z.rho, " ρN:", N.rho, " μ l1: ",Pars.mu_l1, " μl1/ρN: ", Pars.mu_l1/N.rho)
+	#println("Signal Level: ",siglvl, " - ", Pars.mu_smoo/Z.rho)
+	#println("ρZ:", Z.rho," μsmoo/ρZ: ",Pars.mu_smoo/Z.rho, " ρN:", N.rho, " μ l1: ",Pars.mu_l1, " μl1/ρN: ", Pars.mu_l1/N.rho)
 #	T.rho=2000#20.0*Pars.mu_temp#2000.0/flx_scale#2000.0 #5.0
 #	V.rho=2000#20.0*Pars.mu_spec#2000.0/flx_scale#2000.0
 #	P.rho=2000#2000.0/(flx_scale)#2000.0
@@ -160,8 +162,9 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 #Diagnostics on VDM initialized with Tihonov Solution.
 	init_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
 	Pars.chi2=init_chi2
-	Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -Tik_Init-")
-
+	if RepIt==true
+		Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -Tik_Init-")
+	end
 	#=  Calculate Initial Multipliers & RHO =#
 	for p in 1:DATA.num_lines
 	  Z.U[:,p]=Mats.HT * squeeze(Mats.W[p,:,:],1) * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
