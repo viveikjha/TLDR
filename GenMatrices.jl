@@ -55,6 +55,7 @@ function Gen_Mats(DATA,Params)
 	s=size(Ds)
 	Mat.Ds=eye(s[1],s[2])
 	Mat.Ds = Ds
+	writecsv("Ds.csv",Ds)
 	Mat.DsT = Ds'
 
 	#Dv = zeros(DATA.num_lines,DATA.num_lines)
@@ -88,6 +89,7 @@ function Gen_Mats(DATA,Params)
 	Dv=Dv'
 
 	Mat.Dv = Dv
+	writecsv("Dv.csv",Dv)
 	Mat.DvT = Dv'
 
 

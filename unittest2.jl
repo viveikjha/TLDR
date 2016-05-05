@@ -129,6 +129,6 @@ println("\n Done setting up unit test files! \n")
 #println("Chi2: ",chi2)
 ###############################
 
+f=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"]
 
-
-#tmp,P = TLDR(flx_scale,DATA,Mats,Pars,"True","True","UnitTests/vdm_vert.csv")
+tmp,P = LAUNCH(f;mu_smoo=40.0,nits=50,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true)
