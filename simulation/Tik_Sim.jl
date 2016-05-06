@@ -48,24 +48,24 @@ end #FUNCTION
 µ=[1.0,10.0,1.0e2,500.0,1.0e3,5000.0,1.0e4,5.0e4,1.0e5,5.0e5,1.0e6,5.0e6,1.0e7,5.0e7,1.0e8,5.0e8,1.0e9,5.0e9,1.0e10,5.0e10,1.0e11,5.0e11,1.0e12,5.0e12,1.0e13]
 #µ=[1.0,10.0,1.0e2]
 flx=sqrt(sum(truevdm.^2))
-r=cell(length(µ),4)
-println("Beginning minimizations with µs.")
+#r=cell(length(µ),4)
+#println("Beginning minimizations with µs.")
 
 
-tic()
-for i=1:length(µ)
-  vdm=gen_tiksol(files;scale=1.0,mu_smoo=µ[i],plotting=false,save=false)
-  M=H*vdm
-  residual = sqrt(sum(M-Flux).^2)
-  flux = (sqrt(sum(vdm.^2)))
-  chi2 = sum(((M-Flux)./(Error)).^2)/length(Flux)
-  r[i,:]=[µ[i],residual,flux,chi2]
+#tic()
+#for i=1:length(µ)
+#  vdm=gen_tiksol(files;scale=1.0,mu_smoo=µ[i],plotting=false,save=false)
+#  M=H*vdm
+#  residual = sqrt(sum(M-Flux).^2)
+#  flux = (sqrt(sum(vdm.^2)))
+#  chi2 = sum(((M-Flux)./(Error)).^2)/length(Flux)
+#  r[i,:]=[µ[i],residual,flux,chi2]
 
-  println("µ " , i, " of ", length(µ)," complete.")
-end
-toc()
+#  println("µ " , i, " of ", length(µ)," complete.")
+#end
+#toc()
 
-println(r)
+#println(r)
 
 nextidx() = (idx=i; i+=1; idx)
 
@@ -81,6 +81,7 @@ tic()
 out = pmap(f,µ)
 toc()
 println(out)
-#writecsv("TikMus.csv",µ)
+writecsv("TikSol.csv",out)
+# In output file: [Mu, residual, flux, chi2]
 #writecsv("TikRes.csv",r)
 println("Complete.")
