@@ -27,7 +27,7 @@ end
 #function gen_tiksol(DATA,Pars,Mats;scale=1.0,mu_smoo=40.0)
 function gen_tiksol(f;scale=1.0,mu_smoo=40.0,plotting=true,save=false)
   DATA=getdata(f)
-  println("Scale: ",scale)
+  #println("µ: ",mu_smoo)
   DATA.L = scale.*DATA.L
   DATA.EL = scale.*DATA.EL
   Pars= init_Params()

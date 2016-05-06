@@ -37,5 +37,5 @@ end
 
 writecsv("TikMus.csv",µ)
 writecsv("TikRes.csv",r)
-writecsv("TikFlx.csv"l,flx)
+writecsv("TikFlx.csv",flx)
 println("Complete.")
