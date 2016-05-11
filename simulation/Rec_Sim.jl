@@ -1,41 +1,90 @@
+#RUN THIS SCRIPT WITH julia -p 3 TO USE MULTIPLE PROCESSORS.
+
 include("../RMLib.jl")
 include("../RMTypes.jl")
 include("../DataImport.jl")
 include("../GenMatrices.jl")
 include("../DataImportNEW.jl")
-include("../dev.jl")
+@everywhere include("../dev.jl")
 using PyPlot
 
-function res(A,B)
-  residual=sqrt(sum((A-B).^2))#./(sqrt(sum(B.^2)))
-end
 
-vdmfile="Sim_VDM.csv"
-truevdm=readcsv(vdmfile)
+function pmap(f, lst)
+  np = nprocs()   #GETS THE NUMBER OF PROCESSES AVAILABLE
+  n = length(lst)
+  results = cell(n,4)
+  i = 1
+  #function to produce the next work item from the queue
+  #in this case it's just an index
+  nextidx() = (idx=i; i+=1; idx)
+  @sync begin
+    for p=1:np
+      if p != myid() || np == 1
+        @async begin
+          while true
+            idx = nextidx()
+            if idx > n
+              break
+            end #IF
+            results[idx,:] = remotecall_fetch(p,f,lst[idx]) #CALLS FUNCTION f ON PROCESSOR p WITH PARAMETER lst[idx]
+            println("µ " , idx, " of ", length(lst)," complete.")
+          end #WHILE
+        end #@ASYNC
+      end #IF
+    end #FOR
+  end #@SYNC
+  results
+end #FUNCTION
 
-files=["../data/rvm_wavelengths.csv","Sim_Spectra.csv","Sim_Error.csv","../data/rvm_dates.csv","../data/arp151.b.dat"]
-#files=["../data/rvm_wavelengths.csv","../data/rvm_fluxes.csv","../data/rvm_errfluxes.csv","../data/rvm_dates.csv","../data/arp151.b.dat"]
 
-off=0.000001
+@everywhere vdmfile="Sim_VDM.csv"
+@everywhere truevdm=readcsv(vdmfile)
+@everywhere H = readcsv("H.csv")
+@everywhere files=["../data/rvm_wavelengths.csv","../simulation/Sim_Spectra.csv","../simulation/Sim_Error.csv","../data/rvm_dates.csv","../data/arp151.b.dat"]
+@everywhere Error = (readcsv("Sim_Error.csv"))'
+@everywhere Flux = (readcsv("Sim_Spectra.csv"))'
+@everywhere off=0.000001
 
 µ=[1.0,10.0,1.0e2,500.0,1.0e3,5000.0,1.0e4,5.0e4,1.0e5,5.0e5,1.0e6,5.0e6,1.0e7,5.0e7,1.0e8,5.0e8,1.0e9,5.0e9,1.0e10,5.0e10,1.0e11,5.0e11,1.0e12,5.0e12,1.0e13]
 #µ=[1.0,10.0,1.0e2]
 flx=sqrt(sum(truevdm.^2))
-r=zeros(length(µ))
-println("Beginning minimizations with µs.")
-for i=1:length(µ)
-  Rec,p=LAUNCH(files;mu_smoo=µ[i],mu_spec=off,mu_temp=off,mu_l1=off,scale=1.0,nits=50,Tvdm="",Plot_Live=false,Plot_Final=false,RepIt=false,RepF=false)
-  #Rec=gen_tiksol(files;scale=1.0,mu_smoo=µ[i],plotting=false,save=false)
-  #r[i]=res(Rec,truevdm)
-  r[i]=res(Rec.vdm,truevdm)
-  println("µ " , i, " of ", length(µ)," complete.")
+#r=cell(length(µ),4)
+#println("Beginning minimizations with µs.")
+
+
+#tic()
+#for i=1:length(µ)
+#  vdm=gen_tiksol(files;scale=1.0,mu_smoo=µ[i],plotting=false,save=false)
+#  M=H*vdm
+#  residual = sqrt(sum(M-Flux).^2)
+#  flux = (sqrt(sum(vdm.^2)))
+#  chi2 = sum(((M-Flux)./(Error)).^2)/length(Flux)
+#  r[i,:]=[µ[i],residual,flux,chi2]
+
+#  println("µ " , i, " of ", length(µ)," complete.")
+#end
+#toc()
+
+#println(r)
+
+nextidx() = (idx=i; i+=1; idx)
+@everywhere off = 0.00001
+@everywhere function f(mu)
+  rec = LAUNCH(files;mu_smoo=mu,mu_spec=off,mu_temp=off,mu_l1=off,nits=50,Tvdm="",Plot_Live=false,Plot_Final=false,RepIt=false,RepF=false)
+  vdm=rec.vdm
+  M=H*vdm
+  name = string("VDMs/rec",mu,".csv")
+  writecsv(name,vdm)
+  residual = sqrt(sum(M-Flux).^2)
+  flux = (sqrt(sum(vdm.^2)))
+  chi2 = sum((((M)-Flux)./(Error)).^2)/length(Flux)
+  [mu,residual,flux,chi2]
 end
-
-#figure()
-#loglog(µ,r,"k.")
-#show()
-
-writecsv("TikMus.csv",µ)
-writecsv("TikRes.csv",r)
-writecsv("TikFlx.csv",flx)
+tic()
+out = pmap(f,µ)
+toc()
+println(out)
+writecsv("TikSol.csv",out)
+# In output file: [Mu, residual, flux, chi2]
+#writecsv("TikRes.csv",r)
 println("Complete.")

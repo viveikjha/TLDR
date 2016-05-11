@@ -5,7 +5,7 @@ include("DataImport.jl")
 include("DataImportNEW.jl")
 include("GenMatrices.jl")
 
-using PyPlot
+#using PyPlot
 
 function getdata(FILES_ARR)
   #FILES_ARR = ["data/rvm_wavelengths_trimmed.csv","data/rvm_fluxs_trimmed.csv","data/rvm_errfluxes_trimmed.csv","data/rvm_dates.csv","data/arp151.b.dat"]

@@ -19,7 +19,7 @@ include("GenMatrices.jl")
 #otherwise, the values are based on those for mu_smoo.
 #Plot_Live option shows the active reconstruction every so many iterations.
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
-function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true)
+function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
   #IMPORT DATA FROM FILES_ARR
 	wavelengths=FILES_ARR[1]
 	spectra = FILES_ARR[2]
@@ -40,6 +40,7 @@ function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,s
 	Mats=Gen_Mats(DATA,Pars)
 
 	Pars.nits=nits
+
 	#SET RECONSTRUCTION PARAMETERS
 	scale=1.0
   if mu_temp != false
@@ -58,14 +59,14 @@ function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,s
     Pars.mu_l1 = 0.25*mu_smoo/scale
   end
   Pars.mu_smoo=mu_smoo/scale^2
-  tmp,P = TLDR(1.0,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF)
+  tmp,P = TLDR(1.0,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV)
 end
 
 
 #=--------------------------------------------------=#
 #================ ADMM Algorithm ====================#
 #=--------------------------------------------------=#
-function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true)
+function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0,rhoT=800.0,rhoV=800.0)
 	Pars.tau=2.0
 	if Plot_A == true
 		ion()
@@ -94,9 +95,9 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 			B = Mats.HT* W_slice * DATA.L
 			vdm[:,l] = Q\B[:,l]
 		end
-	Ini=vdm #sdata() pulls the underlying shared array
+	Ini=vdm.*(vdm .>= 0.0) #sdata() pulls the underlying shared array
 	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Pars.mu_smoo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
-	init_vdm =Ini.*(Ini.>0.0) #FILTER OUT NEGATIVE VALUES
+	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
 	if Plot_A == true
 		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Blues")
 		#colorbar()
@@ -144,12 +145,12 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	#flx_scale= 5.0
 	#flx_scale=1.0/10000.0
 	#println("Z: ",Z.rho,"P: ",P.rho,"T: ",T.rho,"V: ",V.rho,"N: ",N.rho)
-	Z.rho=4000000.0/flx_scale^2#20.0*Pars.mu_smoo#2000.0/flx_scale#2000.0
-	P.rho=200.00/flx_scale^2
-	T.rho=200.00/flx_scale^2
-	V.rho=200.00/flx_scale^2
+	Z.rho= rhoZ #4000000.0/flx_scale^2#20.0*Pars.mu_smoo#2000.0/flx_scale#2000.0
+	P.rho=rhoP#200.00/flx_scale^2
+	T.rho=rhoT#200.00/flx_scale^2
+	V.rho=rhoV#200.00/flx_scale^2
 	#N.rho=4000000.0/flx_scale^2
-	N.rho=2000.00/flx_scale^2
+	N.rho=rhoN#2000.00/flx_scale^2
 
 	siglvl=abs(median(DATA.L))
 	#println("Signal Level: ",siglvl, " - ", Pars.mu_smoo/Z.rho)
@@ -181,8 +182,9 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	while Pars.it <= Pars.nits && converged==0        #ADMM ITERATION LOOP
 		X.vdm_previous = X.vdm
 	#Step 1: MINIMIZATION W.R.T. X
-		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 
+		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
+		#X.vdm = X.vdm.*(X.vdm.>0.0)
 	#Step 2: UPDATE REGULARIZATION TERMS
 		P.vdm_squiggle = X.vdm - P.U/P.rho
 		P.vdm_previous = P.vdm
@@ -190,8 +192,8 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 
 		T.vdm_squiggle = Mats.Ds*X.vdm-T.U/T.rho
 		T.vdm_previous = T.vdm
-		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Pars.mu_temp,T.rho)
 
+		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Pars.mu_temp,T.rho)
 		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
 		V.vdm_previous = V.vdm
 		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
@@ -202,7 +204,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 
 		Z.vdm_previous = Z.vdm
 		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats)
-
+		#Z.vdm = Z.vdm.*(Z.vdm.>0.0)
 		#Step 4: UPDATE LAGRANGE MULTIPLIERS
 		T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
 		V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
@@ -218,11 +220,11 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 #		T = Pen_update(X,T,Pars)
 #		V = Pen_update(X,V,Pars)
 #		P = Pen_update(X,P,Pars)
-Z.rho=800.0/flx_scale^2#20.0*Pars.mu_smoo#2000.0/flx_scale#2000.0
-T.rho=8000.0/flx_scale^2#20.0*Pars.mu_temp#2000.0/flx_scale#2000.0 #5.0
-V.rho=8000.0/flx_scale^2#20.0*Pars.mu_spec#2000.0/flx_scale#2000.0
-P.rho=8000.0/flx_scale^2#2000.0/(flx_scale)#2000.0
-N.rho=8000.0/flx_scale^2#20.0*Pars.mu_l1#2000.0/flx_scale
+#Z.rho=#800.0/flx_scale^2#20.0*Pars.mu_smoo#2000.0/flx_scale#2000.0
+#T.rho=#8000.0/flx_scale^2#20.0*Pars.mu_temp#2000.0/flx_scale#2000.0 #5.0
+#V.rho=#8000.0/flx_scale^2#20.0*Pars.mu_spec#2000.0/flx_scale#2000.0
+#P.rho=#8000.0/flx_scale^2#2000.0/(flx_scale)#2000.0
+#N.rho=#8000.0/flx_scale^2#20.0*Pars.mu_l1#2000.0/flx_scale
 
 	#Step 6: Check for Convergence
 		Pars.it = Pars.it+1
@@ -248,7 +250,7 @@ N.rho=8000.0/flx_scale^2#20.0*Pars.mu_l1#2000.0/flx_scale
 		#Plotting
 		if Plot_A == true && (Pars.it%10 == 0)
 			clf()
-			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",interpolation="None")
+			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],cmap="Reds",aspect="auto",origin="lower",interpolation="None")
 			colorbar()
 			draw()
 		end

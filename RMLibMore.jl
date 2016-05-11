@@ -267,6 +267,8 @@ function ell1_prox_op(X,XS,mu,rho)
 			X[i] = 0.0
 		end
 	end
+
+	#X=(abs(XS)-Lam).*(abs(XS).>=Lam).*((1.0.*(XS.>0.0)).-(1.0.*(XS.<0.0))) #THIS IS SLOWER THAN FOR LOOP.
 	X
 end
 
@@ -284,12 +286,7 @@ end
 #========= Positivity Proximal Operator  ============#
 #=--------------------------------------------------=#
 function pos_prox_op(X)
-	for i in 1:length(X)
-		if X[i] < 0.0
-			X[i] = 0.0
-		end
-	end
-	X
+	X=X.*(X.>0.0)
 end
 
 #=--------------------------------------------------=#
@@ -346,3 +343,32 @@ function plotfin(Plot_F,X,Z,T,V)
   		#savefig("Spiral_rec.png")
   	end
   end
+	#=--------------------------------------------------=#
+	#================ Parallel Mapping ==================#
+	#=--------------------------------------------------=#
+	function pmap(f, lst)
+	  np = nprocs()   #GETS THE NUMBER OF PROCESSES AVAILABLE
+	  n = length(lst)
+	  results = cell(n,4)
+	  i = 1
+	  #function to produce the next work item from the queue
+	  #in this case it's just an index
+	  nextidx() = (idx=i; i+=1; idx)
+	  @sync begin
+	    for p=1:np
+	      if p != myid() || np == 1
+	        @async begin
+	          while true
+	            idx = nextidx()
+	            if idx > n
+	              break
+	            end #IF
+	            results[idx,:] = remotecall_fetch(p,f,lst[idx]) #CALLS FUNCTION f ON PROCESSOR p WITH PARAMETER lst[idx]
+	            println("µ " , idx, " of ", length(lst)," complete.")
+	          end #WHILE
+	        end #@ASYNC
+	      end #IF
+	    end #FOR
+	  end #@SYNC
+	  results
+	end #FUNCTION

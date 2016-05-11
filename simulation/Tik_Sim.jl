@@ -70,7 +70,7 @@ flx=sqrt(sum(truevdm.^2))
 nextidx() = (idx=i; i+=1; idx)
 
 @everywhere function f(mu)
-  vdm = gen_tiksol(files;mu_smoo=mu,plotting=false,save=false)
+  vdm = gen_tiksol(files;mu_smoo=mu,plotting=false,save=false,nits=5)
   M=H*vdm
   residual = sqrt(sum(M-Flux).^2)
   flux = (sqrt(sum(vdm.^2)))
@@ -81,7 +81,7 @@ tic()
 out = pmap(f,µ)
 toc()
 println(out)
-writecsv("TikSol.csv",out)
+writecsv("RecSol.csv",out)
 # In output file: [Mu, residual, flux, chi2]
 #writecsv("TikRes.csv",r)
 println("Complete.")
