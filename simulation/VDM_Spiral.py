@@ -19,7 +19,7 @@ phi2 = np.array([])
 
 for i in range(0,len(phi)):
 	try:
-		r = np.append(r,spiral(phi[i],1.0,0.5,4.0))
+		r = np.append(r,spiral(phi[i],5.0,0.5,4.0))
 		phi2 = np.append(phi2,phi[i])
 	except:
 		print phi[i], " failed."
@@ -140,8 +140,10 @@ ax.scatter(LOSvel,delay,c=-col,edgecolor='k',cmap="seismic",vmin=min(LOSvel),vma
 ###########################################
 #RELATIVE SIGNAL STRENTGTH
 IFE = 1.0
-
 RF = IFE/1.0
+Emissivity = delay/max(delay)
+RF = Emissivity*IFE #ADD EMISSIVITY AS FUNCTION OF MAXIMUM DELAY.
+
 
 pixlen =50
 Fim = np.zeros([pixlen,pixlen],dtype='float')
@@ -158,7 +160,7 @@ for j in range(0,len(LOSvel)): #ind
 			if (LOSvel[j] > pixbinV[n]) and (LOSvel[j] <= pixbinV[n+1]) and (delay[j] > pixbinT[m]) and (delay[j] <=pixbinT[m+1]):
 				if m == 0 and n == 0:
 					c+=1
-				Fim[m,n] = Fim[m,n]+RF
+				Fim[m,n] = Fim[m,n]+RF[j]
 				pts = pts+1
 print c
 print "Max Signal: ", np.max(Fim)
@@ -176,7 +178,7 @@ ax.set_xlabel("Binned L.O.S. Velocity (km/s)" )
 
 plt.tight_layout()
 #plt.savefig('disk.png', format='png')
-plt.savefig("Spiral_Geometry.png")
+plt.savefig("Spiral/Spiral_Geometry.png")
 #plt.show()
 
 Ha =6563.0
@@ -192,15 +194,15 @@ plt.imshow(np.log(Fim), origin="lower", extent=[min(newl_a),max(newl_a),0,12],as
 plt.show()
 
 
-np.savetxt('LOSvel.csv',LOSvel,delimiter=',')
-np.savetxt('Fim.csv',(Fim/np.max(Fim)),delimiter=',')
-np.savetxt('X.csv',X,delimiter=',')
-np.savetxt('Y.csv',Y,delimiter=',')
-#np.savetxt('radii.csv',radii,delimiter=',')
-#np.savetxt('delay.csv',delay,delimiter=',')
-#np.savetxt('angle.csv',angle,delimiter=',')
-np.savetxt('new_wavelengths.csv',newl_a,delimiter=',')
-np.savetxt('simulated_vdm.csv',Fim,delimiter=',')
+np.savetxt('Spiral/LOSvel.csv',LOSvel,delimiter=',')
+np.savetxt('Spiral/Fim.csv',(Fim/np.max(Fim)),delimiter=',')
+np.savetxt('Spiral/X.csv',X,delimiter=',')
+np.savetxt('Spiral/Y.csv',Y,delimiter=',')
+np.savetxt('Spiral/radii.csv',r_n,delimiter=',')
+np.savetxt('Spiral/delay.csv',delay,delimiter=',')
+np.savetxt('Spiral/angle.csv',phi_n,delimiter=',')
+np.savetxt('Spiral/new_wavelengths.csv',newl_a,delimiter=',')
+np.savetxt('Spiral/simulated_vdm.csv',Fim,delimiter=',')
 
 
 
