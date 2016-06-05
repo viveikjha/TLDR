@@ -8,7 +8,7 @@ include("DataImportNEW.jl")
 include("GenMatrices.jl")
 
 #=--------------------------------------------------=#
-#================= TLDR LAUNCHER ====================#
+#================= TLDR COLD LAUNCHER ====================#
 #=--------------------------------------------------=#
 #1. FILES REQUIRED - FILES_ARR = [WAVELENGTHS,SPECTRA,ERRSPECTRA,DATES,CONTINUUM]
 #2. IS THIS A TEST? TRUE VDM FILE? -> OPTIONAL
@@ -68,6 +68,11 @@ end
 #=--------------------------------------------------=#
 function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0,rhoT=800.0,rhoV=800.0)
 	Pars.tau=2.0
+	threshold = 1.0e-1 #CONVERGANCE THRESHOLD
+	CX=false
+	CN=false
+	CT=false
+	CV=false
 	if Plot_A == true
 		ion()
 		figure()
@@ -178,31 +183,31 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	N.U = Z.U
 	Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)
 	B = zeros(Pars.num_tdf_times,DATA.num_lines)
-	converged = 0
-	while Pars.it <= Pars.nits && converged==0        #ADMM ITERATION LOOP
-		X.vdm_previous = X.vdm
+	converged = false
+	while Pars.it <= Pars.nits && converged==false        #ADMM ITERATION LOOP
+		X.vdm_previous = copy(X.vdm)
 	#Step 1: MINIMIZATION W.R.T. X
 
 		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 		#X.vdm = X.vdm.*(X.vdm.>0.0)
 	#Step 2: UPDATE REGULARIZATION TERMS
 		P.vdm_squiggle = X.vdm - P.U/P.rho
-		P.vdm_previous = P.vdm
+		P.vdm_previous = copy(P.vdm)
 		P.vdm = pos_prox_op(P.vdm_squiggle)
 
 		T.vdm_squiggle = Mats.Ds*X.vdm-T.U/T.rho
-		T.vdm_previous = T.vdm
+		T.vdm_previous = copy(T.vdm)
 
 		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Pars.mu_temp,T.rho)
 		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
-		V.vdm_previous = V.vdm
+		V.vdm_previous = copy(V.vdm)
 		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
 
 		N.vdm_squiggle = X.vdm - N.U/N.rho
-		N.vdm_previous = N.vdm
+		N.vdm_previous = copy(N.vdm)
 		N.vdm = ell1_prox_op(N.vdm,N.vdm_squiggle,Pars.mu_l1,N.rho)
 
-		Z.vdm_previous = Z.vdm
+		Z.vdm_previous = copy(Z.vdm)
 		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats)
 		#Z.vdm = Z.vdm.*(Z.vdm.>0.0)
 		#Step 4: UPDATE LAGRANGE MULTIPLIERS
@@ -227,6 +232,27 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 #N.rho=#8000.0/flx_scale^2#20.0*Pars.mu_l1#2000.0/flx_scale
 
 	#Step 6: Check for Convergence
+		if Pars.it != 2
+			if abs(regX(X,Pars)-PregX) < threshold
+				CX=true
+			end
+			if abs(regN(N,Pars)-PregN) < threshold
+				CN=true
+			end
+			if abs(regT(T,Pars)-PregT) < threshold
+				CT=true
+			end
+			if abs(regV(V,Pars)-PregV) < threshold
+				CV=true
+			end
+		end
+		if CX == true && CN == true && CT == true && CV == true
+			converged = true
+		end
+		PregX=regX(X,Pars)
+		PregN=regN(N,Pars)
+		PregT=regT(T,Pars)
+		PregV=regV(V,Pars)
 		Pars.it = Pars.it+1
 
 		true_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)

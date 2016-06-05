@@ -70,7 +70,7 @@ flx=sqrt(sum(truevdm.^2))
 nextidx() = (idx=i; i+=1; idx)
 
 @everywhere function f(mu)
-  vdm = gen_tiksol(files;mu_smoo=mu,plotting=false,save=false,nits=5)
+  vdm = gen_tiksol(files;mu_smoo=mu,plotting=false,save=false)
   M=H*vdm
   residual = sqrt(sum(M-Flux).^2)
   flux = (sqrt(sum(vdm.^2)))

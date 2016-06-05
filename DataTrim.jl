@@ -5,10 +5,10 @@ errflux =readcsv("data/rvm_errfluxes.csv")
 waves = readcsv("data/rvm_wavelengths.csv")
 
 
-#ind = find(6300.<waves.<6800) #Halpha
+ind = find(6300.<waves.<6800) #Halpha
 #ind = find(4650.<waves.<5150) #Hbeta
 #ind = find(4100.<waves.<4600)#Hgamma
-ind = find(4600.<waves.<5100)
+#ind = find(4600.<waves.<5100)
 #ind = find(5200.<waves.<5600) #ZERO REGION
 
 println(minimum(waves))

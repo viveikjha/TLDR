@@ -72,7 +72,8 @@ function Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=false,L2x=false,L1T=false,L1V=fals
   end
 
 	rx=ell2norm(X.vdm)
-  if s==true sstring=@sprintf "\ts: %0.3e" ell2norm(X.rho*(X.vdm-X.vdm_previous))/rx
+  if s==true
+			sstring=@sprintf "\ts: %0.3e" ell2norm(X.rho*(X.vdm-X.vdm_previous))/rx
   else sstring=""
   end
 #Residuals
@@ -332,6 +333,7 @@ function plotfin(Plot_F,X,Z,T,V)
   		imshow((V.vdm),aspect="auto",origin="lower",interpolation="None")
   		title("V")
   		colorbar()
+			savefig("Rec.png")
   		show()
   		#figure()
   		#imshow((N.vdm),aspect="auto",origin="lower",interpolation="None")
@@ -340,7 +342,7 @@ function plotfin(Plot_F,X,Z,T,V)
   		#writecsv("UnitTests/Ds.csv",Mats.Ds)
   		#writecsv("UnitTests/T.csv",T.vdm)
   		#writecsv("UnitTests/X.csv",T.vdm)
-  		#savefig("Spiral_rec.png")
+
   	end
   end
 	#=--------------------------------------------------=#
