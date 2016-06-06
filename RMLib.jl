@@ -4,9 +4,48 @@ include("RMLibMore.jl")
 include("RMTypes.jl")
 include("DataImport.jl")
 include("DataImportNEW.jl")
-
 include("GenMatrices.jl")
+#=--------------------------------------------------=#
+#================= TLDR HOT LAUNCHER ====================#
+#=--------------------------------------------------=#
+#1. FILES REQUIRED - FILES_ARR = [WAVELENGTHS,SPECTRA,ERRSPECTRA,DATES,CONTINUUM]
+#2. IS THIS A TEST? TRUE VDM FILE? -> OPTIONAL
+#3. mus: mu_smoo required. others optional?
 
+#Tvdm file: Optional file imput of the real tdf. Used for testing puroposes.
+#mu_spec, mu_l1, and mu_temp flags are options for providing individual regularization weights
+#otherwise, the values are based on those for mu_smoo.
+#Plot_Live option shows the active reconstruction every so many iterations.
+#Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
+function HOT_LAUNCH(Data,Mats,Pars;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
+
+	Data.L=scale*(Data.L)
+	Data.EL=scale*(Data.EL)
+	Data.continuum_flux=scale*Data.continuum_flux
+	Data.continuum_error_flux=scale*Data.continuum_error_flux
+	Pars.nits=nits
+
+	#SET RECONSTRUCTION PARAMETERS
+	scale=1.0
+  if mu_temp != false
+    Pars.mu_temp = mu_temp
+  else
+    Pars.mu_temp = 0.25*mu_smoo/scale
+  end
+  if mu_spec != false
+    Pars.mu_spec = mu_spec
+  else
+    Pars.mu_spec = 0.25*mu_smoo/scale
+  end
+  if mu_l1 != false
+    Pars.mu_l1 = mu_l1
+  else
+    Pars.mu_l1 = 0.25*mu_smoo/scale
+  end
+  Pars.mu_smoo=mu_smoo/scale^2
+  tmp,P = TLDR(1.0,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV)
+  tmp;
+end
 #=--------------------------------------------------=#
 #================= TLDR COLD LAUNCHER ====================#
 #=--------------------------------------------------=#
@@ -19,14 +58,14 @@ include("GenMatrices.jl")
 #otherwise, the values are based on those for mu_smoo.
 #Plot_Live option shows the active reconstruction every so many iterations.
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
-function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
+function COLD_LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
   #IMPORT DATA FROM FILES_ARR
 	wavelengths=FILES_ARR[1]
 	spectra = FILES_ARR[2]
 	errspectra = FILES_ARR[3]
 	dates = FILES_ARR[4]
 	continuum = FILES_ARR[5]
-	@everywhere DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
+	 DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 
 	DATA.L=scale*(DATA.L)
 	DATA.EL=scale*(DATA.EL)
@@ -34,10 +73,10 @@ function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,s
 	DATA.continuum_error_flux=scale*DATA.continuum_error_flux
 
 	#data_report(DATA)
-	@everywhere Pars = init_Params()
+	 Pars = init_Params()
 	Pars.num_tdf_times=50
 
-	@everywhere Mats=Gen_Mats(DATA,Pars)
+	 Mats=Gen_Mats(DATA,Pars)
 
 	Pars.nits=nits
 
@@ -66,9 +105,9 @@ end
 #=--------------------------------------------------=#
 #================ ADMM Algorithm ====================#
 #=--------------------------------------------------=#
-function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0,rhoT=800.0,rhoV=800.0)
+function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0,rhoT=800.0,rhoV=800.0,savefits=false)
 	Pars.tau=2.0
-	threshold = 1.0e-1 #CONVERGANCE THRESHOLD
+	threshold = 1.0e-4 #CONVERGANCE THRESHOLD
 	CX=false
 	CN=false
 	CT=false
@@ -86,7 +125,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	diffbest=10.0
 	difbit=1
 	#= INITIALIZING ADMM PARAMETERS =#
-	initial_psi = 0.0  #Initial value for PSI
+	 initial_psi = 0.0  #Initial value for PSI
 	#ADMM ARRAYS:
 	Con_Arr = zeros(DATA.num_lines)
 
@@ -112,12 +151,12 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	#init_vdm=randn(size(init_vdm)) #Start from Random
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 
-	@everywhere X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	@everywhere Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	@everywhere T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	@everywhere V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	@everywhere P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	@everywhere N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 
 
 
@@ -184,12 +223,10 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)
 	B = zeros(Pars.num_tdf_times,DATA.num_lines)
 	converged = false
-	while Pars.it <= Pars.nits && converged==false        #ADMM ITERATION LOOP
+	while Pars.it <= Pars.nits && Pars.conflag==false        #ADMM ITERATION LOOP
 		X.vdm_previous = copy(X.vdm)
 	#Step 1: MINIMIZATION W.R.T. X
-
-		#X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
-		X.vdm = P_min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
+		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 		#X.vdm = X.vdm.*(X.vdm.>0.0)
 	#Step 2: UPDATE REGULARIZATION TERMS
 		P.vdm_squiggle = X.vdm - P.U/P.rho
@@ -248,7 +285,8 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 			end
 		end
 		if CX == true && CN == true && CT == true && CV == true
-			converged = true
+			Pars.conflag = true
+			print_with_color(:blue,"TLDR CONVERGED \n")
 		end
 		PregX=regX(X,Pars)
 		PregN=regN(N,Pars)
@@ -270,10 +308,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 			#diffbest = sqdiff
 			#difbit = Pars.it
 		#end
-		if abs(Pars.chi2 - chiprev) < (0.000001)
-			#converged = 1
-			#println("CONVERGED")
-		end
+
 		#Plotting
 		if Plot_A == true && (Pars.it%10 == 0)
 			clf()
@@ -291,7 +326,12 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	end
 	#Final Plot
 	plotfin(Plot_F,X,Z,T,V)
-
+	if Pars.it==Pars.nits-1 && Pars.conflag==false
+		print_with_color(:red,"TLDR FAILED TO CONVERGE \n")
+	end
+	if savefits==true
+		Write_FITS(X,P);
+	end
 	X,Pars
 end
 
@@ -299,7 +339,7 @@ end
 #============= Generate ADMM Variable ===============#
 #=--------------------------------------------------=#
 #Intializes and fills the regularization terms for ADMM
-function Gen_Var(rhoi, num_tdf_times,num_lines,psi)
+ function Gen_Var(rhoi, num_tdf_times,num_lines,psi)
 	x = init_IMAGE(rhoi)
 	x.vdm = zeros((num_tdf_times,num_lines))
 	fill!(x.vdm,psi)
@@ -307,26 +347,6 @@ function Gen_Var(rhoi, num_tdf_times,num_lines,psi)
 	fill!(x.vdm_squiggle,psi)
 	x.U=zeros((num_tdf_times,num_lines))
 	x
-end
-
-
-#=--------------------------------------------------=#
-#=============== Stand IN Function ==================#
-#=--------------------------------------------------=#
-@everywhere function f(lambda)
-	l = lambda
-	W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
-	Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-	B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
-	X.vdm[:,l] = Q\B[:,l]
-end
-
-
-function P_min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
-	s = size(X.vdm)
-	l = collect(l=1:DATA.num_lines)
-	pmap(f,l)
-	X.vdm
 end
 
 
@@ -395,31 +415,4 @@ function Pen_update(X,Y,P)
 		end
 	end
 	Y
-end
-
-#=--------------------------------------------------=#
-#================ Parallel Mapping ==================#
-#=--------------------------------------------------=#
-function pmap(f, lst)
-	np = nprocs()
-	n = length(lst)
-	results = cell(n,4)
-	i=1
-	nextidx() = (idx=i; i+=1; idx)
-	@sync begin
-		for i=1:np
-			if p != myid() || np ==1
-				@async begin
-					while true
-						idx = nextidx()
-						if idx > n
-							break
-						end
-						results[idx,:] = remotecall_fetch(p,f,lst[idx])
-					end
-				end
-			end
-		end
-	end
-	results
 end

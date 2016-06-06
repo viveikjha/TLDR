@@ -146,7 +146,8 @@ end
 #Writes VDM and relevent info to FITS file & Header
 function Write_FITS(X,P)
 	Date = ["Date",string(Dates.today()),""]
-	it = ["it", P.it, "Iterations to convergance"]
+	it = ["it", P.it, "Iterations to convergence"]
+	conflag = ["ConFlag", P.conflag, "Convergence Flag"]
 	nit = ["max_its", P.nits, "Max number of iterations allowed."]
 	mu_smoo = ["mu_smo", P.mu_smoo,"Weight of smoothing regularizer."]
 	mu_spec = ["mu_spe", P.mu_spec, "Weight of spectral regularizer."]
@@ -159,9 +160,9 @@ function Write_FITS(X,P)
 	rho0 = ["in_rho", P.rho0,"Initial Penalty"]
 	tau = ["tau", P.tau,""]
 	chi2 = ["Chi2", P.chi2,"Final Chi Squared"]
-	keys = [Date[1],it[1],nit[1],mu_smoo[1],mu_spec[1],mu_temp[1],eps_abs[1],eps_abs[1],sigma[1],G[1],alpha[1],rho0[1],tau[1],chi2[1]]
-	vals = [Date[2],it[2]-1,nit[2],mu_smoo[2],mu_spec[2],mu_temp[2],eps_abs[2],eps_abs[2],sigma[2],G[2],alpha[2],rho0[2],tau[2],chi2[2]]
-	coms = [Date[3],it[3],nit[3],mu_smoo[3],mu_spec[3],mu_temp[3],eps_abs[3],eps_abs[3],sigma[3],G[3],alpha[3],rho0[3],tau[3],chi2[3]]
+	keys = [Date[1],conflag[1],it[1],nit[1],mu_smoo[1],mu_spec[1],mu_temp[1],eps_abs[1],eps_abs[1],sigma[1],G[1],alpha[1],rho0[1],tau[1],chi2[1]]
+	vals = [Date[2],conflag[2],it[2]-1,nit[2],mu_smoo[2],mu_spec[2],mu_temp[2],eps_abs[2],eps_abs[2],sigma[2],G[2],alpha[2],rho0[2],tau[2],chi2[2]]
+	coms = [Date[3],conflag[3],it[3],nit[3],mu_smoo[3],mu_spec[3],mu_temp[3],eps_abs[3],eps_abs[3],sigma[3],G[3],alpha[3],rho0[3],tau[3],chi2[3]]
 	head = FITSHeader(keys,vals,coms)
 	name=string(now(),"vdm.fits")
 	f = FITS(name,"w")
@@ -345,32 +346,40 @@ function plotfin(Plot_F,X,Z,T,V)
 
   	end
   end
-	#=--------------------------------------------------=#
-	#================ Parallel Mapping ==================#
-	#=--------------------------------------------------=#
-	function pmap(f, lst)
-	  np = nprocs()   #GETS THE NUMBER OF PROCESSES AVAILABLE
-	  n = length(lst)
-	  results = cell(n,4)
-	  i = 1
-	  #function to produce the next work item from the queue
-	  #in this case it's just an index
-	  nextidx() = (idx=i; i+=1; idx)
-	  @sync begin
-	    for p=1:np
-	      if p != myid() || np == 1
-	        @async begin
-	          while true
-	            idx = nextidx()
-	            if idx > n
-	              break
-	            end #IF
-	            results[idx,:] = remotecall_fetch(p,f,lst[idx]) #CALLS FUNCTION f ON PROCESSOR p WITH PARAMETER lst[idx]
-	            println("µ " , idx, " of ", length(lst)," complete.")
-	          end #WHILE
-	        end #@ASYNC
-	      end #IF
-	    end #FOR
-	  end #@SYNC
-	  results
-	end #FUNCTION
+
+	#function gen_tiksol(DATA,Pars,Mats;scale=1.0,mu_smoo=40.0)
+
+
+	function gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=40.0,plotting=false,save=false)
+	  #Par,Mats,DATA=getdata(f)
+	  #println("µ: ",mu_smoo)
+	  DATA.L = scale.*DATA.L
+	  DATA.EL = scale.*DATA.EL
+	  Pars= init_Params()
+	  Mats = Gen_Mats(DATA,Pars)
+
+	  #end
+	  Pars.mu_smoo=mu_smoo
+
+	  vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
+	  for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
+	    W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
+	    Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+	    B = Mats.HT* W_slice * DATA.L
+	    vdm[:,l] = Q\B[:,l]
+	  end
+	  vdm =vdm.*(vdm.>0.0) #FILTER OUT NEGATIVE VALUES
+	  if save==true
+	    writecsv("devsol.csv",vdm)
+	  end
+	  if plotting==true
+	    figure()
+	    imshow(vdm,origin="lower",cmap="Greens",interpolation="None",aspect="auto")
+	    xlabel("Spectral Channel")
+	    ylabel("Delay Time")
+	    titlestring=string("Tikhonov Image for µ=",Pars.mu_smoo, " and scale=",scale)
+	    title(titlestring)
+	    show()
+	  end
+	  vdm
+	end

@@ -14,24 +14,25 @@ end
 
 type Params
 	it::Int 				#Iteration Counter											#1
-	nits::Int				#Total Iterations Allowed								#2
-	tau::Real																								#3
-	num_lines::Int																					#4
-	num_tdf_times::Int																			#5
-	initial_psi::Real																				#6
-	mu_smoo::Real		#Tik Smoothing Weight										#7
-	mu_l1::Real			#Ell1 Reg weight												#8
-	mu_spec::Real		#Spectral Reg Weight										#9
-	mu_temp::Real		#Temporal Reg Weight										#10
-	eps_abs::Real																						#11
-	eps_rel::Real																						#12
-	sigma::Real																							#13
-	G::Real																									#14
-	alpha::Real																							#15
-	rho0::Real																							#16
-	chi2::Real																							#17
-	tdf_times::Array{Float64}																#18
-	tdf_values::Array{Float64}															#19
+	conflag::Bool		#Convergence Flag												#2
+	nits::Int				#Total Iterations Allowed								#3
+	tau::Real																								#4
+	num_lines::Int																					#5
+	num_tdf_times::Int																			#6
+	initial_psi::Real																				#7
+	mu_smoo::Real		#Tik Smoothing Weight										#8
+	mu_l1::Real			#Ell1 Reg weight												#9
+	mu_spec::Real		#Spectral Reg Weight										#10
+	mu_temp::Real		#Temporal Reg Weight										#11
+	eps_abs::Real																						#12
+	eps_rel::Real																						#13
+	sigma::Real																							#14
+	G::Real																									#15
+	alpha::Real																							#16
+	rho0::Real																							#17
+	chi2::Real																							#18
+	tdf_times::Array{Float64}																#19
+	tdf_values::Array{Float64}															#20
 end
 
 type Data
@@ -69,7 +70,7 @@ end
 function init_Params()
 #	Params(0,0 ,0.0,0  ,0 ,0.0,0.0,0.0,0.0,0.0,0.0,0.0 ,0   ,0.0,0.0 ,Inf,[],[])
 #  Params(2,50,1.2,0.0,50,0.1,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((max_delay-1.0)/(Pars.num_tdf_times-1)):max_delay),zeros(Pars.num_tdf_times))
-  Params(2,50,1.2,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50))
+  Params(2,false,50,1.2,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50))
 end
 
 function init_Data()
