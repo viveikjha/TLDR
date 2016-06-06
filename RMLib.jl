@@ -26,7 +26,7 @@ function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,s
 	errspectra = FILES_ARR[3]
 	dates = FILES_ARR[4]
 	continuum = FILES_ARR[5]
-	DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
+	@everywhere DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 
 	DATA.L=scale*(DATA.L)
 	DATA.EL=scale*(DATA.EL)
@@ -34,10 +34,10 @@ function LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,s
 	DATA.continuum_error_flux=scale*DATA.continuum_error_flux
 
 	#data_report(DATA)
-	Pars = init_Params()
+	@everywhere Pars = init_Params()
 	Pars.num_tdf_times=50
 
-	Mats=Gen_Mats(DATA,Pars)
+	@everywhere Mats=Gen_Mats(DATA,Pars)
 
 	Pars.nits=nits
 
@@ -112,12 +112,12 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	#init_vdm=randn(size(init_vdm)) #Start from Random
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 
-	X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	@everywhere X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	@everywhere Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	@everywhere T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	@everywhere V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	@everywhere P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	@everywhere N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 
 
 
@@ -188,7 +188,8 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		X.vdm_previous = copy(X.vdm)
 	#Step 1: MINIMIZATION W.R.T. X
 
-		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
+		#X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
+		X.vdm = P_min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 		#X.vdm = X.vdm.*(X.vdm.>0.0)
 	#Step 2: UPDATE REGULARIZATION TERMS
 		P.vdm_squiggle = X.vdm - P.U/P.rho
@@ -308,6 +309,27 @@ function Gen_Var(rhoi, num_tdf_times,num_lines,psi)
 	x
 end
 
+
+#=--------------------------------------------------=#
+#=============== Stand IN Function ==================#
+#=--------------------------------------------------=#
+@everywhere function f(lambda)
+	l = lambda
+	W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
+	Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+	B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+	X.vdm[:,l] = Q\B[:,l]
+end
+
+
+function P_min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
+	s = size(X.vdm)
+	l = collect(l=1:DATA.num_lines)
+	pmap(f,l)
+	X.vdm
+end
+
+
 #=--------------------------------------------------=#
 #=============== Minimization wrt X =================#
 #=--------------------------------------------------=#
@@ -373,4 +395,31 @@ function Pen_update(X,Y,P)
 		end
 	end
 	Y
+end
+
+#=--------------------------------------------------=#
+#================ Parallel Mapping ==================#
+#=--------------------------------------------------=#
+function pmap(f, lst)
+	np = nprocs()
+	n = length(lst)
+	results = cell(n,4)
+	i=1
+	nextidx() = (idx=i; i+=1; idx)
+	@sync begin
+		for i=1:np
+			if p != myid() || np ==1
+				@async begin
+					while true
+						idx = nextidx()
+						if idx > n
+							break
+						end
+						results[idx,:] = remotecall_fetch(p,f,lst[idx])
+					end
+				end
+			end
+		end
+	end
+	results
 end

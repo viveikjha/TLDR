@@ -12,7 +12,7 @@ using PyPlot
 #mode = 2
 #DATA = Import_Data(mode)
 println("---------2nd Import----------")
-DATA = Import_DataN("data/","rvm_wavelengths_trimmed.csv","rvm_fluxes_trimmed.csv", "rvm_errfluxes_trimmed.csv","data/rvm_dates.csv","data/arp151.b.dat")
+DATA = Import_DataN("","data/rvm_wavelengths_trimmed.csv","data/rvm_fluxes_trimmed.csv", "data/rvm_errfluxes_trimmed.csv","data/rvm_dates.csv","data/arp151.b.dat")
 #DATA = Import_DataN("data/","rvm_wavelengths.csv","rvm_fluxes.csv", "rvm_errfluxes.csv","data/rvm_dates.csv","data/arp151.b.dat")
 
 
