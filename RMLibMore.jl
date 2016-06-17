@@ -13,7 +13,8 @@ end
 #=========== Regularization term on X ===============#
 #=--------------------------------------------------=#
 function regX(X,Pars)
-	Pars.mu_smoo*0.5*ell2normsquared(X.vdm)
+	A=Pars.mu_smoo*0.5*ell2normsquared(X.vdm)
+	A
 end
 #=--------------------------------------------------=#
 #========== Regularization term on T,V,N ============#
@@ -211,7 +212,7 @@ function interp(x_DESIRED,x_DATA,y_DATA)
         y_NEW = y_DATA[length(y_DATA)]+ y_change
         yset = 1
       end
-      y_DESIRED[i] = y_NEW
+      y_DESIRED[i] = copy(y_NEW)
     end
   end
   y_DESIRED #This is the returned value. In Julia, return statements are not required.
@@ -359,7 +360,7 @@ function plotfin(Plot_F,X,Z,T,V)
 	  Mats = Gen_Mats(DATA,Pars)
 
 	  #end
-	  Pars.mu_smoo=mu_smoo
+	  Pars.mu_smoo=copy(mu_smoo)
 
 	  vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
 	  for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP

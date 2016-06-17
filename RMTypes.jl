@@ -33,6 +33,9 @@ type Params
 	chi2::Real																							#18
 	tdf_times::Array{Float64}																#19
 	tdf_values::Array{Float64}															#20
+	l1N_state::Bool																					#21
+	l1T_state::Bool																					#22
+	l1V_state::Bool																					#23
 end
 
 type Data
@@ -68,9 +71,7 @@ function init_IMAGE(rho)
 end
 
 function init_Params()
-#	Params(0,0 ,0.0,0  ,0 ,0.0,0.0,0.0,0.0,0.0,0.0,0.0 ,0   ,0.0,0.0 ,Inf,[],[])
-#  Params(2,50,1.2,0.0,50,0.1,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((max_delay-1.0)/(Pars.num_tdf_times-1)):max_delay),zeros(Pars.num_tdf_times))
-  Params(2,false,50,1.2,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50))
+  Params(2,false,50,1.2,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true)
 end
 
 function init_Data()

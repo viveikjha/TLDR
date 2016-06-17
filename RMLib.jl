@@ -73,7 +73,7 @@ function COLD_LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=fa
 	DATA.continuum_error_flux=scale*DATA.continuum_error_flux
 
 	#data_report(DATA)
-	 Pars = init_Params()
+	Pars = init_Params()
 	Pars.num_tdf_times=50
 
 	 Mats=Gen_Mats(DATA,Pars)
@@ -105,7 +105,7 @@ end
 #=--------------------------------------------------=#
 #================ ADMM Algorithm ====================#
 #=--------------------------------------------------=#
-function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0,rhoT=800.0,rhoV=800.0,savefits=false)
+function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,rhoZ=8000.0,rhoN=8000.0,rhoP=8000.0,rhoT=8000.0,rhoV=8000.0,savefits=false)
 	Pars.tau=2.0
 	threshold = 1.0e-4 #CONVERGANCE THRESHOLD
 	CX=false
@@ -164,49 +164,39 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	if vdmact != ""
 		vdm_path = vdmact
 		vdm_act = readcsv(vdm_path)
-		X.vdm = vdm_act
-		Z.vdm = vdm_act
+		X.vdm = copy(vdm_act)
+		Z.vdm = copy(vdm_act)
 		T.vdm = Mats.Ds*vdm_act
 		V.vdm = vdm_act*Mats.Dv
 		P.vdm = pos_prox_op(vdm_act)
-		N.vdm = vdm_act
+		N.vdm = copy(vdm_act)
 		act_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
 		#println("actual chi2: ",act_chi2)
-		Pars.chi2=act_chi2
+		Pars.chi2=copy(act_chi2)
 		if RepIt==true
-			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -True_VDM-")
+			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,Chi2x=true,Ppen=false,Zpen=true,Tpen=true,Vpen=true,Npen=true,Msg=" -True_VDM-")
 		end
 	end
 
-	X.vdm = init_vdm
-	Z.vdm = init_vdm
+	X.vdm = copy(init_vdm)
+	Z.vdm = copy(init_vdm)
 	T.vdm = Mats.Ds*init_vdm
 	V.vdm = init_vdm*Mats.Dv
 	P.vdm = pos_prox_op(init_vdm)
-	N.vdm = init_vdm
+	N.vdm = copy(init_vdm)
 
 	#Initiailize Penalty Parameters.
-	#flx_scale= 5.0
-	#flx_scale=1.0/10000.0
-	#println("Z: ",Z.rho,"P: ",P.rho,"T: ",T.rho,"V: ",V.rho,"N: ",N.rho)
-	Z.rho= rhoZ #4000000.0/flx_scale^2#20.0*Pars.mu_smoo#2000.0/flx_scale#2000.0
-	P.rho=rhoP#200.00/flx_scale^2
-	T.rho=rhoT#200.00/flx_scale^2
-	V.rho=rhoV#200.00/flx_scale^2
-	#N.rho=4000000.0/flx_scale^2
-	N.rho=rhoN#2000.00/flx_scale^2
+	Z.rho= rhoZ
+	P.rho=copy(rhoP)
+	T.rho=copy(rhoT)
+	V.rho=copy(rhoV)
+	N.rho=copy(rhoN)
 
 	siglvl=abs(median(DATA.L))
-	#println("Signal Level: ",siglvl, " - ", Pars.mu_smoo/Z.rho)
-	#println("ρZ:", Z.rho," μsmoo/ρZ: ",Pars.mu_smoo/Z.rho, " ρN:", N.rho, " μ l1: ",Pars.mu_l1, " μl1/ρN: ", Pars.mu_l1/N.rho)
-#	T.rho=2000#20.0*Pars.mu_temp#2000.0/flx_scale#2000.0 #5.0
-#	V.rho=2000#20.0*Pars.mu_spec#2000.0/flx_scale#2000.0
-#	P.rho=2000#2000.0/(flx_scale)#2000.0
-#	N.rho=2000#20.0*Pars.mu_l1#2000.0/flx_scale
 
 #Diagnostics on VDM initialized with Tihonov Solution.
 	init_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
-	Pars.chi2=init_chi2
+	Pars.chi2=copy(init_chi2)
 	if RepIt==true
 		Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -Tik_Init-")
 	end
@@ -216,10 +206,10 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	end
 	#println("INITIAL MULTIPLIERS: ",mean(Z.U))
 	Z.U=zeros(size(Z.U))
-	V.U = Z.U
-	T.U = Z.U
-	P.U = Z.U
-	N.U = Z.U
+	V.U = copy(Z.U)
+	T.U = copy(Z.U)
+	P.U = copy(Z.U)
+	N.U = copy(Z.U)
 	Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)
 	B = zeros(Pars.num_tdf_times,DATA.num_lines)
 	converged = false
@@ -235,11 +225,13 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 
 		T.vdm_squiggle = Mats.Ds*X.vdm-T.U/T.rho
 		T.vdm_previous = copy(T.vdm)
-
 		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Pars.mu_temp,T.rho)
+		#T.vdm=ell2_prox_op(T.vdm_squiggle,Pars.mu_temp,T.rho)
+
 		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
 		V.vdm_previous = copy(V.vdm)
 		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
+		#V.vdm=ell2_prox_op(V.vdm_squiggle,Pars.mu_spec,V.rho)
 
 		N.vdm_squiggle = X.vdm - N.U/N.rho
 		N.vdm_previous = copy(N.vdm)
@@ -259,15 +251,10 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 			Pars.G = 1.5
 		end
 	#Step 5: Update Penalty Parameters
-#		Z = Pen_update(X,Z,Pars)
-#		T = Pen_update(X,T,Pars)
-#		V = Pen_update(X,V,Pars)
-#		P = Pen_update(X,P,Pars)
-#Z.rho=#800.0/flx_scale^2#20.0*Pars.mu_smoo#2000.0/flx_scale#2000.0
-#T.rho=#8000.0/flx_scale^2#20.0*Pars.mu_temp#2000.0/flx_scale#2000.0 #5.0
-#V.rho=#8000.0/flx_scale^2#20.0*Pars.mu_spec#2000.0/flx_scale#2000.0
-#P.rho=#8000.0/flx_scale^2#2000.0/(flx_scale)#2000.0
-#N.rho=#8000.0/flx_scale^2#20.0*Pars.mu_l1#2000.0/flx_scale
+		#Z = Pen_update(X,Z,Pars)
+		#T = Pen_update_E(X,T,Pars; Ds=Mats.Ds)
+		#V = Pen_update_E(Z,V,Pars; Dv=Mats.Dv)
+		#P = Pen_update(X,P,Pars)
 
 	#Step 6: Check for Convergence
 		if Pars.it != 2
@@ -283,6 +270,18 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 			if abs(regV(V,Pars)-PregV) < threshold
 				CV=true
 			end
+			if sum(N.vdm) == 0		#CHECK IF L1(N) HAS FAILED
+				Pars.l1N_state=false
+				Pars.conflag = true
+			end
+			if sum(T.vdm) == 0 		#CHECK IF L1(T) HAS FAILED
+				Pars.l1T_state=false
+				Pars.conflag = true
+			end
+			if sum(V.vdm) == 0		#CHECK IF L1(V) HAS FAILED
+				Pars.l1V_state=false
+				Pars.conflag = true
+			end
 		end
 		if CX == true && CN == true && CT == true && CV == true
 			Pars.conflag = true
@@ -295,19 +294,14 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		Pars.it = Pars.it+1
 
 		true_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
-		chiprev = Pars.chi2
-		Pars.chi2= true_chi2
+		chiprev = copy(Pars.chi2)
+		Pars.chi2= copy(true_chi2)
 
 		#Reporting
 		if RepIt==true
-			Report(X,Z,P,T,V,N,DATA,Mats,Pars,Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,s=true,Pres=true,Zres=true,Tres=true,Vres=true,Nres=true)
+			#Report(X,Z,P,T,V,N,DATA,Mats,Pars,Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,s=true,Pres=true,Zres=true,Tres=true,Vres=true,Nres=true)
+			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,s=false,Chi2x=true,Ppen=false,Zpen=true,Tpen=true,Vpen=true,Npen=true)
 		end
-		#println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,L1Vstring,chi2xstring,sstring,rastring, rbstring,rcstring,rdstring,restring,rhozstring,rhopstring,rhotstring,rhovstring,rhonstring)
-		#println("It: ",Pars.it-2,Jstring,L2xstring,L1Tstring,chi2xstring,sstring,rastring, rbstring,rdstring)
-		#if sqdiff < diffbest
-			#diffbest = sqdiff
-			#difbit = Pars.it
-		#end
 
 		#Plotting
 		if Plot_A == true && (Pars.it%10 == 0)
@@ -372,7 +366,7 @@ end
 function min_wrt_z(X,V,Z,Pars,DATA,Mats)
   	Rinv = inv(V.rho*Mats.Dv*Mats.DvT+Z.rho*Mats.Gammaspe)
     C = (V.U+V.rho*V.vdm)*Mats.DvT-Z.U+(Z.rho*X.vdm)	#ORIGINAL PAPER VERSION
-    Z.vdm = 	C*Rinv
+		Z.vdm = 	C*Rinv
 end
 
 #=--------------------------------------------------=#
@@ -382,22 +376,60 @@ end
 #alpha is a throttling term on multiplier update.
 function LG_update(U,Z,X,rho,alpha)
 	U = U + (rho/alpha)*(Z - X)
-	Z
 end
 
 #=--------------------------------------------------=#
 #================= Update Penalty ===================#
 #=--------------------------------------------------=#
 function Pen_update(X,Y,P)
+
 	S = Y.rho*(Y.vdm-Y.vdm_previous)
 	R = X.vdm-Y.vdm
-	tau_prim_previous = Y.tau_prim
+	tau_prim_previous = copy(Y.tau_prim)
   Y.tau_prim = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*(maximum([ell2norm(X.vdm),ell2norm(Y.vdm)]))
-	tau_dual_previous = Y.tau_dual
+	tau_dual_previous = copy(Y.tau_dual)
   Y.tau_dual = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*ell2norm(Y.U)
 	eta = ell2norm(R)*Y.tau_dual / (ell2norm(S)*Y.tau_prim)
 #	eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
-	phi_previous = Y.phi
+	phi_previous = copy(Y.phi)
+	Y.phi = max(ell2norm(R/Y.tau_prim),ell2norm(S)/Y.tau_dual)
+	if (1.0/P.tau[1] <= eta[1]) && (eta[1] <= P.tau[1]) || (Y.phi[1] < P.sigma[1]*phi_previous[1])
+		#NOTHING HAPPENS IN HERE
+	elseif eta < (1.0/P.tau)
+		Y.rho_max = copy(Y.rho)
+		if Y.rho_min > 0.0
+			Y.rho = sqrt(Y.rho_min*Y.rho_max)
+		else Y.rho = Y.rho_max/P.G
+		end
+	elseif eta > P.tau
+		Y.rho_min = copy(Y.rho)
+		if Y.rho_max < Inf
+			Y.rho = sqrt(Y.rho_min*Y.rho_max)
+		else Y.rho = Y.rho_min*P.G
+		end
+	end
+	Y
+end
+
+#=--------------------------------------------------=#
+#================= Update Penalty ===================#
+#=--------------------------------------------------=#
+function Pen_update_E(X,Y,P;Dv=false,Ds=false)
+	if Dv==false
+		Dv = eye(size(X.vdm)[2])
+	end
+	if Ds == false
+		Ds = eye(size(X.vdm)[1])
+	end
+	S = Y.rho*(Y.vdm-Y.vdm_previous)
+	R = Ds*X.vdm*Dv-Y.vdm
+	tau_prim_previous = copy(Y.tau_prim)
+  Y.tau_prim = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*(maximum([ell2norm(X.vdm),ell2norm(Y.vdm)]))
+	tau_dual_previous = copy(Y.tau_dual)
+  Y.tau_dual = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*ell2norm(Y.U)
+	eta = ell2norm(R)*Y.tau_dual / (ell2norm(S)*Y.tau_prim)
+#	eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
+	phi_previous = copy(Y.phi)
 	Y.phi = max(ell2norm(R/Y.tau_prim),ell2norm(S)/Y.tau_dual)
 	if (1.0/P.tau[1] <= eta[1]) && (eta[1] <= P.tau[1]) || (Y.phi[1] < P.sigma[1]*phi_previous[1])
 		#NOTHING HAPPENS IN HERE
@@ -408,7 +440,7 @@ function Pen_update(X,Y,P)
 		else Y.rho = Y.rho_max/P.G
 		end
 	elseif eta > P.tau
-		Y.rho_min = Y.rho
+		Y.rho_min = copy(Y.rho)
 		if Y.rho_max < Inf
 			Y.rho = sqrt(Y.rho_min*Y.rho_max)
 		else Y.rho = Y.rho_min*P.G

@@ -42,10 +42,6 @@ println("For Box, ", total_lit, " pixels lit.")
 #Initialize ADMM Parameters
 Pars = init_Params()
 
-
-
-
-
 #Initialize Matrices
 #println("-----------")
 #println("Getting H:")
@@ -68,11 +64,11 @@ println("dimensions:", dims)
 #println("Using a sigma of: ",sigma)
 
 
-n = randn((dims))*sigma #GENERATE NOISE
+#n = randn((dims))*sigma #GENERATE NOISE
 #GENERATE NOISE BY RANDOMLY SAMPLING REAL DATA ERROR
-#nbase=vec(readcsv("data/rvm_errfluxes.csv"))
-#n = rand(nbase,length(Spectra_Vert)).*rand([-1.0,1.0],length(Spectra_Vert))
-#n= reshape(n,size(Spectra_Vert))
+nbase=vec(readcsv("data/rvm_errfluxes.csv"))
+n = rand(nbase,length(Spectra_Vert)).*rand([-1.0,1.0],length(Spectra_Vert))
+n= reshape(n,size(Spectra_Vert))
 println("-----------")
 
 
