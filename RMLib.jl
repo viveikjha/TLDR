@@ -353,7 +353,7 @@ function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
 			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho*T.vdm)+P.U+P.rho*P.vdm+Z.U+Z.rho*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
 			vdm[:,l] = Q\B[:,l]
 	end
 	X.vdm=sdata(vdm) #sdata() pulls the underlying shared array
@@ -364,9 +364,18 @@ end
 #=============== Minimization wrt Z =================#
 #=--------------------------------------------------=#
 function min_wrt_z(X,V,Z,Pars,DATA,Mats)
-  	Rinv = inv(V.rho*Mats.Dv*Mats.DvT+Z.rho*Mats.Gammaspe)
-    C = (V.U+V.rho*V.vdm)*Mats.DvT-Z.U+(Z.rho*X.vdm)	#ORIGINAL PAPER VERSION
-		Z.vdm = 	C*Rinv
+		#writecsv("Arrays/Xv.csv",X.vdm)
+		#writecsv("Arrays/Vv.csv",V.vdm)
+		#writecsv("Arrays/Zv.csv",Z.vdm)
+		#writecsv("Arrays/Zrho.csv",Z.rho)
+		#writecsv("Arrays/Vrho.csv",V.rho)
+		#writecsv("Arrays/Vu.csv",V.U)
+		#writecsv("Arrays/Zu.csv",Z.U)
+		#writecsv("Arrays/Gammas.csv",Mats.Gammaspe)
+		#writecsv("Arrays/DvT.csv",Mats.DvT)
+  	R = V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe
+    C = (V.U+V.rho.*V.vdm)*Mats.DvT-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
+		Z.vdm = 	C\R
 end
 
 #=--------------------------------------------------=#
@@ -375,7 +384,7 @@ end
 #X and Y are IMAGE structs
 #alpha is a throttling term on multiplier update.
 function LG_update(U,Z,X,rho,alpha)
-	U = U + (rho/alpha)*(Z - X)
+	U = U + (rho/alpha).*(Z - X)
 end
 
 #=--------------------------------------------------=#

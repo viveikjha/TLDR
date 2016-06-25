@@ -7,7 +7,7 @@ include("../DataImportNEW.jl")
 using PyPlot
 
 #sim_wavelenghts = readcsv("new_wavelengths.csv")
-vdm_simulated = readcsv("Sim_VDM.csv")
+vdm_simulated = readcsv("Spiral/simulated_vdm.csv")
 #DATA = Import_Data(2)
 DATA=Import_DataN("../data/","rvm_wavelengths.csv","rvm_fluxes.csv","rvm_errfluxes.csv","rvm_dates.csv","arp151.b.dat")
 
@@ -24,30 +24,31 @@ Pars = init_Params()
 Mats = Gen_Mats(DATA,Pars)
 
 #CALCULATE SNR ARRAY FOR ACTUAL DATA
+
+
 SNR = abs(DATA.L./DATA.EL)
+println("SNR size: ", size(SNR))
 println("Mats.H ", size(Mats.H))
 H2=readcsv("H.csv")
 println(maximum(abs(Mats.H-H2)))
 Spectra = Mats.H*vdm_simulated #NOISELESS SPECTRA
+println("Spectra Size: ", size(Spectra))
 #writecsv("Spectrac_sim.csv", Spectra)
 
 
-dims = size(Spectra)
-#println("dimensions:", dims)
-gaus=randn((dims))
-println("Max gaus: ",maximum(gaus))
-Error = (Spectra./SNR)#.* gaus #GENERATE NOISE
 
-zind=find(Error.==0.0)
-Error[zind]=gaus[zind]
-nind=find(isnan(Error).==true)
-Error[nind]=gaus[nind]
+nbase=vec(readcsv("../data/rvm_errfluxes.csv"))
+n = rand(nbase,length(Spectra)).*rand([-1.0,1.0],length(Spectra))
+n= reshape(n,size(Spectra))
+println("-----------")
+Error= n
+
+
 
 println("Zeros in SNR: ", size(find(SNR.==0.0)))
 println("Checking for Nans in SNR: ",any(isnan,SNR))
 println("Checking for Nans in Error: ",any(isnan,Error))
 println("Checking for Nans in Spectra: ",any(isnan,Spectra))
-println("Checking for Nans in Gaus: ",any(isnan,gaus))
 
 Noisy_Spectra = Spectra+Error #ADD NOISE
 println("Checking for Nans in Noisy Spectra: ",any(isnan,Noisy_Spectra))

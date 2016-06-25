@@ -5,51 +5,20 @@ include("../RMTypes.jl")
 include("../DataImport.jl")
 include("../GenMatrices.jl")
 include("../DataImportNEW.jl")
-@everywhere include("../dev.jl")
+include("../dev.jl")
 using PyPlot
 
 
-function pmap(f, lst)
-  np = nprocs()   #GETS THE NUMBER OF PROCESSES AVAILABLE
-  n = length(lst)
-  results = cell(n,4)
-  i = 1
-  #function to produce the next work item from the queue
-  #in this case it's just an index
-  nextidx() = (idx=i; i+=1; idx)
-  @sync begin
-    for p=1:np
-      if p != myid() || np == 1
-        @async begin
-          while true
-            idx = nextidx()
-            if idx > n
-              break
-            end #IF
-            results[idx,:] = remotecall_fetch(p,f,lst[idx]) #CALLS FUNCTION f ON PROCESSOR p WITH PARAMETER lst[idx]
-            println("µ " , idx, " of ", length(lst)," complete.")
-          end #WHILE
-        end #@ASYNC
-      end #IF
-    end #FOR
-  end #@SYNC
-  results
-end #FUNCTION
 
 
-@everywhere vdmfile="Sim_VDM.csv"
-@everywhere truevdm=readcsv(vdmfile)
-@everywhere H = readcsv("H.csv")
-@everywhere files=["../data/rvm_wavelengths.csv","../simulation/Sim_Spectra.csv","../simulation/Sim_Error.csv","../data/rvm_dates.csv","../data/arp151.b.dat"]
-@everywhere Error = (readcsv("Sim_Error.csv"))'
-@everywhere Flux = (readcsv("Sim_Spectra.csv"))'
-@everywhere off=0.000001
+vdmfile="Spiral/simulated_vdm.csv"
+truevdm=readcsv(vdmfile)
+H = readcsv("H.csv")
+files=["../data/rvm_wavelengths.csv","../simulation/Sim_Spectra.csv","../simulation/Sim_Error.csv","../data/rvm_dates.csv","../data/arp151.b.dat"]
+Error = (readcsv("Sim_Error.csv"))'
+Flux = (readcsv("Sim_Spectra.csv"))'
+off=0.000001
 
-µ=[1.0,10.0,1.0e2,500.0,1.0e3,5000.0,1.0e4,5.0e4,1.0e5,5.0e5,1.0e6,5.0e6,1.0e7,5.0e7,1.0e8,5.0e8,1.0e9,5.0e9,1.0e10,5.0e10,1.0e11,5.0e11,1.0e12,5.0e12,1.0e13]
-#µ=[1.0,10.0,1.0e2]
-flx=sqrt(sum(truevdm.^2))
-#r=cell(length(µ),4)
-#println("Beginning minimizations with µs.")
 
 
 #tic()
@@ -66,25 +35,9 @@ flx=sqrt(sum(truevdm.^2))
 #toc()
 
 #println(r)
-
-nextidx() = (idx=i; i+=1; idx)
-@everywhere off = 0.00001
-@everywhere function f(mu)
-  rec = LAUNCH(files;mu_smoo=mu,mu_spec=off,mu_temp=off,mu_l1=off,nits=50,Tvdm="",Plot_Live=false,Plot_Final=false,RepIt=false,RepF=false)
-  vdm=rec.vdm
-  M=H*vdm
-  name = string("VDMs/rec",mu,".csv")
-  writecsv(name,vdm)
-  residual = sqrt(sum(M-Flux).^2)
-  flux = (sqrt(sum(vdm.^2)))
-  chi2 = sum((((M)-Flux)./(Error)).^2)/length(Flux)
-  [mu,residual,flux,chi2]
-end
-tic()
-out = pmap(f,µ)
-toc()
-println(out)
-writecsv("TikSol.csv",out)
-# In output file: [Mu, residual, flux, chi2]
-#writecsv("TikRes.csv",r)
+mu_smoo=1.0e3
+mu_spec=0.001
+mu_temp=0.001
+mu_l1=0.001
+rec = COLD_LAUNCH(files;mu_smoo=mu_smoo,mu_spec=mu_spec,mu_temp=mu_temp,mu_l1=mu_l1,nits=50,Plot_Live=false,Plot_Final=false,RepIt=false,RepF=false)
 println("Complete.")

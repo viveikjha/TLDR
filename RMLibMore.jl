@@ -13,7 +13,11 @@ end
 #=========== Regularization term on X ===============#
 #=--------------------------------------------------=#
 function regX(X,Pars)
-	A=Pars.mu_smoo*0.5*ell2normsquared(X.vdm)
+	#writecsv("Arrays/Xv.csv",X.vdm)
+	#A=Pars.mu_smoo*0.5*ell2normsquared(X.vdm)
+	A=Pars.mu_smoo*0.5*	sum(X.vdm.^2)
+
+
 	A
 end
 #=--------------------------------------------------=#
