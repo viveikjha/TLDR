@@ -15,7 +15,8 @@ end
 function regX(X,Pars)
 	#writecsv("Arrays/Xv.csv",X.vdm)
 	#A=Pars.mu_smoo*0.5*ell2normsquared(X.vdm)
-	A=Pars.mu_smoo*0.5*	sum(X.vdm.^2)
+	G=copy(X.vdm)
+	A=Pars.mu_smoo*0.5*	sum(G.^2)
 
 
 	A
@@ -371,7 +372,14 @@ function plotfin(Plot_F,X,Z,T,V)
 	    W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
 	    Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
 	    B = Mats.HT* W_slice * DATA.L
-	    vdm[:,l] = Q\B[:,l]
+			G=inv(Q)*B
+			vdm[:,l] = G[:,l]
+
+	    #vdm[:,l] = Q\B[:,l]
+
+			#vdm[:,l] = Q\B[:,l]
+
+
 	  end
 	  vdm =vdm.*(vdm.>0.0) #FILTER OUT NEGATIVE VALUES
 	  if save==true

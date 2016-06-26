@@ -14,13 +14,14 @@ DATA = Import_Data(2)
 
 #Create Wavlengths
 Ha =6563.0
-nlams = 50
+nlams = 20
+ntimes=50
 lam = collect(1:nlams)+(Ha-nlams/2)
 writecsv("UnitTests/UT_Wavelengths.csv",lam)
 println("Wrote UT_wavelengths.csv with dimensions: ",size(lam))
 #Create VDM Vertical Stripe
 spread=10.0
-ntimes=50
+
 lvl=1.00
 flx_scale=1.0
 

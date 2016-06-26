@@ -214,26 +214,29 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	B = zeros(Pars.num_tdf_times,DATA.num_lines)
 	converged = false
 	while Pars.it <= Pars.nits && Pars.conflag==false        #ADMM ITERATION LOOP
+		
 		X.vdm_previous = copy(X.vdm)
 	#Step 1: MINIMIZATION W.R.T. X
 		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 		#X.vdm = X.vdm.*(X.vdm.>0.0)
 	#Step 2: UPDATE REGULARIZATION TERMS
-		P.vdm_squiggle = X.vdm - P.U/P.rho
+		P.vdm_squiggle = X.vdm - P.U./P.rho
 		P.vdm_previous = copy(P.vdm)
 		P.vdm = pos_prox_op(P.vdm_squiggle)
 
-		T.vdm_squiggle = Mats.Ds*X.vdm-T.U/T.rho
+
+
+		T.vdm_squiggle = Mats.Ds*X.vdm-T.U./T.rho
 		T.vdm_previous = copy(T.vdm)
 		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Pars.mu_temp,T.rho)
 		#T.vdm=ell2_prox_op(T.vdm_squiggle,Pars.mu_temp,T.rho)
 
-		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U/V.rho
+		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U./V.rho
 		V.vdm_previous = copy(V.vdm)
 		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
 		#V.vdm=ell2_prox_op(V.vdm_squiggle,Pars.mu_spec,V.rho)
 
-		N.vdm_squiggle = X.vdm - N.U/N.rho
+		N.vdm_squiggle = X.vdm - N.U./N.rho
 		N.vdm_previous = copy(N.vdm)
 		N.vdm = ell1_prox_op(N.vdm,N.vdm_squiggle,Pars.mu_l1,N.rho)
 
@@ -349,14 +352,18 @@ end
 #=--------------------------------------------------=#
 function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 	s = size(X.vdm)
-	vdm = SharedArray(Float64,s[1],s[2])
+	vdm = Array(Float64,s[1],s[2])
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
 			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
 			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
-			vdm[:,l] = Q\B[:,l]
+
+			G=inv(Q)*B
+			#vdm[:,l] = Q\B[:,l]
+			vdm[:,l] = G[:,l]
+
 	end
-	X.vdm=sdata(vdm) #sdata() pulls the underlying shared array
+	X.vdm=copy(vdm) #sdata() pulls the underlying shared array
 	X.vdm
 end
 
@@ -364,18 +371,9 @@ end
 #=============== Minimization wrt Z =================#
 #=--------------------------------------------------=#
 function min_wrt_z(X,V,Z,Pars,DATA,Mats)
-		#writecsv("Arrays/Xv.csv",X.vdm)
-		#writecsv("Arrays/Vv.csv",V.vdm)
-		#writecsv("Arrays/Zv.csv",Z.vdm)
-		#writecsv("Arrays/Zrho.csv",Z.rho)
-		#writecsv("Arrays/Vrho.csv",V.rho)
-		#writecsv("Arrays/Vu.csv",V.U)
-		#writecsv("Arrays/Zu.csv",Z.U)
-		#writecsv("Arrays/Gammas.csv",Mats.Gammaspe)
-		#writecsv("Arrays/DvT.csv",Mats.DvT)
-  	R = V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe
+  	Rinv = inv(V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe)
     C = (V.U+V.rho.*V.vdm)*Mats.DvT-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
-		Z.vdm = 	C\R
+		Z.vdm = 	C*Rinv
 end
 
 #=--------------------------------------------------=#

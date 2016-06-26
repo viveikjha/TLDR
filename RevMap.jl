@@ -6,8 +6,8 @@ include("DataImportNEW.jl")
 include("GenMatrices.jl")
 using PyPlot
 
-FILES_ARR=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"] #Data files to load.
-#FILES_ARR=["data/rvm_wavelengths_trimmed.csv","data/rvm_fluxes_trimmed.csv", "data/rvm_errfluxes_trimmed.csv","data/rvm_dates.csv","data/arp151.b.dat"]
+#FILES_ARR=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"] #Data files to load.
+FILES_ARR=["data/rvm_wavelengths_trimmed.csv","data/rvm_fluxes_trimmed.csv", "data/rvm_errfluxes_trimmed.csv","data/rvm_dates.csv","data/arp151.b.dat"]
 
 wavelengths=FILES_ARR[1]
 spectra = FILES_ARR[2]
@@ -24,12 +24,13 @@ DATA.continuum_error_flux=scale*DATA.continuum_error_flux
 
 Pars= init_Params()
 Pars.nits=200
+Pars.num_tdf_times=50 #This is the default
 Mats=Gen_Mats(DATA,Pars)
 
-msmo = 1000000.0
-ml1 = 1000.0
-mspe = 100.0     #GOES WITH V
-mtem = 100.0     #GOES WITH T
+msmo = 1000.0
+ml1 = 100.0
+mspe = 10.0     #GOES WITH V
+mtem = 10.0     #GOES WITH T
 
 pz=1.0e8
 #pp=1.0e12

@@ -7,37 +7,34 @@ include("../GenMatrices.jl")
 include("../DataImportNEW.jl")
 include("../dev.jl")
 using PyPlot
-
-
-
-
-vdmfile="Spiral/simulated_vdm.csv"
-truevdm=readcsv(vdmfile)
-H = readcsv("H.csv")
 files=["../data/rvm_wavelengths.csv","../simulation/Sim_Spectra.csv","../simulation/Sim_Error.csv","../data/rvm_dates.csv","../data/arp151.b.dat"]
-Error = (readcsv("Sim_Error.csv"))'
-Flux = (readcsv("Sim_Spectra.csv"))'
-off=0.000001
 
+wavelengths=files[1];
+spectra = files[2];
+errspectra = files[3];
+dates = files[4];
+continuum = files[5];
+DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum);
 
+Pars= init_Params();
+Pars.nits=200
+Pars.num_tdf_times=50 #This is the default
+Mats=Gen_Mats(DATA,Pars);
 
-#tic()
-#for i=1:length(µ)
-#  vdm=gen_tiksol(files;scale=1.0,mu_smoo=µ[i],plotting=false,save=false)
-#  M=H*vdm
-#  residual = sqrt(sum(M-Flux).^2)
-#  flux = (sqrt(sum(vdm.^2)))
-#  chi2 = sum(((M-Flux)./(Error)).^2)/length(Flux)
-#  r[i,:]=[µ[i],residual,flux,chi2]
-
-#  println("µ " , i, " of ", length(µ)," complete.")
-#end
-#toc()
 
 #println(r)
 mu_smoo=1.0e3
 mu_spec=0.001
 mu_temp=0.001
 mu_l1=0.001
-rec = COLD_LAUNCH(files;mu_smoo=mu_smoo,mu_spec=mu_spec,mu_temp=mu_temp,mu_l1=mu_l1,nits=50,Plot_Live=false,Plot_Final=false,RepIt=false,RepF=false)
+
+pz=1.0e8
+#pp=1.0e12
+pn=1.0e8
+pv=1.0e6
+pt=1.0e6
+
+rec=HOT_LAUNCH(DATA,Mats,Pars;mu_smoo=msmo,mu_spec=mspe,mu_temp=mtem,mu_l1=ml1,scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=true,RepIt=false,RepF=false, rhoN=pn, rhoZ=pz, rhoV=pv,rhoT=pt); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+
+
 println("Complete.")
