@@ -23,19 +23,30 @@ DATA.continuum_flux=scale*DATA.continuum_flux
 DATA.continuum_error_flux=scale*DATA.continuum_error_flux
 
 Pars= init_Params()
-Pars.nits=200
-Pars.num_tdf_times=50 #This is the default
+Pars.nits=500
+Pars.num_tdf_times=100 #This is the default
+min=0.0
+max=20.0
+stepsize=(max-min)/(Pars.num_tdf_times-1)
+#collect(1.0:((50-1.0)/(50-1)):50)
+Pars.tdf_times=collect(min:stepsize:max)
 Mats=Gen_Mats(DATA,Pars)
 
-msmo = 1000.0
-ml1 = 100.0
-mspe = 10.0     #GOES WITH V
-mtem = 10.0     #GOES WITH T
+msmo = 1.0e7
+pz=1.0e10
 
-pz=1.0e8
-#pp=1.0e12
-pn=1.0e8
-pv=1.0e6
-pt=1.0e6
 
-K=HOT_LAUNCH(DATA,Mats,Pars;mu_smoo=msmo,mu_spec=mspe,mu_temp=mtem,mu_l1=ml1,scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true, rhoN=pn, rhoZ=pz, rhoV=pv,rhoT=pt); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+ml1 = 500.0
+pn=1.0e7
+
+
+mspe = 500.0     #GOES WITH V
+pv=1.0e7
+
+
+mtem = 500.0     #GOES WITH T
+pt=1.0e7
+pp=1.0e7
+K=HOT_LAUNCH(DATA,Mats,Pars;mu_smoo=msmo,mu_spec=mspe,mu_temp=mtem,mu_l1=ml1,scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true, rhoN=pn, rhoZ=pz, rhoV=pv,rhoT=pt,rhoP=pp); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+vdm=copy(K.vdm)
+writecsv("RevMapResult.csv",vdm)

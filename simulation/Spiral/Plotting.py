@@ -195,7 +195,7 @@ sol = 299792.458 #km/s
 #H-Alpha:
 
 #wavelengths = loadtxt("new_wavelengths.csv")
-#Recvdm=loadtxt("RecVDM.csv",delimiter=",")
+Recvdm=loadtxt("recVDM.csv",delimiter=",")
 ############################################################################
 ############################################################################
 ############################################################################
@@ -203,12 +203,12 @@ sol = 299792.458 #km/s
 ############################################################################
 #fig=plt.figure(4)
 #ax=plt.subplot(111)
-#ax = plt.subplot2grid((2,2),(1,1),colspan=1)
-#plt.imshow((Recvdm),cmap='Greys',origin='lower',interpolation='none',extent=[min(LOSvel),max(LOSvel),0,max(delay)],aspect='auto')
-#plt.minorticks_on()
-#ax.set_title("Reconstruced Velocity Delay Map")
-#ax.set_ylabel("Delay")
-#ax.set_xlabel("L.O.S. Velocity (km/s)" )
+ax = plt.subplot2grid((2,2),(1,1),colspan=1)
+plt.imshow((Recvdm),cmap='Greys',origin='lower',interpolation='none',extent=[min(LOSvel),max(LOSvel),0,max(delay)],aspect='auto')
+plt.minorticks_on()
+ax.set_title("Reconstruced Velocity Delay Map")
+ax.set_ylabel("Delay")
+ax.set_xlabel("L.O.S. Velocity (km/s)" )
 ############################################################################
 ############################################################################
 ############################################################################

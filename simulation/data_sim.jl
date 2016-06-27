@@ -7,7 +7,7 @@ include("../DataImportNEW.jl")
 using PyPlot
 
 #sim_wavelenghts = readcsv("new_wavelengths.csv")
-vdm_simulated = readcsv("Spiral/simulated_vdm.csv")./(1000.0)
+vdm_simulated = readcsv("Spiral/simulated_vdm.csv")./(100.0)
 #DATA = Import_Data(2)
 DATA=Import_DataN("../data/","rvm_wavelengths.csv","rvm_fluxes.csv","rvm_errfluxes.csv","rvm_dates.csv","arp151.b.dat")
 
