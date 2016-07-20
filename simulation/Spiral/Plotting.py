@@ -44,10 +44,10 @@ fig=plt.figure(figsize=(10,10))
 ax = plt.subplot2grid((2,2),(0,0),colspan=1)
 #fig = plt.figure(1)
 #ax = plt.subplot(111)
-ax.set_title("BLR Geometry")
+ax.set_title(r"$BLR$ $Geometry$")
 col=LOSvel
 sizes = (delay/max(delay))*100.0
-ax.scatter(X,Y,c=-col,s=sizes,cmap="bwr",vmin=min(LOSvel),vmax=max(LOSvel))
+ax.scatter(X,Y,c=col,cmap="bwr",vmin=min(LOSvel),vmax=max(LOSvel))
 plt.minorticks_on()
 #ax.set_aspect('equal')
 ############################################################################
@@ -145,9 +145,9 @@ ax.set_ylim(-10.0,10.0)
 ax = plt.subplot2grid((2,2),(0,1),colspan=1)
 #fig=plt.figure(2)
 #ax = plt.subplot(111)
-ax.set_title("Velocity Delay Map")
-ax.set_xlabel("L.O.S. Velocity (km/s)")
-ax.set_ylabel("Delay")
+ax.set_title(r"$Velocity$ $Delay$ $Map$")
+ax.set_xlabel(r"$L.O.S.$ $Velocity$")
+ax.set_ylabel(r"$Delay$")
 ax.scatter(LOSvel,delay,c=-col,cmap="bwr",vmin=min(LOSvel),vmax=max(LOSvel))
 
 plt.minorticks_on()
@@ -179,9 +179,9 @@ ax = plt.subplot2grid((2,2),(1,0),colspan=1)
 plt.imshow((Fim),cmap='Greys',origin='lower',interpolation='none',extent=[min(LOSvel),max(LOSvel),0,max(delay)],aspect='auto')
 
 plt.minorticks_on()
-ax.set_title("Synthetic Velocity Delay Map")
-ax.set_ylabel("Delay")
-ax.set_xlabel("L.O.S. Velocity (km/s)" )
+ax.set_title(r"$Synthetic$ $Velocity$ $Delay$ $Map$")
+ax.set_ylabel(r"$Delay$")
+ax.set_xlabel(r"$L.O.S.$ $Velocity$" )
 ############################################################################
 ############################################################################
 ############################################################################
@@ -206,9 +206,9 @@ Recvdm=loadtxt("recVDM.csv",delimiter=",")
 ax = plt.subplot2grid((2,2),(1,1),colspan=1)
 plt.imshow((Recvdm),cmap='Greys',origin='lower',interpolation='none',extent=[min(LOSvel),max(LOSvel),0,max(delay)],aspect='auto')
 plt.minorticks_on()
-ax.set_title("Reconstruced Velocity Delay Map")
-ax.set_ylabel("Delay")
-ax.set_xlabel("L.O.S. Velocity (km/s)" )
+ax.set_title(r"$Reconstruced$ $Velocity$ $Delay$ $Map$")
+ax.set_ylabel(r"$Delay$")
+ax.set_xlabel(r"$L.O.S.$ $Velocity$" )
 ############################################################################
 ############################################################################
 ############################################################################
