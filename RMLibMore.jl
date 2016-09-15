@@ -376,7 +376,6 @@ function plotfin(Plot_F,X,Z,T,V)
 			vdm[:,l] = G[:,l]
 
 	    #vdm[:,l] = Q\B[:,l]
-
 			#vdm[:,l] = Q\B[:,l]
 
 
@@ -395,4 +394,30 @@ function plotfin(Plot_F,X,Z,T,V)
 	    show()
 	  end
 	  vdm
+	end
+
+	function gen_UTD(DATA,Pars,lvl,nlams,ntimes;CW=6563.0,spread=10)
+		lams = collect(1:nlams)+(CW-nlams/2.0)
+		vdm = zeros(ntimes,nlams)
+		for i in 1:ntimes
+			for j in 1:nlams
+				if i>= (ntimes/2)-(spread/2) && i < (ntimes/2)+(spread/2) && j> (nlams/2)-(spread/2) && j <= (nlams/2)+(spread/2)
+					vdm[i,j]=lvl
+				end
+			end
+		end
+		Par = init_Params()
+		Mats = Gen_Mats(DATA,Pars)
+		Spectra=Mats.H*vdm
+		nbase=vec(DATA.EL)
+		n=reshape(nbase,size(Spectra))
+		Noisy_Spectra = (Spectra+n)
+		Error = n
+		DATA.L=Noisy_Spectra
+		DATA.EL=Error
+		DATA.num_lines=size(DATA.L,2)
+		DATA.num_spectra_samples=length(DATA.spectra_dates)
+		DATA.num_continuum_dates=length(DATA.continuum_dates)
+		Mats=Gen_Mats(DATA,Pars)
+		vdm
 	end
