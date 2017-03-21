@@ -14,9 +14,9 @@ end
 #=--------------------------------------------------=#
 function regX(X,Pars)
 	#writecsv("Arrays/Xv.csv",X.vdm)
-	#A=Pars.mu_smoo*0.5*ell2normsquared(X.vdm)
-	G=copy(X.vdm)
-	A=Pars.mu_smoo*0.5*	sum(G.^2)
+	#A=Pars.mu_l2*0.5*ell2normsquared(X.vdm)
+	#G=copy(X.vdm) #THIS COPY MAY BE UNNECESSARY.
+	A=Pars.mu_l2*0.5*	sum(X.vdm.^2)
 
 
 	A
@@ -37,7 +37,9 @@ end
 function regN(N,Pars)
 	Pars.mu_l1*ell1norm(N.vdm)
 end
-
+function regP(P,Pars)
+	ell1norm(P.vdm)
+end
 
 
 #=--------------------------------------------------=#
@@ -155,7 +157,7 @@ function Write_FITS(X,P)
 	it = ["it", P.it, "Iterations to convergence"]
 	conflag = ["ConFlag", P.conflag, "Convergence Flag"]
 	nit = ["max_its", P.nits, "Max number of iterations allowed."]
-	mu_smoo = ["mu_smo", P.mu_smoo,"Weight of smoothing regularizer."]
+	mu_l2 = ["mu_smo", P.mu_l2,"Weight of smoothing regularizer."]
 	mu_spec = ["mu_spe", P.mu_spec, "Weight of spectral regularizer."]
 	mu_temp = ["mu_tem", P.mu_temp, "Weight of the temporal regularizer."]
 	eps_abs = ["eps_abs",P.eps_abs,""]
@@ -166,9 +168,9 @@ function Write_FITS(X,P)
 	rho0 = ["in_rho", P.rho0,"Initial Penalty"]
 	tau = ["tau", P.tau,""]
 	chi2 = ["Chi2", P.chi2,"Final Chi Squared"]
-	keys = [Date[1],conflag[1],it[1],nit[1],mu_smoo[1],mu_spec[1],mu_temp[1],eps_abs[1],eps_abs[1],sigma[1],G[1],alpha[1],rho0[1],tau[1],chi2[1]]
-	vals = [Date[2],conflag[2],it[2]-1,nit[2],mu_smoo[2],mu_spec[2],mu_temp[2],eps_abs[2],eps_abs[2],sigma[2],G[2],alpha[2],rho0[2],tau[2],chi2[2]]
-	coms = [Date[3],conflag[3],it[3],nit[3],mu_smoo[3],mu_spec[3],mu_temp[3],eps_abs[3],eps_abs[3],sigma[3],G[3],alpha[3],rho0[3],tau[3],chi2[3]]
+	keys = [Date[1],conflag[1],it[1],nit[1],mu_l2[1],mu_spec[1],mu_temp[1],eps_abs[1],eps_abs[1],sigma[1],G[1],alpha[1],rho0[1],tau[1],chi2[1]]
+	vals = [Date[2],conflag[2],it[2]-1,nit[2],mu_l2[2],mu_spec[2],mu_temp[2],eps_abs[2],eps_abs[2],sigma[2],G[2],alpha[2],rho0[2],tau[2],chi2[2]]
+	coms = [Date[3],conflag[3],it[3],nit[3],mu_l2[3],mu_spec[3],mu_temp[3],eps_abs[3],eps_abs[3],sigma[3],G[3],alpha[3],rho0[3],tau[3],chi2[3]]
 	head = FITSHeader(keys,vals,coms)
 	name=string(now(),"vdm.fits")
 	f = FITS(name,"w")
@@ -353,24 +355,24 @@ function plotfin(Plot_F,X,Z,T,V)
   	end
   end
 
-	#function gen_tiksol(DATA,Pars,Mats;scale=1.0,mu_smoo=40.0)
+	#function gen_tiksol(DATA,Pars,Mats;scale=1.0,mu_l2=40.0)
 
 
-	function gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=40.0,plotting=false,save=false)
+	function gen_tiksol(Par,Mats,DATA;scale=1.0,mu_l2=40.0,plotting=false,save=false)
 	  #Par,Mats,DATA=getdata(f)
-	  #println("µ: ",mu_smoo)
+	  #println("µ: ",mu_l2)
 	  DATA.L = scale.*DATA.L
 	  DATA.EL = scale.*DATA.EL
 	  Pars= init_Params()
 	  Mats = Gen_Mats(DATA,Pars)
 
 	  #end
-	  Pars.mu_smoo=copy(mu_smoo)
+	  Pars.mu_l2=copy(mu_l2)
 
 	  vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
 	  for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 	    W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
-	    Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+	    Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_l2)*Mats.Gammatdf #INCLUCES L1 NORM ON X
 	    B = Mats.HT* W_slice * DATA.L
 			G=inv(Q)*B
 			vdm[:,l] = G[:,l]
@@ -389,7 +391,7 @@ function plotfin(Plot_F,X,Z,T,V)
 	    imshow(vdm,origin="lower",cmap="Greens",interpolation="None",aspect="auto")
 	    xlabel("Spectral Channel")
 	    ylabel("Delay Time")
-	    titlestring=string("Tikhonov Image for µ=",Pars.mu_smoo, " and scale=",scale)
+	    titlestring=string("Tikhonov Image for µ=",Pars.mu_l2, " and scale=",scale)
 	    title(titlestring)
 	    show()
 	  end

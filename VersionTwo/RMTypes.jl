@@ -20,7 +20,7 @@ type Params
 	num_lines::Int																					#5
 	num_tdf_times::Int																			#6
 	initial_psi::Real																				#7
-	mu_smoo::Real		#Tik Smoothing Weight										#8
+	mu_l2::Real		#Tik Smoothing Weight										#8
 	mu_l1::Real			#Ell1 Reg weight												#9
 	mu_spec::Real		#Spectral Reg Weight										#10
 	mu_temp::Real		#Temporal Reg Weight										#11

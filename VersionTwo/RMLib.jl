@@ -2,7 +2,7 @@ using FITSIO
 using PyPlot
 include("RMLibMore.jl")
 include("RMTypes.jl")
-include("DataImport.jl")
+#include("DataImport.jl")
 include("DataImportNEW.jl")
 include("GenMatrices.jl")
 #=--------------------------------------------------=#
@@ -10,14 +10,14 @@ include("GenMatrices.jl")
 #=--------------------------------------------------=#
 #1. FILES REQUIRED - FILES_ARR = [WAVELENGTHS,SPECTRA,ERRSPECTRA,DATES,CONTINUUM]
 #2. IS THIS A TEST? TRUE VDM FILE? -> OPTIONAL
-#3. mus: mu_smoo required. others optional?
+#3. mus: mu_l2 required. others optional?
 
 #Tvdm file: Optional file imput of the real tdf. Used for testing puroposes.
 #mu_spec, mu_l1, and mu_temp flags are options for providing individual regularization weights
-#otherwise, the values are based on those for mu_smoo.
+#otherwise, the values are based on those for mu_l2.
 #Plot_Live option shows the active reconstruction every so many iterations.
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
-function HOT_LAUNCH(Data,Mats,Pars;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
+function HOT_LAUNCH(Data,Mats,Pars;mu_l2=40.0,mu_spec=false,mu_temp=false,mu_l1=false,mu_p=false,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
 
 	Data.L=scale*(Data.L)
 	Data.EL=scale*(Data.EL)
@@ -26,24 +26,31 @@ function HOT_LAUNCH(Data,Mats,Pars;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l
 	Pars.nits=nits
 
 	#SET RECONSTRUCTION PARAMETERS
-	scale=1.0
+
   if mu_temp != false
     Pars.mu_temp = mu_temp
-  else
-    Pars.mu_temp = 0.25*mu_smoo/scale
+		Tt=true
+	else
+		Tt=false
   end
   if mu_spec != false
     Pars.mu_spec = mu_spec
-  else
-    Pars.mu_spec = 0.25*mu_smoo/scale
+		Vt=true
+	else
+		Vt=false
   end
   if mu_l1 != false
     Pars.mu_l1 = mu_l1
-  else
-    Pars.mu_l1 = 0.25*mu_smoo/scale
+		Nt=true
+	else
+		Nt=false
   end
-  Pars.mu_smoo=mu_smoo/scale^2
-  tmp,P = TLDR(1.0,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV)
+	if mu_p == true
+		Pt=true
+	else
+		Pt=false
+	end
+  tmp,P = TLDR(1.0,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV,T_toggle=Tt,V_toggle=Vt,N_toggle=Nt,P_toggle=Pt)
   tmp;
 end
 #=--------------------------------------------------=#
@@ -51,14 +58,14 @@ end
 #=--------------------------------------------------=#
 #1. FILES REQUIRED - FILES_ARR = [WAVELENGTHS,SPECTRA,ERRSPECTRA,DATES,CONTINUUM]
 #2. IS THIS A TEST? TRUE VDM FILE? -> OPTIONAL
-#3. mus: mu_smoo required. others optional?
+#3. mus: mu_l2 required. others optional?
 
 #Tvdm file: Optional file imput of the real tdf. Used for testing puroposes.
 #mu_spec, mu_l1, and mu_temp flags are options for providing individual regularization weights
-#otherwise, the values are based on those for mu_smoo.
+#otherwise, the values are based on those for mu_l2.
 #Plot_Live option shows the active reconstruction every so many iterations.
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
-function COLD_LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
+function COLD_LAUNCH(FILES_ARR;mu_l2=40.0,mu_spec=false,mu_temp=false,mu_l1=false,mu_p=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
   #IMPORT DATA FROM FILES_ARR
 	wavelengths=FILES_ARR[1]
 	spectra = FILES_ARR[2]
@@ -81,24 +88,24 @@ function COLD_LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=fa
 	Pars.nits=nits
 
 	#SET RECONSTRUCTION PARAMETERS
-	scale=1.0
+	#NOTE: mu_pos WOULD BE MEANINGLESS
+
   if mu_temp != false
     Pars.mu_temp = mu_temp
-  else
-    Pars.mu_temp = 0.25*mu_smoo/scale
+  	Tt=true
   end
   if mu_spec != false
     Pars.mu_spec = mu_spec
-  else
-    Pars.mu_spec = 0.25*mu_smoo/scale
+		Vt = true
   end
   if mu_l1 != false
     Pars.mu_l1 = mu_l1
-  else
-    Pars.mu_l1 = 0.25*mu_smoo/scale
+		Nt = true
   end
-  Pars.mu_smoo=mu_smoo/scale^2
-  tmp,P = TLDR(1.0,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV)
+	if mu_p == true
+		Pt = true
+  end
+  tmp,P = TLDR(1.0,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV,T_toggle=Tt,V_toggle=Vt,N_toggle=Nt,P_toggle=Pt)
 end
 
 
@@ -129,17 +136,15 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 
 
 	#INITIALIZATION FROM TIKHONOV SOLUTION
-	#println("a: ",flx_scale^2*Pars.mu_smoo)
-
-	vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
+		vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
-			Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-			B = Mats.HT* W_slice * DATA.L
+			Wslice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
+			Q = Mats.HT * Wslice * Mats.H +  (Pars.mu_l2)*Mats.Gammatdf #INCLUCES L2 NORM ON X
+			B = Mats.HT* Wslice * DATA.L
 			vdm[:,l] = Q\B[:,l]
 		end
 	Ini=vdm.*(vdm .>= 0.0) #sdata() pulls the underlying shared array
-	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Pars.mu_smoo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
+	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Pars.mu_l2)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
 	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
 	if Plot_A == true
 		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Blues")
@@ -152,37 +157,63 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	#GENERATE REG TERMS
 	X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)	#REQUIRED
 	X.vdm = copy(init_vdm)
+
 	Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi) 	#REQUIRED
 	Z.vdm = copy(init_vdm)
 	Z.rho= rhoZ
+	Wslice=0
+	min_x_eqn_string_nt="Mats.HT * Wslice * DATA.L + Z.U + Z.rho .* Z.vdm"
+	min_x_eqn_string_it="Mats.HT * Wslice * Mats.H + Pars.mu_l2 * Mats.Gammatdf"
+
+	min_z_eqn_string_nt="-Z.U+Z.rho*X.vdm"
+	min_z_eqn_string_it="Z.rho*Mats.Gammaspe"
+
 	if P_toggle==true #CHECK IF USING POSITIVITY
 		P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)	#GENERATE VDM ARRAYS
 		P.vdm = pos_prox_op(init_vdm)																					#POPULATE VDM
 		P.rho=copy(rhoP)																											#POPULATE REG. HYPERPARAMETER
+		min_x_eqn_string_nt=string(min_x_eqn_string_nt,"+","P.U+P.rho.*P.vdm")#ADD TERMS TO EQUATION NORMAL TERM
+		min_x_eqn_string_it=string(min_x_eqn_string_it,"+","P.rho.*Mats.Gammatdf")#ADD TERMS TO EQUATION INVERSE TERM
+	else
+		P=false
 	end
 	if T_toggle==true #CHECK IF USING TEMPORAL GTV
 		T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)	#GENERATE VDM ARRAYS
 		T.vdm = Mats.Ds*init_vdm																							#POPULATE VDM
 		T.rho=copy(rhoT)																											#POPULATE REG. HYPERPARAMETER
+		min_x_eqn_string_nt=string(min_x_eqn_string_nt,"+","Mats.DsT*(T.U+T.rho.*T.vdm)")#ADD TERMS TO EQUATION NORMAL TERM
+		min_x_eqn_string_it=string(min_x_eqn_string_it,"+","T.rho.*Mats.DsT*Mats.Ds")#ADD TERMS TO EQUATION INVERSE TERM
+	else
+		T=false
 	end
 	if V_toggle==true	#CHECK IF USING FREQUENCY GTV
 		V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)	#GENERATE VDM ARRAYS
 		V.vdm = init_vdm*Mats.Dv																							#POPULATE VDM
 		V.rho=copy(rhoV)																											#POPULATE REG. HYPERPARAMETER
+		min_z_eqn_string_nt=string(min_z_eqn_string_nt,"+","(V.U+V.rho.*V.vdm)*Mats.DvT")#ADD TERMS TO EQUATION NORMAL TERM
+		min_z_eqn_string_it=string(min_z_eqn_string_it,"+","V.rho*Mats.Dv*Mats.DvT")#ADD TERMS TO EQUATION INVERSE TERM
+	else
+		V=false
 	end
 	if N_toggle==true	#CHECK IF USING L1-NORM
 		N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)	#GENERATE VDM ARRAYS
 		N.vdm = copy(init_vdm)																								#POPULATE VDM
 		N.rho=copy(rhoN)																											#POPULATE REG. HYPERPARAMETER
+		min_x_eqn_string_nt=string(min_x_eqn_string_nt,"+","N.U+N.rho.*N.vdm")#ADD TERMS TO EQUATION NORMAL TERM
+		min_x_eqn_string_it=string(min_x_eqn_string_it,"+","N.rho*Mats.Mats.Gammatdf")#ADD TERMS TO EQUATION INVERSE TERM
+	else
+		N=false
 	end
 
-
-
-
-
-
-	#Initiailize Penalty Parameters.
-
+	#GENERATE MINIMIZATION FUNCTIONS FROM EQUATION STRINGS     what could go wrong?
+	@generated function minx_nt(X,T,P,N,Z,Pars,DATA,Mats,Wslice)
+			return parse(min_x_eqn_string_nt)
+	end
+	min_x_nt=parse(min_x_eqn_string_nt) #Parse normal term
+	min_x_it=parse(min_x_eqn_string_it) #Parse inverse term
+	min_z_nt=parse(min_z_eqn_string_nt) #Parse normal term
+	min_z_it=parse(min_z_eqn_string_it) #Parse inverse term
+	eqns=[min_x_nt,min_x_it,min_z_nt,min_z_it] #Package terms into array
 
 	siglvl=abs(median(DATA.L))
 
@@ -194,26 +225,32 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	end
 	#=  Calculate Initial Multipliers & RHO =#
 	for p in 1:DATA.num_lines
-	  Z.U[:,p]=Mats.HT * squeeze(Mats.W[p,:,:],1) * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
+	  Z.U[:,p]=Mats.HT * squeeze(Mats.W[p,:,:],1) * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))  #MAY NOT BE CORRECT FOR ALL VDMs.
 	end
 	#println("INITIAL MULTIPLIERS: ",mean(Z.U))
 	Z.U=zeros(size(Z.U))
-	V.U = copy(Z.U)
-	T.U = copy(Z.U)
-	P.U = copy(Z.U)
-	N.U = copy(Z.U)
-	Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)
-	B = zeros(Pars.num_tdf_times,DATA.num_lines)
-	converged = false
+	if V_toggle==true; V.U=copy(Z.U); end
+	if T_toggle==true; T.U=copy(Z.U); end
+	if P_toggle==true; P.U=copy(Z.U); end
+	if N_toggle==true; N.U=copy(Z.U); end
 
+	#Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)  #I DON'T THINIK THIS IS USED OUTSIDE OF FUNCTIONS
+	#B = zeros(Pars.num_tdf_times,DATA.num_lines)					#I DON'T THINIK THIS IS USED OUTSIDE OF FUNCTIONS
+	converged = false
+	CX=false
+	if N_toggle==true; CN=false; end
+	if P_toggle==true; CP=false; end
+	if T_toggle==true; CT=false; end
+	if V_toggle==true; CV=false; end
 
 	while Pars.it <= Pars.nits && Pars.conflag==false        #ADMM ITERATION LOOP
 
 		X.vdm_previous = copy(X.vdm)
+
 	#Step 1: MINIMIZATION W.R.T. X
-		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
+		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,eqns)
 		#X.vdm = X.vdm.*(X.vdm.>0.0)
-	#Step 2: UPDATE REGULARIZATION TERMS
+	#Step 2: UPDATE REGULARIZATION TERMS ONLY IF THEY EXIST
 		if P_toggle == true
 			P.vdm_squiggle = X.vdm - P.U./P.rho
 			P.vdm_previous = copy(P.vdm)
@@ -241,9 +278,9 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		end
 
 		Z.vdm_previous = copy(Z.vdm)
-		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats)
+		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats,eqns)
 		#Z.vdm = Z.vdm.*(Z.vdm.>0.0)
-		#Step 4: UPDATE LAGRANGE MULTIPLIERS
+		#Step 4: UPDATE LAGRANGE MULTIPLIERS ONLY IF THEY EXIST
 		if T_toggle==true; T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha); end
 		if V_toggle==true; V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha); end
 		if N_toggle==true; N.U = LG_update(N.U,N.vdm,X.vdm,N.rho,Pars.alpha); end
@@ -259,29 +296,23 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		#V = Pen_update_E(Z,V,Pars; Dv=Mats.Dv)
 		#P = Pen_update(X,P,Pars)
 
+
 	#Step 6: Check for Convergence
 		if Pars.it != 2
-			if abs(regX(X,Pars)-PregX) < threshold
-				CX=true
-			end
-			if abs(regN(N,Pars)-PregN) < threshold
-				CN=true
-			end
-			if abs(regT(T,Pars)-PregT) < threshold
-				CT=true
-			end
-			if abs(regV(V,Pars)-PregV) < threshold
-				CV=true
-			end
-			if sum(N.vdm) == 0		#CHECK IF L1(N) HAS FAILED
+			if abs(regX(X,Pars)-PregX) < threshold; CX=true; end
+			if N_toggle == true && abs(regN(N,Pars)-PregN) < threshold; CN=true; end
+			if T_toggle == true && abs(regT(T,Pars)-PregT) < threshold; CT=true; end
+			if V_toggle == true && abs(regV(V,Pars)-PregV) < threshold;	CV=true; end
+			if P_toggle == true && abs(regP(P,Pars)-PregP) < threshold; CP=true; end
+			if N_toggle == true && sum(N.vdm) == 0		#CHECK IF L1(N) HAS FAILED
 				Pars.l1N_state=false
 				Pars.conflag = true
 			end
-			if sum(T.vdm) == 0 		#CHECK IF L1(T) HAS FAILED
+			if T_toggle == true && sum(T.vdm) == 0 		#CHECK IF L1(T) HAS FAILED
 				Pars.l1T_state=false
 				Pars.conflag = true
 			end
-			if sum(V.vdm) == 0		#CHECK IF L1(V) HAS FAILED
+			if V_toggle == true && sum(V.vdm) == 0		#CHECK IF L1(V) HAS FAILED
 				Pars.l1V_state=false
 				Pars.conflag = true
 			end
@@ -290,10 +321,14 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 			Pars.conflag = true
 			print_with_color(:blue,"TLDR CONVERGED \n")
 		end
+		#STILL NEED CHECKS.
+
 		PregX=regX(X,Pars)
-		PregN=regN(N,Pars)
-		PregT=regT(T,Pars)
-		PregV=regV(V,Pars)
+		if N_toggle==true; PregN=regN(N,Pars); end
+		if T_toggle==true; PregT=regT(T,Pars); end
+		if V_toggle==true; PregV=regV(V,Pars); end
+		if P_toggle==true; PregP=regP(P,Pars); end
+
 		Pars.it = Pars.it+1
 
 		true_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
@@ -302,7 +337,6 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 
 		#Reporting
 		if RepIt==true
-			#Report(X,Z,P,T,V,N,DATA,Mats,Pars,Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,s=true,Pres=true,Zres=true,Tres=true,Vres=true,Nres=true)
 			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,s=false,Chi2x=true,Ppen=false,Zpen=true,Tpen=true,Vpen=true,Npen=true)
 		end
 
@@ -350,15 +384,19 @@ end
 #=--------------------------------------------------=#
 #=============== Minimization wrt X =================#
 #=--------------------------------------------------=#
-function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
+function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,eqns)
 	s = size(X.vdm)
 	vdm = Array(Float64,s[1],s[2])
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
-			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+			Wslice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
+			println(eqns[2])
+			Q = inv(eval(eqns[2])) #INVERSE TERM
+			#Q = Mats.HT * Wslice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_l2+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INVERSE TERM
+			B = eval(eqns[1]) #NORMAL TERM
+			#B = Mats.HT* Wslice * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #NORMAL TERM
 
-			G=inv(Q)*B
+			G=Q*B
+
 			#vdm[:,l] = Q\B[:,l]
 			vdm[:,l] = G[:,l]
 
@@ -370,9 +408,11 @@ end
 #=--------------------------------------------------=#
 #=============== Minimization wrt Z =================#
 #=--------------------------------------------------=#
-function min_wrt_z(X,V,Z,Pars,DATA,Mats)
-  	Rinv = inv(V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe)
-    C = (V.U+V.rho.*V.vdm)*Mats.DvT-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
+function min_wrt_z(X,V,Z,Pars,DATA,Mats,eqns)
+		Rinv=inv(eval(eqns[4])) #INVERSE TERM
+  	#Rinv = inv(V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe) 	#INVERSE TERM
+		C = eval(eqns[3])#NORMAL TERM
+    #C = (V.U+V.rho.*V.vdm)*Mats.DvT-Z.U+(Z.rho.*X.vdm)				#NORMAL TERM
 		Z.vdm = 	C*Rinv
 end
 
