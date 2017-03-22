@@ -209,11 +209,19 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	@generated function minx_nt(X,T,P,N,Z,Pars,DATA,Mats,Wslice)
 			return parse(min_x_eqn_string_nt)
 	end
-	min_x_nt=parse(min_x_eqn_string_nt) #Parse normal term
-	min_x_it=parse(min_x_eqn_string_it) #Parse inverse term
-	min_z_nt=parse(min_z_eqn_string_nt) #Parse normal term
-	min_z_it=parse(min_z_eqn_string_it) #Parse inverse term
-	eqns=[min_x_nt,min_x_it,min_z_nt,min_z_it] #Package terms into array
+
+	@generated function minx_it(X,T,P,N,Z,Pars,DATA,Mats,Wslice)
+			return parse(min_x_eqn_string_it)
+	end
+
+	@generated function minz_nt(X,T,P,N,Z,Pars,DATA,Mats)
+			return parse(min_z_eqn_string_nt)
+	end
+
+	@generated function minz_it(X,T,P,N,Z,Pars,DATA,Mats)
+			return parse(min_z_eqn_string_it)
+	end
+	
 
 	siglvl=abs(median(DATA.L))
 
@@ -244,11 +252,28 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	if V_toggle==true; CV=false; end
 
 	while Pars.it <= Pars.nits && Pars.conflag==false        #ADMM ITERATION LOOP
-
+		println(Pars.it)
 		X.vdm_previous = copy(X.vdm)
 
 	#Step 1: MINIMIZATION W.R.T. X
-		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,eqns)
+
+		s = size(X.vdm) #THIS LINE IS A WASTE OF TIME. ITS ALSO A RHYME.
+		vdm = zeros(s[1],s[2])#Array(Float64,s[1],s[2])
+		for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
+				Wslice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
+				Q = inv(minx_it(X,T,P,N,Z,Pars,DATA,Mats,Wslice)) #INVERSE TERM
+				#Q = Mats.HT * Wslice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_l2+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INVERSE TERM
+				B = minx_nt(X,T,P,N,Z,Pars,DATA,Mats,Wslice) #NORMAL TERM
+				#B = Mats.HT* Wslice * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #NORMAL TERM
+
+				G=Q*B
+
+				#vdm[:,l] = Q\B[:,l]
+				vdm[:,l] = G[:,l]
+
+		end
+		X.vdm=copy(vdm)
+
 		#X.vdm = X.vdm.*(X.vdm.>0.0)
 	#Step 2: UPDATE REGULARIZATION TERMS ONLY IF THEY EXIST
 		if P_toggle == true
@@ -278,7 +303,8 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		end
 
 		Z.vdm_previous = copy(Z.vdm)
-		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats,eqns)
+		Z.vdm = minz_nt(X,T,P,N,Z,Pars,DATA,Mats)*inv(minz_it(X,T,P,N,Z,Pars,DATA,Mats))
+
 		#Z.vdm = Z.vdm.*(Z.vdm.>0.0)
 		#Step 4: UPDATE LAGRANGE MULTIPLIERS ONLY IF THEY EXIST
 		if T_toggle==true; T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha); end
@@ -405,16 +431,6 @@ function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,eqns)
 	X.vdm
 end
 
-#=--------------------------------------------------=#
-#=============== Minimization wrt Z =================#
-#=--------------------------------------------------=#
-function min_wrt_z(X,V,Z,Pars,DATA,Mats,eqns)
-		Rinv=inv(eval(eqns[4])) #INVERSE TERM
-  	#Rinv = inv(V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe) 	#INVERSE TERM
-		C = eval(eqns[3])#NORMAL TERM
-    #C = (V.U+V.rho.*V.vdm)*Mats.DvT-Z.U+(Z.rho.*X.vdm)				#NORMAL TERM
-		Z.vdm = 	C*Rinv
-end
 
 #=--------------------------------------------------=#
 #=============== Update Multipliers =================#
