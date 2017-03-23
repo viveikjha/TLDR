@@ -1,3 +1,5 @@
+module RMTypes
+export ADMM_IMAGE,Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats
 type ADMM_IMAGE
 	vdm::Array{Float64}										#1
 	vdm_previous::Array{Float64}					#2
@@ -20,7 +22,7 @@ type Params
 	num_lines::Int																					#5
 	num_tdf_times::Int																			#6
 	initial_psi::Real																				#7
-	mu_l2::Real		#Tik Smoothing Weight										#8
+	mu_l2::Real			#Tik Smoothing Weight										#8
 	mu_l1::Real			#Ell1 Reg weight												#9
 	mu_spec::Real		#Spectral Reg Weight										#10
 	mu_temp::Real		#Temporal Reg Weight										#11
@@ -80,4 +82,5 @@ end
 
 function init_Mats()
 	Matrices_S([],[],[],[],[],[],[],[],[],[],[],[])
+end
 end

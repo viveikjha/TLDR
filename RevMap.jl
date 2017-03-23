@@ -23,8 +23,8 @@ DATA.continuum_flux=scale*DATA.continuum_flux
 DATA.continuum_error_flux=scale*DATA.continuum_error_flux
 
 Pars= init_Params()
-Pars.nits=500
-Pars.num_tdf_times=100 #This is the default
+Pars.nits=50
+Pars.num_tdf_times=50 #This is the default
 min=0.0
 max=20.0
 stepsize=(max-min)/(Pars.num_tdf_times-1)

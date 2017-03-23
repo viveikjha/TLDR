@@ -1,9 +1,14 @@
-include("RMLib.jl")
-include("RMTypes.jl")
+#include("RMLib.jl")
+#include("RMTypes.jl")
 #include("DataImport.jl")
-include("DataImportNEW.jl")
-
-include("GenMatrices.jl")
+#include("DataImportNEW.jl")
+#include("GenMatrices.jl")
+push!(LOAD_PATH,"/home/manderson/Research/TLDR/VersionTwo/")
+using RMLib
+using RMTypes
+using DataImportNEW
+using RMLibMore
+using GenMatrices
 using PyPlot
 
 FILES_ARR=["../UnitTests/UT_Wavelengths.csv","../UnitTests/UT_Spectra.csv","../UnitTests/UT_Spectra_Error.csv","../data/rvm_dates.csv","../data/arp151.b.dat"] #Data files to load.

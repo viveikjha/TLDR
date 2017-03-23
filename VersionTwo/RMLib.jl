@@ -1,10 +1,19 @@
+module RMLib
+
 using FITSIO
 using PyPlot
-include("RMLibMore.jl")
-include("RMTypes.jl")
+using RMLibMore
+using RMTypes
+using DataImportNEW
+using GenMatrices
+#include("RMLibMore.jl")
+#include("RMTypes.jl")
 #include("DataImport.jl")
-include("DataImportNEW.jl")
-include("GenMatrices.jl")
+#include("DataImportNEW.jl")
+#include("GenMatrices.jl")
+
+
+export HOT_LAUNCH,COLD_LAUNCH
 #=--------------------------------------------------=#
 #================= TLDR HOT LAUNCHER ====================#
 #=--------------------------------------------------=#
@@ -17,12 +26,12 @@ include("GenMatrices.jl")
 #otherwise, the values are based on those for mu_l2.
 #Plot_Live option shows the active reconstruction every so many iterations.
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
-function HOT_LAUNCH(Data,Mats,Pars;mu_l2=40.0,mu_spec=false,mu_temp=false,mu_l1=false,mu_p=false,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
+function HOT_LAUNCH(DATA,Mats,Pars;mu_l2=40.0,mu_spec=false,mu_temp=false,mu_l1=false,mu_p=false,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
 
-	Data.L=scale*(Data.L)
-	Data.EL=scale*(Data.EL)
-	Data.continuum_flux=scale*Data.continuum_flux
-	Data.continuum_error_flux=scale*Data.continuum_error_flux
+	#Data.L=scale*(Data.L)
+	#Data.EL=scale*(Data.EL)
+	#Data.continuum_flux=scale*Data.continuum_flux
+	#Data.continuum_error_flux=scale*Data.continuum_error_flux
 	Pars.nits=nits
 
 	#SET RECONSTRUCTION PARAMETERS
@@ -72,7 +81,7 @@ function COLD_LAUNCH(FILES_ARR;mu_l2=40.0,mu_spec=false,mu_temp=false,mu_l1=fals
 	errspectra = FILES_ARR[3]
 	dates = FILES_ARR[4]
 	continuum = FILES_ARR[5]
-	 DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
+	DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 
 	DATA.L=scale*(DATA.L)
 	DATA.EL=scale*(DATA.EL)
@@ -221,7 +230,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	@generated function minz_it(X,T,P,N,Z,Pars,DATA,Mats)
 			return parse(min_z_eqn_string_it)
 	end
-	
+
 
 	siglvl=abs(median(DATA.L))
 
@@ -510,4 +519,6 @@ function Pen_update_E(X,Y,P;Dv=false,Ds=false)
 		end
 	end
 	Y
+end
+
 end
