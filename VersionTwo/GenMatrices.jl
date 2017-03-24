@@ -3,6 +3,8 @@
 module GenMatrices
 using RMTypes
 using RMLibMore
+using PyPlot
+
 export Gen_Mats
 function Gen_Mats(DATA,Params)
 	Mat=init_Mats()

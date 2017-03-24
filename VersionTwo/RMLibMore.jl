@@ -1,5 +1,7 @@
 module RMLibMore
-
+using RMTypes
+using GenMatrices
+using PyPlot
 export J,regX,regT,regV,regN,regP,Report,data_report,Write_FITS,interp,gen_UTD,gen_tiksol,plotfin,Model,Chi2,ell1_prox_op,ell2_prox_op,pos_prox_op,ell1norm,ell2norm,ell2normsquared
 #THIS FILE CONTAINS THE BASE LEVEL FUNCTIONS FOR TLDR THAT ARE NOT PART OF THE CORE ADMM ALGORITHM
 #Inputs include all the reconstruction variables. Options are for printed lines.
