@@ -1,10 +1,18 @@
+module RMLib
+
 using FITSIO
 using PyPlot
-include("RMLibMore.jl")
-include("RMTypes.jl")
-include("DataImport.jl")
-include("DataImportNEW.jl")
-include("GenMatrices.jl")
+using RMLibMore
+using RMTypes
+using DataImportNEW
+using GenMatrices
+
+#include("RMLibMore.jl")
+#include("RMTypes.jl")
+#include("DataImport.jl")
+#include("DataImportNEW.jl")
+#include("GenMatrices.jl")
+export HOT_LAUNCH,COLD_LAUNCH
 #=--------------------------------------------------=#
 #================= TLDR HOT LAUNCHER ====================#
 #=--------------------------------------------------=#
@@ -43,7 +51,7 @@ function HOT_LAUNCH(Data,Mats,Pars;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l
     Pars.mu_l1 = 0.25*mu_smoo/scale
   end
   Pars.mu_smoo=mu_smoo/scale^2
-  tmp,P = TLDR(1.0,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV)
+  tmp,P = TLDR(1.0,Data,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV)
   tmp;
 end
 #=--------------------------------------------------=#
@@ -132,14 +140,17 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	#INITIALIZATION FROM TIKHONOV SOLUTION
 	#println("a: ",flx_scale^2*Pars.mu_smoo)
 
-	vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
-	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
-			Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-			B = Mats.HT* W_slice * DATA.L
-			vdm[:,l] = Q\B[:,l]
-		end
-	Ini=vdm.*(vdm .>= 0.0) #sdata() pulls the underlying shared array
+	#vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
+	#for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
+	#		W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
+	#		Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+	#		B = Mats.HT* W_slice * DATA.L
+	#		G=inv(Q)*B
+	#		vdm[:,l] = G[:,l]
+	#	end
+	#writecsv("tiksol.csv",vdm)
+	sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
+	Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
 	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Pars.mu_smoo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
 	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
 	if Plot_A == true
@@ -147,7 +158,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		#colorbar()
 		#show()
 	end
-	writecsv("tiksol.csv",init_vdm)
+	writecsv("tiksol_thresh.csv",init_vdm)
 	#init_vdm=randn(size(init_vdm)) #Start from Random
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 
@@ -213,8 +224,9 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)
 	B = zeros(Pars.num_tdf_times,DATA.num_lines)
 	converged = false
+	#Pars.conflag=true #should never begin main loop.
 	while Pars.it <= Pars.nits && Pars.conflag==false        #ADMM ITERATION LOOP
-		
+
 		X.vdm_previous = copy(X.vdm)
 	#Step 1: MINIMIZATION W.R.T. X
 		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
@@ -223,8 +235,6 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		P.vdm_squiggle = X.vdm - P.U./P.rho
 		P.vdm_previous = copy(P.vdm)
 		P.vdm = pos_prox_op(P.vdm_squiggle)
-
-
 
 		T.vdm_squiggle = Mats.Ds*X.vdm-T.U./T.rho
 		T.vdm_previous = copy(T.vdm)
@@ -275,15 +285,15 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 			end
 			if sum(N.vdm) == 0		#CHECK IF L1(N) HAS FAILED
 				Pars.l1N_state=false
-				Pars.conflag = true
+				#Pars.conflag = true
 			end
 			if sum(T.vdm) == 0 		#CHECK IF L1(T) HAS FAILED
 				Pars.l1T_state=false
-				Pars.conflag = true
+				#Pars.conflag = true
 			end
 			if sum(V.vdm) == 0		#CHECK IF L1(V) HAS FAILED
 				Pars.l1V_state=false
-				Pars.conflag = true
+				#Pars.conflag = true
 			end
 		end
 		if CX == true && CN == true && CT == true && CV == true
@@ -300,10 +310,17 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		chiprev = copy(Pars.chi2)
 		Pars.chi2= copy(true_chi2)
 
+		if J(X,P,T,V,N,DATA,Mats,Pars) < 1.0e20
+			#Pars.conflag = true
+			println("!!! FUNCTION DIVERGING ABORTING !!!")
+			RepF=false
+			savefits=false
+			plot_A=false
+		end
 		#Reporting
 		if RepIt==true
 			#Report(X,Z,P,T,V,N,DATA,Mats,Pars,Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,s=true,Pres=true,Zres=true,Tres=true,Vres=true,Nres=true)
-			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,s=false,Chi2x=true,Ppen=false,Zpen=true,Tpen=true,Vpen=true,Npen=true)
+			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,s=false,Chi2x=true,Ppen=false,Zpen=false,Tpen=false,Vpen=false,Npen=false)
 		end
 
 		#Plotting
@@ -454,4 +471,5 @@ function Pen_update_E(X,Y,P;Dv=false,Ds=false)
 		end
 	end
 	Y
+end
 end

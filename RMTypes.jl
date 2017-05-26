@@ -1,3 +1,5 @@
+module RMTypes
+export ADMM_IMAGE,Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats
 type ADMM_IMAGE
 	vdm::Array{Float64}										#1
 	vdm_previous::Array{Float64}					#2
@@ -80,4 +82,5 @@ end
 
 function init_Mats()
 	Matrices_S([],[],[],[],[],[],[],[],[],[],[],[])
+end
 end

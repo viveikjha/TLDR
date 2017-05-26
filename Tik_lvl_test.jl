@@ -1,10 +1,11 @@
 #include("RMLibMore.jl")
 #include("RMLib.jl")
 
-push!(LOAD_PATH,"/home/manderson/Research/TLDR/VersionTwo/")
+push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 
 using RMLib
 using RMLibMore
+using DataImportNEW
 
 FILES_ARR=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"] #Data files to load.
 

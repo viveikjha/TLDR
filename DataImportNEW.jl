@@ -1,5 +1,9 @@
-include("RMTypes.jl")
+module DataImportNEW
 
+using RMTypes
+export Import_DataN
+
+#include("RMTypes.jl")
 function Import_DataN(path="data/",waves="rvm_wavelengths.csv",spectra="rvm_fluxes.csv",spectraerr="rvm_errfluxes.csv",spectradate="rvm_dates.csv",continuum="arp151.b.dat";cont_scale=1.0,spec_scale=1.0,Reports=false)
 	Data_Arrs = init_Data()
 
@@ -57,3 +61,4 @@ function Import_DataN(path="data/",waves="rvm_wavelengths.csv",spectra="rvm_flux
 	end
 	Data_Arrs
 end
+end #endmodule

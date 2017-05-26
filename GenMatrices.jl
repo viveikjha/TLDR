@@ -1,6 +1,10 @@
 #include("RMLib.jl")
-include("RMTypes.jl")
+module GenMatrices
+using RMTypes
+using RMLibMore
+using PyPlot
 
+export Gen_Mats
 function Gen_Mats(DATA,Params)
 	Mat=init_Mats()
 	#= COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS =#
@@ -112,4 +116,5 @@ function Gen_Mats(DATA,Params)
 	Mat.Gammaspe = eye(DATA.num_lines)
 	Mat.GammaspeT = Mat.Gammaspe'
 	Mat #Return Data Structure
-end
+end #endfunction
+end #endmodule

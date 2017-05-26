@@ -38,7 +38,7 @@ Pars.tdf_times=collect(min:stepsize:max)
 Mats=Gen_Mats(DATA,Pars)
 
 msmo = 1.0e2
-pz=10.0
+pz=1.0e3
 
 
 #ml1 = 500.0

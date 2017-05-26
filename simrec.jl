@@ -5,6 +5,10 @@ include("DataImportNEW.jl")
 
 include("GenMatrices.jl")
 
+using RMLib
+using RMTypes
+using DataImportNEW
+using DataImport
 
 using PyPlot
 

@@ -1,3 +1,8 @@
+module RMLibMore
+using RMTypes
+using GenMatrices
+using PyPlot
+export J,regX,regT,regV,regN,regP,Report,data_report,Write_FITS,interp,gen_UTD,gen_tiksol,plotfin,Model,Chi2,ell1_prox_op,ell2_prox_op,pos_prox_op,ell1norm,ell2norm,ell2normsquared
 #THIS FILE CONTAINS THE BASE LEVEL FUNCTIONS FOR TLDR THAT ARE NOT PART OF THE CORE ADMM ALGORITHM
 #Inputs include all the reconstruction variables. Options are for printed lines.
 
@@ -79,6 +84,8 @@ function Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=false,L2x=false,L1T=false,L1V=fals
 
 	rx=ell2norm(X.vdm)
   if s==true
+			println("dims of x:", shape(X.vdm))
+			println("dims of xp:", shape(X.vdm_previous))
 			sstring=@sprintf "\ts: %0.3e" ell2norm(X.rho*(X.vdm-X.vdm_previous))/rx
   else sstring=""
   end
@@ -421,3 +428,4 @@ function plotfin(Plot_F,X,Z,T,V)
 		Mats=Gen_Mats(DATA,Pars)
 		vdm
 	end
+end

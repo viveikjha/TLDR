@@ -1,10 +1,9 @@
-include("RMLib.jl")
-include("RMLibMore.jl")
-include("RMTypes.jl")
-include("DataImport.jl")
-include("DataImportNEW.jl")
-include("GenMatrices.jl")
-
+using RMLib
+using RMLibMore
+using RMTypes
+using DataImport
+using DataImportNEW
+using GenMatrices
 # a=500.0; X=inv(H'*H+a^2*eye(size(H)[2]))*(H'*L); imshow(X.*(X.>0.0),origin="lower",aspect="auto",cmap="Reds")
 
 using PyPlot
@@ -21,7 +20,7 @@ println("Wrote UT_wavelengths.csv with dimensions: ",size(lam))
 #Create VDM Vertical Stripe
 spread=10.0
 
-lvl=10.00
+lvl=0.05
 flx_scale=1.0
 
 vdm_vert = zeros(ntimes,nlams)
