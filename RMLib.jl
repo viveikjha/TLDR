@@ -190,6 +190,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	end
 
 	X.vdm = copy(init_vdm)
+	#zinis=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
 	Z.vdm = copy(init_vdm)
 	T.vdm = Mats.Ds*init_vdm
 	V.vdm = init_vdm*Mats.Dv
@@ -215,12 +216,17 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	for p in 1:DATA.num_lines
 	  Z.U[:,p]=Mats.HT * squeeze(Mats.W[p,:,:],1) * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
 	end
+
 	#println("INITIAL MULTIPLIERS: ",mean(Z.U))
-	Z.U=zeros(size(Z.U))
+	#Z.U=ones(size(Z.U))
+
 	V.U = copy(Z.U)
 	T.U = copy(Z.U)
 	P.U = copy(Z.U)
 	N.U = copy(Z.U)
+
+
+
 	Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)
 	B = zeros(Pars.num_tdf_times,DATA.num_lines)
 	converged = false
@@ -305,12 +311,12 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		PregT=regT(T,Pars)
 		PregV=regV(V,Pars)
 		Pars.it = Pars.it+1
-
+		#println(DATA.num_spectra_samples, " ", DATA.num_lines, size(DATA.L))
 		true_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
 		chiprev = copy(Pars.chi2)
 		Pars.chi2= copy(true_chi2)
 
-		if J(X,P,T,V,N,DATA,Mats,Pars) < 1.0e20
+		if J(X,P,T,V,N,DATA,Mats,Pars) > 1.0e20
 			#Pars.conflag = true
 			println("!!! FUNCTION DIVERGING ABORTING !!!")
 			RepF=false

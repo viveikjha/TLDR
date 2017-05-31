@@ -1,3 +1,5 @@
+push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+
 using RMLib
 using RMLibMore
 using RMTypes
@@ -23,7 +25,7 @@ spread=10.0
 lvl=0.05
 flx_scale=1.0
 
-vdm_vert = zeros(ntimes,nlams)
+vdm_vert = zeros(ntimes,nlams)+0.001
 total_lit=0
 for i in 1:ntimes
 	for j in 1:nlams
