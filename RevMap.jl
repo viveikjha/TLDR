@@ -1,4 +1,4 @@
-push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+push!(LOAD_PATH,"/home/manderson/TLDR/")
 
 using PyPlot
 using RMLib

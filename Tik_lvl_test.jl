@@ -2,7 +2,7 @@
 #include("RMLib.jl")
 
 push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
-
+using RMTypes
 using RMLib
 using RMLibMore
 using DataImportNEW
