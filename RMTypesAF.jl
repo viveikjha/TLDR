@@ -1,4 +1,6 @@
+#using ArrayFire
 module RMTypesAF
+using ArrayFire
 export ADMM_IMAGE,Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats
 type ADMM_IMAGE
 	vdm::AFArray{Float64}										#1
@@ -38,10 +40,11 @@ type Params
 	l1N_state::Bool																					#21
 	l1T_state::Bool																					#22
 	l1V_state::Bool																					#23
+	AF::Bool
 end
 
 type Data
-	wavelength::AFArray{Float64}
+	wavelength::ArrayFire.AFArray{Float64}
 	L::AFArray{Float64}
 	EL::AFArray{Float64}
 	num_lines::Int
@@ -73,7 +76,7 @@ function init_IMAGE(rho)
 end
 
 function init_Params()
-  Params(2,false,50,1.2,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true)
+  Params(2,false,50,1.2,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true,false)
 end
 
 function init_Data()

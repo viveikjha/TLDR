@@ -3,6 +3,7 @@ module GenMatrices
 using RMTypes
 using RMLibMore
 using PyPlot
+using ArrayFire
 
 export Gen_Mats
 function Gen_Mats(DATA,Params)
@@ -21,10 +22,8 @@ function Gen_Mats(DATA,Params)
 	  HE[date,:] = interp(interpolation_points[date,:],DATA.continuum_dates,DATA.continuum_error_flux)
 	end
 #	Mat.H = H./0.5
-	Mat.H = H
 	#println("		H: ",size(Mat.H))
 	writecsv("H.csv",Mat.H)
-	Mat.HE = HE
 
 	#= 		FINITE DIFFERENCES MATRICES			=#
 	#Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
@@ -57,10 +56,10 @@ function Gen_Mats(DATA,Params)
 		end
 	end
 	s=size(Ds)
-	Mat.Ds=eye(s[1],s[2])
-	Mat.Ds = Ds
+	#Mat.Ds=eye(s[1],s[2])
+	#Mat.Ds = Ds
 	writecsv("Ds.csv",Ds)
-	Mat.DsT = Ds'
+	#Mat.DsT = Ds'
 
 	#Dv = zeros(DATA.num_lines,DATA.num_lines)
 	#for i in collect(1:DATA.num_lines)
@@ -92,9 +91,9 @@ function Gen_Mats(DATA,Params)
 	end
 	Dv=Dv'
 
-	Mat.Dv = Dv
+	#Mat.Dv = Dv
 	writecsv("Dv.csv",Dv)
-	Mat.DvT = Dv'
+	#Mat.DvT = Dv'
 
 
 
@@ -109,12 +108,34 @@ function Gen_Mats(DATA,Params)
 	  end
 	  W[lam,:,:] = T
 	end
-	Mat.W= W
-	Mat.HT = H'
-	Mat.Gammatdf = eye(Params.num_tdf_times)
-	Mat.GammatdfT = Mat.Gammatdf'
-	Mat.Gammaspe = eye(DATA.num_lines)
-	Mat.GammaspeT = Mat.Gammaspe'
+	#LOAD DATA STRUCTURE
+	if Params.AF == true
+		Mat.W= AFArray(W)
+		Mat.HT = AFArray(H')
+		Mat.Gammatdf = AFArray(eye(Params.num_tdf_times))
+		Mat.GammatdfT = AFArray(Mat.Gammatdf')
+		Mat.Gammaspe = AFArray(eye(DATA.num_lines))
+		Mat.GammaspeT = AFArray(Mat.Gammaspe')
+		Mat.Dv = AFArray(Dv)
+		Mat.DvT = AFArray(Dv')
+		Mat.Ds = AFArray(Ds)
+		Mat.DsT = AFArray(Ds')
+		Mat.H = AFArray(H)
+		Mat.HE = AFArray(HE)
+	else
+		Mat.W= W
+		Mat.HT = H'
+		Mat.Gammatdf = eye(Params.num_tdf_times)
+		Mat.GammatdfT = Mat.Gammatdf'
+		Mat.Gammaspe = eye(DATA.num_lines)
+		Mat.GammaspeT = Mat.Gammaspe'
+		Mat.Dv = Dv
+		Mat.DvT = Dv'
+		Mat.Ds = Ds
+		Mat.DsT = Ds'
+		Mat.H = H
+		Mat.HE = HE
+	end
 	Mat #Return Data Structure
 end #endfunction
 end #endmodule

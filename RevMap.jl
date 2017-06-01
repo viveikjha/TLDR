@@ -1,8 +1,16 @@
-push!(LOAD_PATH,"/home/manderson/TLDR/")
+push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+
+if "ArrayFire" in keys(Pkg.installed())
+  AF=true
+  println("ArrayFire detected. Using GPU acceleration.")
+  using ArrayFire
+  using RMTypesAF
+else
+  using RMTypes
+end
 
 using PyPlot
 using RMLib
-using RMTypes
 using DataImportNEW
 #using DataImport
 using GenMatrices
@@ -17,12 +25,14 @@ continuum = FILES_ARR[5]
 DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 
 scale=1.0e0
-DATA.L=scale*(DATA.L)
-DATA.EL=scale*(DATA.EL)
-DATA.continuum_flux=scale*DATA.continuum_flux
-DATA.continuum_error_flux=scale*DATA.continuum_error_flux
+DATA.L=AFArray(scale*(DATA.L))
+DATA.EL=AFArray(scale*(DATA.EL))
+DATA.continuum_flux=AFArray(scale*DATA.continuum_flux)
+DATA.continuum_error_flux=AFArray(scale*DATA.continuum_error_flux)
 
 Pars= init_Params()
+Pars.AF=AF
+
 Pars.nits=200
 Pars.num_tdf_times=50 #This is the default
 min=0.0
@@ -47,7 +57,7 @@ pv=1.0e8
 mtem = 1.0e3    #GOES WITH T
 pt=1.0e4
 pp=1.0e2
-K=HOT_LAUNCH(DATA,Mats,Pars;mu_smoo=msmo,mu_spec=mspe,mu_temp=mtem,mu_l1=ml1,scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true, rhoN=pn, rhoZ=pz, rhoV=pv,rhoT=pt,rhoP=pp); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
-vdm=copy(K.vdm)
+K=HOT_LAUNCH(DATA,Mats,Pars;mu_smoo=msmo,mu_spec=mspe,mu_temp=mtem,mu_l1=ml1,scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=false,RepIt=true,RepF=true, rhoN=pn, rhoZ=pz, rhoV=pv,rhoT=pt,rhoP=pp); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+vdm=copy(Array(K.vdm))
 writecsv("RevMapResult.csv",vdm)
 println("wrote result to RevMapResult.csv")

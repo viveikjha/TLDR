@@ -3,7 +3,7 @@ module RMLib
 using FITSIO
 using PyPlot
 using RMLibMore
-using RMTypes
+using RMTypesAF
 using DataImportNEW
 using GenMatrices
 
