@@ -379,6 +379,10 @@ function plotfin(Plot_F,X,Z,T,V)
 	  Pars.mu_smoo=copy(mu_smoo)
 
 	  vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
+
+		println(mean(DATA.L))
+		println(mean(Mats.H))
+		println(mean(Mats.Gammatdf))
 	  for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 	    W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
 	    Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X

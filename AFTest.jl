@@ -57,7 +57,13 @@ mu = 1.0e3
 Par=init_Params();
 Par.AF=true
 Par.num_tdf_times=ntimes
+#min=0.0
+#max=20.0
+#stepsize=(max-min)/(Par.num_tdf_times-1)
+#collect(1.0:((50-1.0)/(50-1)):50)
+#Par.tdf_times=collect(min:stepsize:max)
 Mats=Gen_Mats(DATA,Par);
+println(mean(Mats.H))
 Par.num_tdf_times=ntimes
 #tsol=gen_tiksol_AF(Par,Mats,DATA;scale=1.0,mu_smoo=mu);
 tsol= gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=mu)
