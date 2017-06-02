@@ -4,6 +4,7 @@ if "ArrayFire" in keys(Pkg.installed())
   AF=true
   println("ArrayFire detected. Using GPU acceleration.")
   using ArrayFire
+  setBackend(AF_BACKEND_CPU)
   using RMTypesAF
 else
   using RMTypes
@@ -36,13 +37,13 @@ Pars.AF=AF
 Pars.nits=200
 Pars.num_tdf_times=50 #This is the default
 
-min=0.0
-max=20.0
-stepsize=(max-min)/(Pars.num_tdf_times-1)
+#min=0.0
+#max=20.0
+#stepsize=(max-min)/(Pars.num_tdf_times-1)
 #collect(1.0:((50-1.0)/(50-1)):50)
-Pars.tdf_times=collect(min:stepsize:max)
+#Pars.tdf_times=collect(min:stepsize:max)
 Mats=Gen_Mats(DATA,Pars)
-
+println(mean(Mats.H))
 msmo = 1.0e3
 pz=1.0e8
 
