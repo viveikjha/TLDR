@@ -1,14 +1,14 @@
 #include("RMLibMore.jl")
 #include("RMLib.jl")
 using PyPlot
-push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
-using RMTypes
+push!(LOAD_PATH,"/home/manderson/TLDR/")
+using RMTypesAF
 using ArrayFire
 using GenMatrices
 using RMLib
 using RMLibMore
 using DataImportNEW
-
+"""
 function gen_tiksol_AF(Par,Mats,DATA;scale=1.0,mu_smoo=40.0)
   #Par,Mats,DATA=getdata(f)
   #println("µ: ",mu_smoo)
@@ -38,7 +38,7 @@ function gen_tiksol_AF(Par,Mats,DATA;scale=1.0,mu_smoo=40.0)
   end
   vdm
 end
-
+"""
 
 FILES_ARR=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"] #Data files to load.
 
@@ -55,13 +55,13 @@ spread=10.0
 lvl=1.00
 mu = 1.0e3
 Par=init_Params();
+Par.AF=true
 Par.num_tdf_times=ntimes
 Mats=Gen_Mats(DATA,Par);
 Par.num_tdf_times=ntimes
 #tsol=gen_tiksol_AF(Par,Mats,DATA;scale=1.0,mu_smoo=mu);
-a=@elapsed gen_tiksol_AF(Par,Mats,DATA;scale=1.0,mu_smoo=mu)
-println(a)
+tsol= gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=mu)
 #println(size(tsol))
-#figure()
-#imshow(tsol)
-#show()
+figure()
+imshow(Array(tsol))
+show()

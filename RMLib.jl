@@ -1,5 +1,5 @@
 module RMLib
-
+using ArrayFire
 using FITSIO
 using PyPlot
 using RMLibMore
@@ -27,10 +27,10 @@ export HOT_LAUNCH,COLD_LAUNCH
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
 function HOT_LAUNCH(Data,Mats,Pars;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
 
-	Data.L=scale*(Data.L)
-	Data.EL=scale*(Data.EL)
-	Data.continuum_flux=scale*Data.continuum_flux
-	Data.continuum_error_flux=scale*Data.continuum_error_flux
+	#Data.L=scale*(Data.L)
+	#Data.EL=scale*(Data.EL)
+	#Data.continuum_flux=scale*Data.continuum_flux
+	#Data.continuum_error_flux=scale*Data.continuum_error_flux
 	Pars.nits=nits
 
 	#SET RECONSTRUCTION PARAMETERS
@@ -50,8 +50,8 @@ function HOT_LAUNCH(Data,Mats,Pars;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l
   else
     Pars.mu_l1 = 0.25*mu_smoo/scale
   end
-  Pars.mu_smoo=mu_smoo/scale^2
-  tmp,P = TLDR(1.0,Data,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV)
+  Pars.mu_smoo=mu_smoo
+  tmp,P = TLDR(1.0,Data,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV)
   tmp;
 end
 #=--------------------------------------------------=#
@@ -149,12 +149,12 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	#		vdm[:,l] = G[:,l]
 	#	end
 	#writecsv("tiksol.csv",vdm)
-	sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
+	sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=true,save=true)
 	Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
 	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Pars.mu_smoo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
-	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
+	init_vdm =AFArray(Ini) #FILTER OUT NEGATIVE VALUES
 	if Plot_A == true
-		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Blues")
+		imshow(Array(init_vdm),aspect="auto",origin="lower",interpolation="None",cmap="Blues")
 		#colorbar()
 		#show()
 	end
@@ -169,7 +169,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	 P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	 N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 
-
+	 println("!")
 
 	#When loading a known TDF
 	if vdmact != ""
@@ -190,6 +190,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	end
 
 	X.vdm = copy(init_vdm)
+	println(typeof(init_vdm))
 	#zinis=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
 	Z.vdm = copy(init_vdm)
 	T.vdm = Mats.Ds*init_vdm
@@ -205,18 +206,23 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	N.rho=copy(rhoN)
 
 	siglvl=abs(median(DATA.L))
-
+	println("1")
 #Diagnostics on VDM initialized with Tihonov Solution.
 	init_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
 	Pars.chi2=copy(init_chi2)
+	println("**")
 	if RepIt==true
 		Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -Tik_Init-")
 	end
+	println(typeof(vec(Z.vdm[:,1])))
+	println(typeof(reshape(Mats.W[1,:,:],size(Mats.W[1,:,:])[2],size(Mats.W[1,:,:])[3])))
 	#=  Calculate Initial Multipliers & RHO =#
 	for p in 1:DATA.num_lines
-	  Z.U[:,p]=Mats.HT * squeeze(Mats.W[p,:,:],1) * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
-	end
+		W_slice = reshape(Mats.W[p,:,:],size(Mats.W[p,:,:])[2],size(Mats.W[p,:,:])[3])
 
+	  Z.U[:,p]=Mats.HT * W_slice * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
+	end
+	println("2")
 	#println("INITIAL MULTIPLIERS: ",mean(Z.U))
 	#Z.U=ones(size(Z.U))
 
@@ -224,7 +230,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	T.U = copy(Z.U)
 	P.U = copy(Z.U)
 	N.U = copy(Z.U)
-
+	println("3")
 
 
 	Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)
@@ -332,7 +338,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		#Plotting
 		if Plot_A == true && (Pars.it%10 == 0)
 			clf()
-			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],cmap="Reds",aspect="auto",origin="lower",interpolation="None")
+			imshow(Array(X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],cmap="Reds",aspect="auto",origin="lower",interpolation="None")
 			colorbar()
 			draw()
 		end
@@ -360,12 +366,14 @@ end
 #=--------------------------------------------------=#
 #Intializes and fills the regularization terms for ADMM
  function Gen_Var(rhoi, num_tdf_times,num_lines,psi)
-	x = init_IMAGE(rhoi)
-	x.vdm = zeros((num_tdf_times,num_lines))
-	fill!(x.vdm,psi)
-	x.vdm_squiggle = zeros((num_tdf_times,num_lines))
-	fill!(x.vdm_squiggle,psi)
-	x.U=zeros((num_tdf_times,num_lines))
+	dims=(num_tdf_times,num_lines)
+	println("VDM Dimensions: ",dims)
+	x = init_IMAGE(rhoi,dims)
+	#x.vdm = AFArray(zeros((num_tdf_times,num_lines))
+	x.vdm=psi*x.vdm
+	#x.vdm_squiggle = zeros((num_tdf_times,num_lines))
+	x.vdm_squiggle=copy(x.vdm)
+	#x.U=zeros((num_tdf_times,num_lines))
 	x
 end
 
@@ -375,7 +383,8 @@ end
 #=--------------------------------------------------=#
 function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
 	s = size(X.vdm)
-	vdm = Array(Float64,s[1],s[2])
+	#vdm = AFArray(Float64,s[1],s[2])
+	vdm=zeros(AFArray{Float64},s[1],s[2])
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 			W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
 			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X

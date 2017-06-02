@@ -1,7 +1,8 @@
 module RMLibMore
-using RMTypes
+using RMTypesAF
 using GenMatrices
 using PyPlot
+using ArrayFire
 export J,regX,regT,regV,regN,regP,Report,data_report,Write_FITS,interp,gen_UTD,gen_tiksol,plotfin,Model,Chi2,ell1_prox_op,ell2_prox_op,pos_prox_op,ell1norm,ell2norm,ell2normsquared
 #THIS FILE CONTAINS THE BASE LEVEL FUNCTIONS FOR TLDR THAT ARE NOT PART OF THE CORE ADMM ALGORITHM
 #Inputs include all the reconstruction variables. Options are for printed lines.
@@ -363,13 +364,16 @@ function plotfin(Plot_F,X,Z,T,V)
 	#function gen_tiksol(DATA,Pars,Mats;scale=1.0,mu_smoo=40.0)
 
 
-	function gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=40.0,plotting=false,save=false)
+	function gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
 	  #Par,Mats,DATA=getdata(f)
 	  #println("µ: ",mu_smoo)
-	  DATA.L = scale.*DATA.L
-	  DATA.EL = scale.*DATA.EL
-	  Pars= init_Params()
-	  Mats = Gen_Mats(DATA,Pars)
+	  #DATA.L = scale.*DATA.L
+	  #DATA.EL = scale.*DATA.EL
+	  #Pars= init_Params()
+	  #Mats = Gen_Mats(DATA,Pars)
+		Pars= Par
+
+		#Mats = Mats
 
 	  #end
 	  Pars.mu_smoo=copy(mu_smoo)
@@ -393,7 +397,7 @@ function plotfin(Plot_F,X,Z,T,V)
 	  end
 	  if plotting==true
 	    figure()
-	    imshow(vdm,origin="lower",cmap="Greens",interpolation="None",aspect="auto")
+	    imshow(Array(vdm),origin="lower",cmap="Greens",interpolation="None",aspect="auto")
 	    xlabel("Spectral Channel")
 	    ylabel("Delay Time")
 	    titlestring=string("Tikhonov Image for µ=",Pars.mu_smoo, " and scale=",scale)

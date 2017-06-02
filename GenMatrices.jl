@@ -1,13 +1,12 @@
 #include("RMLib.jl")
 module GenMatrices
-using RMTypes
+using RMTypesAF
 using RMLibMore
 using PyPlot
 using ArrayFire
 
 export Gen_Mats
 function Gen_Mats(DATA,Params)
-	Mat=init_Mats()
 	#= COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS =#
 	interpolation_points = zeros(DATA.num_spectra_samples,Params.num_tdf_times)
 #	println("interpolation points:",size(interpolation_points))
@@ -23,8 +22,8 @@ function Gen_Mats(DATA,Params)
 	end
 #	Mat.H = H./0.5
 	#println("		H: ",size(Mat.H))
-	writecsv("H.csv",Mat.H)
-
+	writecsv("H.csv",H)
+	println("# spectra samples: ", DATA.num_spectra_samples)
 	#= 		FINITE DIFFERENCES MATRICES			=#
 	#Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
 	#for i in collect(1:Params.num_tdf_times)
@@ -108,14 +107,34 @@ function Gen_Mats(DATA,Params)
 	  end
 	  W[lam,:,:] = T
 	end
+
+	Gammatdf=eye(Params.num_tdf_times)
+	Gammaspe=eye(DATA.num_lines)
 	#LOAD DATA STRUCTURE
+	ws=size(W);
+	hs=(DATA.num_spectra_samples,Params.num_tdf_times);
+	hts=(Params.num_tdf_times,DATA.num_spectra_samples);
+	hes=hs;
+	dvs=(DATA.num_lines,DATA.num_lines);
+	dvts=dvs;
+	dss=(Params.num_tdf_times,Params.num_tdf_times);
+	dsst=dss;
+	gts=dss;
+	gtts=dss;
+	gss=dvs;
+	gsst=dvs;
+	println(ws)
+	println(hs)
+	println(hts)
+	Mat=init_Mats(ws,hs,hts,hes,gts,gtts,gss,gsst,dvs,dvts,dss,dsst)
+	println(Params.AF)
 	if Params.AF == true
 		Mat.W= AFArray(W)
 		Mat.HT = AFArray(H')
 		Mat.Gammatdf = AFArray(eye(Params.num_tdf_times))
-		Mat.GammatdfT = AFArray(Mat.Gammatdf')
+		Mat.GammatdfT = AFArray(Gammatdf')
 		Mat.Gammaspe = AFArray(eye(DATA.num_lines))
-		Mat.GammaspeT = AFArray(Mat.Gammaspe')
+		Mat.GammaspeT = AFArray(Gammaspe')
 		Mat.Dv = AFArray(Dv)
 		Mat.DvT = AFArray(Dv')
 		Mat.Ds = AFArray(Ds)
@@ -126,9 +145,9 @@ function Gen_Mats(DATA,Params)
 		Mat.W= W
 		Mat.HT = H'
 		Mat.Gammatdf = eye(Params.num_tdf_times)
-		Mat.GammatdfT = Mat.Gammatdf'
+		Mat.GammatdfT = Gammatdf'
 		Mat.Gammaspe = eye(DATA.num_lines)
-		Mat.GammaspeT = Mat.Gammaspe'
+		Mat.GammaspeT = Gammaspe'
 		Mat.Dv = Dv
 		Mat.DvT = Dv'
 		Mat.Ds = Ds
