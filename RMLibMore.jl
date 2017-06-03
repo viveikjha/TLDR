@@ -2,11 +2,31 @@ module RMLibMore
 using RMTypes
 using GenMatrices
 using PyPlot
-export J,regX,regT,regV,regN,regP,Report,data_report,Write_FITS,interp,gen_UTD,gen_tiksol,plotfin,Model,Chi2,ell1_prox_op,ell2_prox_op,pos_prox_op,ell1norm,ell2norm,ell2normsquared
+using JLD
+export J,regX,regT,regV,regN,regP,Report,data_report,Write_FITS,interp,gen_UTD,gen_tiksol,plotfin,Model,Chi2,ell1_prox_op,ell2_prox_op,pos_prox_op,ell1norm,ell2norm,ell2normsquared,save_vars,load_vars,save_data,load_data
 #THIS FILE CONTAINS THE BASE LEVEL FUNCTIONS FOR TLDR THAT ARE NOT PART OF THE CORE ADMM ALGORITHM
 #Inputs include all the reconstruction variables. Options are for printed lines.
 
 
+function save_vars(fname,Mats,Pars)
+  save(fname,"Mats",Mats,"Pars",Pars)
+end
+
+function load_vars(fname)
+  P,M=load(fname)
+  Pars=P[2]
+  Mats=M[2]
+  Pars,Mats
+end
+
+function save_data(fname,Data)
+	save(fname,"Data",Data)
+end
+
+function load_data(fname)
+	D=load(fname)
+	Data=D["Data"]
+end
 #=--------------------------------------------------=#
 #=========== THE Minimization FUNCTION ==============#
 #=--------------------------------------------------=#

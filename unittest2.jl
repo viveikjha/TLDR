@@ -1,4 +1,4 @@
-push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+push!(LOAD_PATH,"/home/manderson/TLDR/")
 
 using RMLib
 using RMLibMore
@@ -42,12 +42,19 @@ println("For Box, ", total_lit, " pixels lit.")
 
 #Initialize ADMM Parameters
 Pars = init_Params()
+#min=0.0
+#max=20.0
+#stepsize=(max-min)/(Pars.num_tdf_times-1)
+#collect(1.0:((50-1.0)/(50-1)):50)
+#Pars.tdf_times=collect(min:stepsize:max)
+
+
 
 #Initialize Matrices
 #println("-----------")
 #println("Getting H:")
 Mats = Gen_Mats(DATA,Pars)
-
+writecsv("UT_H.csv",Mats.H)
 Spectra_Vert = Mats.H*vdm_vert
 writecsv("UnitTests/Spectrac_V.csv", Spectra_Vert)
 
@@ -122,7 +129,7 @@ println("\n Done setting up unit test files! \n")
 #Checking actual chi2
 #vdm_path = "UnitTests/vdm_vert.csv"
 #vdm_act = readcsv(vdm_path)[]
-#chi2 = Chi2(Model((vdm_act),Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
+#chi2 = Chi2(Mats.H*vdm_vert,DATA.L,DATA.EL)./(DATA.num_spectra_samples*DATA.num_lines)
 #println("Chi2: ",chi2)
 ###############################
 

@@ -27,10 +27,10 @@ export HOT_LAUNCH,COLD_LAUNCH
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
 function HOT_LAUNCH(Data,Mats,Pars;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
 
-	Data.L=scale*(Data.L)
-	Data.EL=scale*(Data.EL)
-	Data.continuum_flux=scale*Data.continuum_flux
-	Data.continuum_error_flux=scale*Data.continuum_error_flux
+	#Data.L=scale*(Data.L)
+	#Data.EL=scale*(Data.EL)
+	#Data.continuum_flux=scale*Data.continuum_flux
+	#Data.continuum_error_flux=scale*Data.continuum_error_flux
 	Pars.nits=nits
 
 	#SET RECONSTRUCTION PARAMETERS
@@ -133,7 +133,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	diffbest=10.0
 	difbit=1
 	#= INITIALIZING ADMM PARAMETERS =#
-	 initial_psi = 0.0  #Initial value for PSI
+	initial_psi = 0.0  #Initial value for PSI
 	#ADMM ARRAYS:
 	Con_Arr = zeros(DATA.num_lines)
 
@@ -149,10 +149,11 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	#		vdm[:,l] = G[:,l]
 	#	end
 	#writecsv("tiksol.csv",vdm)
-	sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
+	@time sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
 	Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
 	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Pars.mu_smoo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
 	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
+	Ini=0 #Memory Release
 	if Plot_A == true
 		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Blues")
 		#colorbar()
@@ -162,7 +163,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	#init_vdm=randn(size(init_vdm)) #Start from Random
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 
-	 X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 @time X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	 Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	 T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	 V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
@@ -189,14 +190,14 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		end
 	end
 
-	X.vdm = copy(init_vdm)
+	 X.vdm = copy(init_vdm)
 	#zinis=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
 	Z.vdm = copy(init_vdm)
 	T.vdm = Mats.Ds*init_vdm
 	V.vdm = init_vdm*Mats.Dv
 	P.vdm = pos_prox_op(init_vdm)
 	N.vdm = copy(init_vdm)
-
+	init_vdm=0 #Memory Release
 	#Initiailize Penalty Parameters.
 	Z.rho= rhoZ
 	P.rho=copy(rhoP)
@@ -207,12 +208,15 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	siglvl=abs(median(DATA.L))
 
 #Diagnostics on VDM initialized with Tihonov Solution.
-	init_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
+	println("-------")
+	@time init_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
 	Pars.chi2=copy(init_chi2)
+	init_chi2=0 #Memory Release
 	if RepIt==true
-		Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -Tik_Init-")
+			@ time Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -Tik_Init-")
 	end
 	#=  Calculate Initial Multipliers & RHO =#
+
 	for p in 1:DATA.num_lines
 	  Z.U[:,p]=Mats.HT * squeeze(Mats.W[p,:,:],1) * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
 	end
@@ -231,6 +235,8 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	B = zeros(Pars.num_tdf_times,DATA.num_lines)
 	converged = false
 	#Pars.conflag=true #should never begin main loop.
+	gc() #GARBAGE CLEANUP
+	fcn_vals=zeros(Pars.nits+1)
 	while Pars.it <= Pars.nits && Pars.conflag==false        #ADMM ITERATION LOOP
 
 		X.vdm_previous = copy(X.vdm)
@@ -315,7 +321,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 		true_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
 		chiprev = copy(Pars.chi2)
 		Pars.chi2= copy(true_chi2)
-
+		fcn_vals[Pars.it]=J(X,P,T,V,N,DATA,Mats,Pars)
 		if J(X,P,T,V,N,DATA,Mats,Pars) > 1.0e20
 			#Pars.conflag = true
 			println("!!! FUNCTION DIVERGING ABORTING !!!")
@@ -352,6 +358,7 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	if savefits==true
 		Write_FITS(X,P);
 	end
+	writecsv("J_vals.csv", fcn_vals)
 	X,Pars
 end
 
