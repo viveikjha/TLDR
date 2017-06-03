@@ -1,4 +1,5 @@
 push!(LOAD_PATH,"/home/manderson/TLDR/")
+#push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 
 using RMLib
 using RMLibMore
@@ -22,7 +23,7 @@ println("Wrote UT_wavelengths.csv with dimensions: ",size(lam))
 #Create VDM Vertical Stripe
 spread=10.0
 
-lvl=0.05
+lvl=0.1
 flx_scale=1.0
 
 vdm_vert = zeros(ntimes,nlams)+0.001

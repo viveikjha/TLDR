@@ -25,7 +25,7 @@ export HOT_LAUNCH,COLD_LAUNCH
 #otherwise, the values are based on those for mu_smoo.
 #Plot_Live option shows the active reconstruction every so many iterations.
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
-function HOT_LAUNCH(Data,Mats,Pars;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
+function HOT_LAUNCH(Data,Mats,Pars,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
 
 	#Data.L=scale*(Data.L)
 	#Data.EL=scale*(Data.EL)
@@ -35,23 +35,9 @@ function HOT_LAUNCH(Data,Mats,Pars;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l
 
 	#SET RECONSTRUCTION PARAMETERS
 	scale=1.0
-  if mu_temp != false
-    Pars.mu_temp = mu_temp
-  else
-    Pars.mu_temp = 0.25*mu_smoo/scale
-  end
-  if mu_spec != false
-    Pars.mu_spec = mu_spec
-  else
-    Pars.mu_spec = 0.25*mu_smoo/scale
-  end
-  if mu_l1 != false
-    Pars.mu_l1 = mu_l1
-  else
-    Pars.mu_l1 = 0.25*mu_smoo/scale
-  end
-  Pars.mu_smoo=mu_smoo/scale^2
-  tmp,P = TLDR(1.0,Data,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV)
+  Pars.mu_smoo=Fit.msmo/scale^2
+
+  tmp,P = TLDR(1.0,Data,Mats,Pars,Fit;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF)
   tmp;
 end
 #=--------------------------------------------------=#
@@ -66,7 +52,7 @@ end
 #otherwise, the values are based on those for mu_smoo.
 #Plot_Live option shows the active reconstruction every so many iterations.
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
-function COLD_LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=false,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
+function COLD_LAUNCH(FILES_ARR,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true)
   #IMPORT DATA FROM FILES_ARR
 	wavelengths=FILES_ARR[1]
 	spectra = FILES_ARR[2]
@@ -90,30 +76,14 @@ function COLD_LAUNCH(FILES_ARR;mu_smoo=40.0,mu_spec=false,mu_temp=false,mu_l1=fa
 
 	#SET RECONSTRUCTION PARAMETERS
 	scale=1.0
-  if mu_temp != false
-    Pars.mu_temp = mu_temp
-  else
-    Pars.mu_temp = 0.25*mu_smoo/scale
-  end
-  if mu_spec != false
-    Pars.mu_spec = mu_spec
-  else
-    Pars.mu_spec = 0.25*mu_smoo/scale
-  end
-  if mu_l1 != false
-    Pars.mu_l1 = mu_l1
-  else
-    Pars.mu_l1 = 0.25*mu_smoo/scale
-  end
-  Pars.mu_smoo=mu_smoo/scale^2
-  tmp,P = TLDR(1.0,DATA,Mats,Pars;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,rhoZ=rhoZ,rhoN=rhoN,rhoP=rhoP,rhoT=rhoT,rhoV=rhoV)
+    tmp,P = TLDR(1.0,DATA,Mats,Pars,Fit;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm)
 end
 
 
 #=--------------------------------------------------=#
 #================ ADMM Algorithm ====================#
 #=--------------------------------------------------=#
-function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,rhoZ=8000.0,rhoN=8000.0,rhoP=8000.0,rhoT=8000.0,rhoV=8000.0,savefits=false)
+function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,savefits=false)
 	Pars.tau=2.0
 	threshold = 1.0e-4 #CONVERGANCE THRESHOLD
 	CX=false
@@ -137,19 +107,8 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	#ADMM ARRAYS:
 	Con_Arr = zeros(DATA.num_lines)
 
-	#INITIALIZATION FROM TIKHONOV SOLUTION
-	#println("a: ",flx_scale^2*Pars.mu_smoo)
 
-	#vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
-	#for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-	#		W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
-	#		Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-	#		B = Mats.HT* W_slice * DATA.L
-	#		G=inv(Q)*B
-	#		vdm[:,l] = G[:,l]
-	#	end
-	#writecsv("tiksol.csv",vdm)
-	@time sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
+	@time sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
 	Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
 	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Pars.mu_smoo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
 	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
@@ -199,11 +158,11 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	N.vdm = copy(init_vdm)
 	init_vdm=0 #Memory Release
 	#Initiailize Penalty Parameters.
-	Z.rho= rhoZ
-	P.rho=copy(rhoP)
-	T.rho=copy(rhoT)
-	V.rho=copy(rhoV)
-	N.rho=copy(rhoN)
+	Z.rho= Fit.pz
+	P.rho=copy(Fit.pp)
+	T.rho=copy(Fit.pt)
+	V.rho=copy(Fit.pv)
+	N.rho=copy(Fit.pn)
 
 	siglvl=abs(median(DATA.L))
 
@@ -228,8 +187,6 @@ function TLDR(flx_scale,DATA,Mats,Pars;Plot_F=true,Plot_A=false,vdmact="",RepIt=
 	T.U = copy(Z.U)
 	P.U = copy(Z.U)
 	N.U = copy(Z.U)
-
-
 
 	Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)
 	B = zeros(Pars.num_tdf_times,DATA.num_lines)

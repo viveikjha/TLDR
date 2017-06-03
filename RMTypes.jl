@@ -1,5 +1,5 @@
 module RMTypes
-export ADMM_IMAGE,Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats
+export ADMM_IMAGE,Params,Fit_Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats,init_fit
 type ADMM_IMAGE
 	vdm::Array{Float64}										#1
 	vdm_previous::Array{Float64}					#2
@@ -13,6 +13,18 @@ type ADMM_IMAGE
 	tau_dual::Real												#10
 end
 
+type Fit_Params
+	msmo::Real
+	pz::Real
+	ml1::Real
+	pn::Real
+	mspe::Real
+	pv::Real
+	mtem::Real
+	pt::Real
+	pp::Real
+	TI::Real
+end
 
 type Params
 	it::Int 				#Iteration Counter											#1
@@ -83,4 +95,9 @@ end
 function init_Mats()
 	Matrices_S([],[],[],[],[],[],[],[],[],[],[],[])
 end
+
+function init_fit()
+	Fit_Params(1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3)
 end
+
+end #end module

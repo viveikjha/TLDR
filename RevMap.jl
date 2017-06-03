@@ -1,4 +1,5 @@
-push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+#push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+push!(LOAD_PATH,"/home/manderson/TLDR/")
 
 using PyPlot
 using JLD
@@ -39,26 +40,27 @@ Pars.num_tdf_times=50 #This is the default
 #collect(1.0:((50-1.0)/(50-1)):50)
 #Pars.tdf_times=collect(min:stepsize:max)
 #println(Pars.tdf_times)
-
-msmo = 1.0e6
-pz=1.0e8
-
-
-ml1 = 1.0e3
-pn=1.0e6
+Fit=init_fit()
+Fit.msmo = 1.0e6
+Fit.pz=1.0e8
 
 
-mspe = 1.0e6    #GOES WITH V
-pv=1.0e8
+Fit.ml1 = 1.0e3
+Fit.pn=1.0e6
 
 
-mtem = 1.0e3    #GOES WITH T
-pt=1.0e4
+Fit.mspe = 1.0e6    #GOES WITH V
+Fit.pv=1.0e8
 
 
-pp=1.0e2
+Fit.mtem = 1.0e3    #GOES WITH T
+Fit.pt=1.0e4
 
-K=HOT_LAUNCH(DATA,Mats,Pars;mu_smoo=msmo,mu_spec=mspe,mu_temp=mtem,mu_l1=ml1,scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true, rhoN=pn, rhoZ=pz, rhoV=pv,rhoT=pt,rhoP=pp); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+
+Fit.pp=1.0e2
+Fit.TI=1.0e3
+
+K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
 vdm=copy(K.vdm)
 writecsv("RevMapResult.csv",vdm)
 println("wrote result to RevMapResult.csv")
