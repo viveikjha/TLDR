@@ -1,4 +1,4 @@
-push!(LOAD_PATH,"/home/manderson/TLDR/")
+push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 
 using PyPlot
 using JLD
@@ -18,18 +18,18 @@ dates = FILES_ARR[4]
 continuum = FILES_ARR[5]
 println(@elapsed DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum))
 save_data("TLDR_data.jld",DATA)
-#println( @elapsed DATA = load_data("TLDR_data.jld") )
+println( @elapsed DATA = load_data("TLDR_data.jld") )
 scale=1.0e0
 
-Pars= init_Params()
-println(@elapsed Mats=Gen_Mats(DATA,Pars))
+#Pars= init_Params()
+#println(@elapsed Mats=Gen_Mats(DATA,Pars))
 
 #Save Pars & Mats here.
-save_vars("TLDR_vars.jld",Mats,Pars)
-writecsv("H.csv",Mats.H)
-#println(@elapsed Pars,Mats=load_vars("TLDR_vars.jld"))
+#save_vars("TLDR_vars.jld",Mats,Pars)
+#writecsv("H.csv",Mats.H)
+println(@elapsed Pars,Mats=load_vars("TLDR_vars.jld"))
 
-Pars.nits=10
+Pars.nits=100
 
 Pars.num_tdf_times=50 #This is the default
 
@@ -40,20 +40,22 @@ Pars.num_tdf_times=50 #This is the default
 #Pars.tdf_times=collect(min:stepsize:max)
 #println(Pars.tdf_times)
 
-msmo = 1.0e5
+msmo = 1.0e6
 pz=1.0e8
 
 
 ml1 = 1.0e3
-pn=1.0e3
+pn=1.0e6
 
 
-mspe = 1.0e4    #GOES WITH V
+mspe = 1.0e6    #GOES WITH V
 pv=1.0e8
 
 
 mtem = 1.0e3    #GOES WITH T
 pt=1.0e4
+
+
 pp=1.0e2
 
 K=HOT_LAUNCH(DATA,Mats,Pars;mu_smoo=msmo,mu_spec=mspe,mu_temp=mtem,mu_l1=ml1,scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true, rhoN=pn, rhoZ=pz, rhoV=pv,rhoT=pt,rhoP=pp); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
