@@ -2,13 +2,15 @@
 #include("RMLib.jl")
 
 push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
+push!(LOAD_PATH,"/home/manderson/TLDR")
+
 using RMTypes
 using RMLib
 using RMLibMore
 using GenMatrices
 using DataImportNEW
 
-
+using PyPlot
 
 FILES_ARR=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"] #Data files to load.
 wavelengths=FILES_ARR[1];
@@ -23,8 +25,9 @@ Pars=init_Params();
 Pars.num_tdf_times=50
 Mats=Gen_Mats(DATA,Pars);
 
-mus = logspace(0.0,6.0,10)
+mus = logspace(0.0,3.0,100)
 Res = zeros(length(mus),3)
+println("Dimensions: ", size(DATA.L))
 #Find best mu for Tik initialization under given data.
 for i in 1:length(mus)
   println(i)
@@ -36,4 +39,19 @@ for i in 1:length(mus)
   Res[i,2]=chi2r
   Res[i,3]=diff
 end
-writecsv("Res.csv",Res)
+
+println(Res)
+
+
+lvl=0.1
+DSNR=4.0
+ax=PyPlot.gca()
+ax[:set_ylim](0,200)
+semilogx(Res[:,1],Res[:,2])
+xlabel("Mu")
+ylabel("Chi2")
+tstr=string("Lvl= ", string(lvl), " SNR= ", string(DSNR))
+title(tstr)
+show()
+fname=string("TIkSols/Res_L_", string(lvl),"_SNR_",string(DSNR),".csv")
+writecsv(fname,Res)

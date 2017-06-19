@@ -17,18 +17,17 @@ spectra = FILES_ARR[2]
 errspectra = FILES_ARR[3]
 dates = FILES_ARR[4]
 continuum = FILES_ARR[5]
-println(@elapsed DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum))
+
+#NEW DATASET? IMPORT DATA FILES
+DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 save_data("TLDR_data.jld",DATA)
-println( @elapsed DATA = load_data("TLDR_data.jld") )
+Pars= init_Params()
+Mats=Gen_Mats(DATA,Pars)
+save_vars("TLDR_vars.jld",Mats,Pars)
+#SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
+#DATA = load_data("TLDR_data.jld")
+#Pars,Mats=load_vars("TLDR_vars.jld")
 scale=1.0e0
-
-#Pars= init_Params()
-#println(@elapsed Mats=Gen_Mats(DATA,Pars))
-
-#Save Pars & Mats here.
-#save_vars("TLDR_vars.jld",Mats,Pars)
-#writecsv("H.csv",Mats.H)
-println(@elapsed Pars,Mats=load_vars("TLDR_vars.jld"))
 
 Pars.nits=100
 
