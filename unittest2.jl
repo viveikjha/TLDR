@@ -5,6 +5,7 @@ using RMLib
 using RMLibMore
 using RMTypes
 using DataImport
+using GenMatrices
 using DataImportNEW
 using GenMatrices
 # a=500.0; X=inv(H'*H+a^2*eye(size(H)[2]))*(H'*L); imshow(X.*(X.>0.0),origin="lower",aspect="auto",cmap="Reds")
@@ -24,6 +25,7 @@ println("Wrote UT_wavelengths.csv with dimensions: ",size(lam))
 spread=10.0
 
 lvl=0.1
+DSNR=5.0
 flx_scale=1.0
 
 vdm_vert = zeros(ntimes,nlams)+0.001
@@ -71,30 +73,25 @@ println("dimensions:", dims)
 #Create fake sigmas.
 #sigma = ........?
 #println("Using a sigma of: ",sigma)
-
+n =randn((dims))+DSNR
 
 #n = randn((dims))*sigma #GENERATE NOISE
 #GENERATE NOISE BY RANDOMLY SAMPLING REAL DATA ERROR
-nbase=vec(readcsv("data/rvm_errfluxes.csv"))
-n = rand(nbase,length(Spectra_Vert)).*rand([-1.0,1.0],length(Spectra_Vert))
-n= reshape(n,size(Spectra_Vert))
-println("-----------")
+#nbase=vec(readcsv("data/rvm_errfluxes.csv"))
+#n = rand(nbase,length(Spectra_Vert)).*rand([-1.0,1.0],length(Spectra_Vert))
+#n= reshape(n,size(Spectra_Vert))
+#println("-----------")
 
 
 
 Noisy_Spectra = (Spectra_Vert+n)' #ADD NOISE
-#Noisy_Spectra_H = Spectra_Horz+n
 
 #sig_arr = ones(dims)*sigma
 sig_arr = n
 writecsv("UnitTests/UT_Spectra.csv", Noisy_Spectra)
-#println("Wrote SpectraN_V.csv with dimensions: ", size(Noisy_Spectra_V'))
-#writecsv("UnitTests/SpectraN_H.csv", Noisy_Spectra_H')
-#println("Wrote SpectraN_H.csv with dimensions: ", size(Noisy_Spectra_H'))
 
 Error = sig_arr'
 writecsv("UnitTests/UT_Spectra_Error.csv",Error)
-#println("Wrote errspectra.csv with dimensions: ", size(sig_arr'))
 
 println("Max Flux: ",maximum(Noisy_Spectra))
 println("Max Flux Error: ",maximum(abs(Error)))
