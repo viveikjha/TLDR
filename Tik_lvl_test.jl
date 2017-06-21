@@ -25,14 +25,14 @@ Pars=init_Params();
 Pars.num_tdf_times=50
 Mats=Gen_Mats(DATA,Pars);
 
-mus = logspace(0.0,3.0,100)
+mus = logspace(0.0,10.0,20)
 Res = zeros(length(mus),3)
 println("Dimensions: ", size(DATA.L))
 #Find best mu for Tik initialization under given data.
 for i in 1:length(mus)
   println(i)
   m=mus[i]
-  tsol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=m,plotting=false,save=false);
+  tsol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=m,plotting=true,save=false);
   chi2r=Chi2(Mats.H*tsol,DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
   diff= sum(abs(tsol-vdm)) #RESIDUAL
   Res[i,1]=m

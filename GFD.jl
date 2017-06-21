@@ -20,6 +20,7 @@ nlams = 20
 ntimes=50
 lam = collect(1:nlams)+(Ha-nlams/2)
 writecsv("UnitTests/UT_Wavelengths.csv",lam)
+
 #println("Wrote UT_wavelengths.csv with dimensions: ",size(lam))
 #Create VDM Vertical Stripe
 spread=10.0
@@ -27,7 +28,7 @@ spread=10.0
 #lvl=0.1
 lvl=0.1
 
-DSNR=10.0
+DSNR=100.0
 flx_scale=1.0
 
 vdm_vert = zeros(ntimes,nlams)+0.001
@@ -47,24 +48,15 @@ println("For Box, ", total_lit, " pixels lit.")
 
 #Initialize ADMM Parameters
 Pars = init_Params()
-#min=0.0
-#max=20.0
-#stepsize=(max-min)/(Pars.num_tdf_times-1)
-#collect(1.0:((50-1.0)/(50-1)):50)
-#Pars.tdf_times=collect(min:stepsize:max)
-
-
 
 #Initialize Matrices
 #println("-----------")
 #println("Getting H:")
 Mats = Gen_Mats(DATA,Pars)
-writecsv("UT_H.csv",Mats.H)
+#writecsv("UT_H.csv",Mats.H)
 Spectra_Vert = Mats.H*vdm_vert
 writecsv("UnitTests/Spectrac_V.csv", Spectra_Vert)
 
-#Spectra_Horz = Mats.H*vdm_horz
-#writecsv("UnitTests/Spectrac_H.csv", Spectra_Horz)
 
 println("-----------")
 
@@ -72,10 +64,22 @@ println("-----------")
 
 dims = size(Spectra_Vert)
 println("dimensions:", dims)
-#Create fake sigmas.
-#sigma = ........?
-#println("Using a sigma of: ",sigma)
-n =randn((dims))+DSNR
+
+Spectra_Power = sum(abs(Spectra_Vert).*abs(Spectra_Vert))/length(Spectra_Vert)
+println("Power level of spectra: ", Spectra_Power)
+
+n =randn((dims))
+RN_Power = sum(abs(n).*abs(n))/length(n)
+println("Power level of raw noise: ", RN_Power)
+#DSNR=Spectra_Power/(RN_Power*sf)
+#1/DSNR=(RN_Power*sf)/Spectra_Power
+#Spectra_Power/DSNR=RN_Power*sf
+#Spectra_Power/(DSNR*RN_Power)=sf
+sf=Spectra_Power/(DSNR*RN_Power)
+SN=sqrt(sf)*n
+SN_Power= sum(abs(SN).*abs(SN))/length(SN)
+println("Power level of scaled noise: ", SN_Power)
+println("Simulated SNR: ", Spectra_Power/SN_Power)
 
 #n = randn((dims))*sigma #GENERATE NOISE
 #GENERATE NOISE BY RANDOMLY SAMPLING REAL DATA ERROR
@@ -86,53 +90,13 @@ n =randn((dims))+DSNR
 
 
 
-Noisy_Spectra = (Spectra_Vert+n)' #ADD NOISE
+Noisy_Spectra = (Spectra_Vert+SN)' #ADD NOISE
 
 #sig_arr = ones(dims)*sigma
-sig_arr = n
+sig_arr = SN
 writecsv("UnitTests/UT_Spectra.csv", Noisy_Spectra)
 
 Error = sig_arr'
 writecsv("UnitTests/UT_Spectra_Error.csv",Error)
 
-println("Max Flux: ",maximum(Noisy_Spectra))
-println("Max Flux Error: ",maximum(abs(Error)))
-println("Max SNR: ", maximum(Noisy_Spectra./(Error)))
-println("------------------------")
-println("Median Flux: ",median(Noisy_Spectra))
-println("Median Flux Error: ",median(abs(Error)))
-println("Median SNR: ", median(Noisy_Spectra./(Error)))
-println("------------------------")
-println("Mean Flux: ",mean(Noisy_Spectra))
-println("Mean Flux Error: ",mean(abs(Error)))
-println("Mean SNR: ", mean(Noisy_Spectra./(Error)))
-println("------------------------")
 println("\n Done setting up unit test files! \n")
-
-#println("-------------------------------------------")
-#println("---------  Reconstruction ---------")
-#println("-------------------------------------------")
-#DATA=Import_DataN("UnitTests/","UT_wavelengths.csv","SpectraN_V.csv", "errspectra.csv","data/rvm_dates.csv","data/arp151.b.dat")
-#data_report(DATA)
-#Mats = Gen_Mats(DATA,Pars)
-#maxl=maximum(DATA.L)
-#Initial Penalty Parameters
-
-#Pars.mu_smoo = 40.0/flx_scale^2													#Smoothing Regularization Weight (TIKHONOV)1
-#Pars.mu_spec = 10.0/flx_scale															#Spectral Regularization Weight
-#Pars.mu_temp = 10.0/flx_scale															#Temporal Regularization Weight
-#Pars.mu_l1 = 10.0/flx_scale																		#Ell1 Smoothing Regularization Weight
-#Pars.nits=150
-#max_delay=50
-
-###############################
-#Checking actual chi2
-#vdm_path = "UnitTests/vdm_vert.csv"
-#vdm_act = readcsv(vdm_path)[]
-#chi2 = Chi2(Mats.H*vdm_vert,DATA.L,DATA.EL)./(DATA.num_spectra_samples*DATA.num_lines)
-#println("Chi2: ",chi2)
-###############################
-
-#f=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"]
-
-#tmp,P = LAUNCH(f;mu_smoo=40.0,nits=50,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true)
