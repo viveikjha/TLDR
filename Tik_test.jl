@@ -2,6 +2,7 @@
 #include("RMLib.jl")
 using PyPlot
 push!(LOAD_PATH,"/home/manderson/TLDR/")
+push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 using RMTypes
 using GenMatrices
 using RMLib
@@ -22,13 +23,13 @@ ntimes= 50
 spread=10.0
 lvl=1.00
 levels=[1.0,0.5,0.1,0.05]
-mu = 1000.0
+mu = 1629750.8
 Par=init_Params();
 Par.num_tdf_times=ntimes
 Mats=Gen_Mats(DATA,Par);
 Par.num_tdf_times=ntimes
 #tsol=gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=mu,plotting=false,save=false);
-a=@elapsed gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=mu,plotting=false,save=false);
+a=@elapsed gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=mu,plotting=true,save=false);
 println(a)
 #figure()
 #imshow(tsol)

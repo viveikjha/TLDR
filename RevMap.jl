@@ -1,4 +1,4 @@
-#push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 push!(LOAD_PATH,"/home/manderson/TLDR/")
 
 using PyPlot
@@ -40,7 +40,7 @@ Pars.num_tdf_times=50 #This is the default
 #Pars.tdf_times=collect(min:stepsize:max)
 #println(Pars.tdf_times)
 Fit=init_fit()
-Fit.msmo = 1.0e6
+Fit.msmo = 1.0e5
 Fit.pz=1.0e8
 
 
@@ -48,16 +48,16 @@ Fit.ml1 = 1.0e3
 Fit.pn=1.0e6
 
 
-Fit.mspe = 1.0e6    #GOES WITH V
-Fit.pv=1.0e8
+Fit.mspe = 1.0e0    #GOES WITH V
+Fit.pv=1.0e0
 
 
-Fit.mtem = 1.0e3    #GOES WITH T
+Fit.mtem = 1.0e0    #GOES WITH T
 Fit.pt=1.0e4
 
 
 Fit.pp=1.0e2
-Fit.TI=1.0e3
+Fit.TI=1629750.8
 
 K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
 vdm=copy(K.vdm)

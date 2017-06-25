@@ -1,9 +1,9 @@
 #include("RMLibMore.jl")
 #include("RMLib.jl")
 
-push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
-push!(LOAD_PATH,"/home/manderson/TLDR")
-
+push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR") #LT
+push!(LOAD_PATH,"/home/manderson/TLDR") #WDT
+push!(LOAD_PATH,"/home/manderson/Research/TLDR") #PDT
 using RMTypes
 using RMLib
 using RMLibMore
@@ -25,7 +25,7 @@ Pars=init_Params();
 Pars.num_tdf_times=50
 Mats=Gen_Mats(DATA,Pars);
 
-mus = logspace(0.0,10.0,20)
+mus = logspace(5.0,7.0,10)
 Res = zeros(length(mus),3)
 println("Dimensions: ", size(DATA.L))
 #Find best mu for Tik initialization under given data.
@@ -50,8 +50,8 @@ ax[:set_ylim](0,200)
 semilogx(Res[:,1],Res[:,2])
 xlabel("Mu")
 ylabel("Chi2")
-tstr=string("Lvl= ", string(lvl), " SNR= ", string(DSNR))
+tstr=string("Lvl= ", string(lvl))
 title(tstr)
 show()
-fname=string("TIkSols/Res_L_", string(lvl),"_SNR_",string(DSNR),".csv")
+fname=string("TIkSols/Res_L_", string(lvl),".csv")
 writecsv(fname,Res)
