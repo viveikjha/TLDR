@@ -25,14 +25,14 @@ Pars=init_Params();
 Pars.num_tdf_times=50
 Mats=Gen_Mats(DATA,Pars);
 
-mus = logspace(5.0,7.0,10)
+mus = logspace(5.0,7.0,100)
 Res = zeros(length(mus),3)
 println("Dimensions: ", size(DATA.L))
 #Find best mu for Tik initialization under given data.
 for i in 1:length(mus)
   println(i)
   m=mus[i]
-  tsol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=m,plotting=true,save=false);
+  tsol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=m,plotting=false,save=false);
   chi2r=Chi2(Mats.H*tsol,DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
   diff= sum(abs(tsol-vdm)) #RESIDUAL
   Res[i,1]=m
@@ -45,13 +45,13 @@ println(Res)
 
 lvl=0.1
 DSNR=4.0
-ax=PyPlot.gca()
-ax[:set_ylim](0,200)
-semilogx(Res[:,1],Res[:,2])
-xlabel("Mu")
-ylabel("Chi2")
-tstr=string("Lvl= ", string(lvl))
-title(tstr)
-show()
+#ax=PyPlot.gca()
+#ax[:set_ylim](0,200)
+#semilogx(Res[:,1],Res[:,2])
+#xlabel("Mu")
+#ylabel("Chi2")
+#tstr=string("Lvl= ", string(lvl))
+#title(tstr)
+#show()
 fname=string("TIkSols/Res_L_", string(lvl),".csv")
 writecsv(fname,Res)
