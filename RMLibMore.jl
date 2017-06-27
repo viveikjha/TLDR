@@ -395,8 +395,12 @@ function plotfin(Plot_F,X,Z,T,V)
 	  Pars.mu_smoo=copy(mu_smoo)
 
 	  vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
+    slice_size=size(Mats.W)
 	  for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-	    W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
+      
+#	    W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
+      W_slice = reshape(Mats.W[l,:,:],slice_size[2],slice_size[3])
+
 	    Q = Mats.HT * W_slice * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
 	    B = Mats.HT* W_slice * DATA.L
 			G=inv(Q)*B

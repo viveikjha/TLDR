@@ -75,6 +75,7 @@ for msmo in mus # msmo
                   text(30,30,s4,fontsize=14)
                   text(30,40,s5,fontsize=14)
                   savefig(fname)
+                  println(string(count, " chi2: ", Pars.chi2))
                 end
               end
             end
@@ -83,4 +84,3 @@ for msmo in mus # msmo
       end
     end
   end
-end
