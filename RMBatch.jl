@@ -1,5 +1,6 @@
 push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 push!(LOAD_PATH,"/home/manderson/TLDR/")
+push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
 
 using PyPlot
 using JLD
@@ -31,24 +32,55 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
 DATA = load_data("TLDR_data.jld")
 Pars,Mats=load_vars("TLDR_vars.jld")
-nps=5
+nps=2
 mus=logspace(1.0,10,nps)
 ps=logspace(1.0,10,nps)
-
-for i
-  for j
-    for k
-      for
-
+pp=1.0e1
+count=0
+for msmo in mus # msmo
+  for ml1 in mus #ml1
+    for mspe in mus
+      for mtem in mus
+        for pz in ps
+            for pn in ps
+              for pv in ps
+                for pt in ps
+                  count+=1
+                  DATA = load_data("TLDR_data.jld")
+                  Pars,Mats=load_vars("TLDR_vars.jld")
+                  Fit=init_fit()
+                  Fit.msmo = msmo
+                  Fit.pz=pz
+                  Fit.ml1 = ml1
+                  Fit.pn=pn
+                  Fit.mspe = mspe
+                  Fit.pv=pv
+                  Fit.mtem =mtem
+                  Fit.pt=pt
+                  Fit.pp=pp
+                  Fit.TI=1629750.8
+                  fname=string("Batch/",string(count),".png")
+                  K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=false,RepIt=false,RepF=false);
+                  figure()
+                  imshow((K.vdm),aspect="auto",origin="lower",interpolation="None")
+                  subplots_adjust(right=0.25)
+                  s1=string("Msmo: ",msmo, " RhoS: ",pz )
+                  s2=string("Ml1: ",ml1, " RhoN: ",pn )
+                  s3=string("Mspe: ",mspe, " RhoV: ",pv )
+                  s4=string("Mtem: ",msmo, " RhoT: ",pt )
+                  s5=string("RhoP: ", pp, " Chi2: ", Pars.chi2)
+                  text(30,0,s1,fontsize=14)
+                  text(30,10,s2,fontsize=14)
+                  text(30,20,s3,fontsize=14)
+                  text(30,30,s4,fontsize=14)
+                  text(30,40,s5,fontsize=14)
+                  savefig(fname)
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
 end
-Fit=init_fit()
-Fit.msmo = 1.0e5
-Fit.pz=1.0e8
-Fit.ml1 = 1.0e3
-Fit.pn=1.0e6
-Fit.mspe = 1.0e0    #GOES WITH V
-Fit.pv=1.0e0
-Fit.mtem = 1.0e0    #GOES WITH T
-Fit.pt=1.0e4
-Fit.pp=1.0e2
-Fit.TI=1629750.8
