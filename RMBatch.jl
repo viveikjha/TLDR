@@ -32,19 +32,24 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
 DATA = load_data("TLDR_data.jld")
 Pars,Mats=load_vars("TLDR_vars.jld")
-nps=2
-mus=logspace(1.0,10,nps)
-ps=logspace(1.0,10,nps)
+nps=5
+mus=logspace(1.0,4.0,nps)
+ps=logspace(4.0,6.0,nps)
 pp=1.0e1
 count=0
+mspe=10.0
+mtem=10.0
+pv=10.0
+pt=10.0
+#pz=1.0e5
 for msmo in mus # msmo
   for ml1 in mus #ml1
-    for mspe in mus
-      for mtem in mus
+    #for mspe in mus
+    #  for mtem in mus
         for pz in ps
             for pn in ps
-              for pv in ps
-                for pt in ps
+    #          for pv in ps
+    #            for pt in ps
                   count+=1
                   DATA = load_data("TLDR_data.jld")
                   Pars,Mats=load_vars("TLDR_vars.jld")
@@ -67,7 +72,7 @@ for msmo in mus # msmo
                   s1=string("Msmo: ",msmo, " RhoS: ",pz )
                   s2=string("Ml1: ",ml1, " RhoN: ",pn )
                   s3=string("Mspe: ",mspe, " RhoV: ",pv )
-                  s4=string("Mtem: ",msmo, " RhoT: ",pt )
+                  s4=string("Mtem: ",Mtem, " RhoT: ",pt )
                   s5=string("RhoP: ", pp, " Chi2: ", Pars.chi2)
                   text(30,0,s1,fontsize=14)
                   text(30,10,s2,fontsize=14)
@@ -75,12 +80,12 @@ for msmo in mus # msmo
                   text(30,30,s4,fontsize=14)
                   text(30,40,s5,fontsize=14)
                   savefig(fname)
-                  println(string(count, " chi2: ", Pars.chi2))
+                  println(string(count, " chi2: ", round(Pars.chi2)))
                 end
               end
             end
           end
-        end
-      end
-    end
-  end
+#        end
+#      end
+#    end
+#  end
