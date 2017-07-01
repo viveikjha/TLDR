@@ -30,7 +30,7 @@ end
 
 type Params
 	it::Int 				#Iteration Counter											#1
-	conflag::Bool		#Convergence Flag												#2
+	conflag::Int		#Convergence Flag												#2
 	nits::Int				#Total Iterations Allowed								#3
 	tau::Real																								#4
 	num_lines::Int																					#5
@@ -87,7 +87,7 @@ function init_IMAGE(rho)
 end
 
 function init_Params()
-  Params(2,false,50,1.2,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true)
+  Params(2,0,50,1.2,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true)
 end
 
 function init_Data()

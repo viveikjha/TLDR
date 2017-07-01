@@ -85,7 +85,7 @@ end
 #=--------------------------------------------------=#
 function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,savefits=false)
 	Pars.tau=2.0
-	threshold = 1.0e-6 #CONVERGANCE THRESHOLD
+	threshold = 1.0e-4 #CONVERGANCE THRESHOLD
 	CX=false
 	CN=false
 	CT=false
@@ -202,7 +202,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	#Pars.conflag=true #should never begin main loop.
 	gc() #GARBAGE CLEANUP
 	fcn_vals=zeros(Pars.nits+1)
-	while Pars.it <= Pars.nits && Pars.conflag==false        #ADMM ITERATION LOOP
+	while Pars.it <= Pars.nits && Pars.conflag==0        #ADMM ITERATION LOOP
 
 		X.vdm_previous = copy(X.vdm)
 	#Step 1: MINIMIZATION W.R.T. X
@@ -283,8 +283,8 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			end
 		end
 		if CX == true && CN == true && CT == true && CV == true
-			Pars.conflag = true
-			print_with_color(:blue,"TLDR CONVERGED \n")
+			Pars.conflag = 1
+			#print_with_color(:blue,"TLDR CONVERGED \n")
 		end
 		PregX=regX(X,Pars)
 		PregN=regN(N,Pars)
@@ -297,8 +297,8 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Pars.chi2= copy(true_chi2)
 		fcn_vals[Pars.it]=J(X,P,T,V,N,DATA,Mats,Pars)
 		if J(X,P,T,V,N,DATA,Mats,Pars) > 1.0e20
-			Pars.conflag = true
-			print_with_color(:red,"!!! FUNCTION DIVERGING ABORTING !!!\n")
+			Pars.conflag = 2
+			#print_with_color(:red,"!!! FUNCTION DIVERGING ABORTING !!!\n")
 			RepF=false
 			savefits=false
 			plot_A=false
@@ -326,9 +326,9 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	end
 	#Final Plot
 	plotfin(Plot_F,X,Z,T,V)
-	if Pars.it==Pars.nits-1 && Pars.conflag==false
-		print_with_color(:red,"TLDR FAILED TO CONVERGE \n")
-	end
+	#if Pars.it==Pars.nits-1 && Pars.conflag==0 || Pars.conflag==2
+	#	print_with_color(:red,"TLDR FAILED TO CONVERGE \n")
+	#end
 	if savefits==true
 		Write_FITS(X,P);
 	end
