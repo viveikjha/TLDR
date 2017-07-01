@@ -11,6 +11,8 @@ type ADMM_IMAGE
 	phi::Real															#8
 	tau_prim::Real												#9
 	tau_dual::Real												#10
+	tau_max::Real													#11
+	tau::Real															#12
 end
 
 type Fit_Params
@@ -81,7 +83,7 @@ type Matrices_S
 end
 
 function init_IMAGE(rho)
-	ADMM_IMAGE([],[],[],[],rho,Inf,0.0,0.0,0.0,0.0)
+	ADMM_IMAGE([],[],[],[],rho,Inf,0.0,0.0,0.0,0.0,1.0e3,1.2)
 end
 
 function init_Params()

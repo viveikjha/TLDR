@@ -35,7 +35,7 @@ function HOT_LAUNCH(Data,Mats,Pars,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,
 
 	#SET RECONSTRUCTION PARAMETERS
 	scale=1.0
-  Pars.mu_smoo=Fit.msmo/scale^2
+  Fit.msmo=Fit.msmo
 
   tmp,P = TLDR(1.0,Data,Mats,Pars,Fit;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF)
   tmp;
@@ -85,7 +85,7 @@ end
 #=--------------------------------------------------=#
 function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,savefits=false)
 	Pars.tau=2.0
-	threshold = 1.0e-4 #CONVERGANCE THRESHOLD
+	threshold = 1.0e-6 #CONVERGANCE THRESHOLD
 	CX=false
 	CN=false
 	CT=false
@@ -110,7 +110,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 
 	sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
 	Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
-	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Pars.mu_smoo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
+	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Fit.msmo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
 	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
 	Ini=0 #Memory Release
 	if Plot_A == true
@@ -121,14 +121,19 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	writecsv("tiksol_thresh.csv",init_vdm)
 	#init_vdm=randn(size(init_vdm)) #Start from Random
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
-
+	tmax=5.0
 	 X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 X.tau_max=tmax
 	 Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 Z.tau_max=tmax
 	 T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 T.tau_max=tmax
 	 V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 V.tau_max=tmax
 	 P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 P.tau_max=tmax
 	 N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-
+	 N.tau_max=tmax
 
 
 	#When loading a known TDF
@@ -175,12 +180,13 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -Tik_Init-")
 	end
 	#=  Calculate Initial Multipliers & RHO =#
-	slice_size=size(Mats.W)
-	for p in 1:DATA.num_lines
-		W_slice = reshape(Mats.W[p,:,:],slice_size[2],slice_size[3])
+	Z.U=Z.U+1
+	#slice_size=size(Mats.W)
+	#for p in 1:DATA.num_lines
+	#	W_slice = reshape(Mats.W[p,:,:],slice_size[2],slice_size[3])
 	  #Z.U[:,p]=Mats.HT * squeeze(Mats.W[p,:,:],1) * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
-		Z.U[:,p]=Mats.HT * W_slice * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
-	end
+	#	Z.U[:,p]=Mats.HT * W_slice * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
+	#end
 
 	#println("INITIAL MULTIPLIERS: ",mean(Z.U))
 	#Z.U=ones(size(Z.U))
@@ -200,7 +206,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 
 		X.vdm_previous = copy(X.vdm)
 	#Step 1: MINIMIZATION W.R.T. X
-		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
+		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 		#X.vdm = X.vdm.*(X.vdm.>0.0)
 	#Step 2: UPDATE REGULARIZATION TERMS
 		P.vdm_squiggle = X.vdm - P.U./P.rho
@@ -209,17 +215,17 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 
 		T.vdm_squiggle = Mats.Ds*X.vdm-T.U./T.rho
 		T.vdm_previous = copy(T.vdm)
-		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Pars.mu_temp,T.rho)
-		#T.vdm=ell2_prox_op(T.vdm_squiggle,Pars.mu_temp,T.rho)
+		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Fit.mtem,T.rho)
+		#T.vdm=ell2_prox_op(T.vdm_squiggle,Fit.mtem,T.rho)
 
 		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U./V.rho
 		V.vdm_previous = copy(V.vdm)
-		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Pars.mu_spec,V.rho)
-		#V.vdm=ell2_prox_op(V.vdm_squiggle,Pars.mu_spec,V.rho)
+		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Fit.mspe,V.rho)
+		#V.vdm=ell2_prox_op(V.vdm_squiggle,Fit.mspe,V.rho)
 
 		N.vdm_squiggle = X.vdm - N.U./N.rho
 		N.vdm_previous = copy(N.vdm)
-		N.vdm = ell1_prox_op(N.vdm,N.vdm_squiggle,Pars.mu_l1,N.rho)
+		N.vdm = ell1_prox_op(N.vdm,N.vdm_squiggle,Fit.ml1,N.rho)
 
 		Z.vdm_previous = copy(Z.vdm)
 		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats)
@@ -235,10 +241,19 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			Pars.G = 1.5
 		end
 	#Step 5: Update Penalty Parameters
+
 		#Z = Pen_update(X,Z,Pars)
 		#T = Pen_update_E(X,T,Pars; Ds=Mats.Ds)
 		#V = Pen_update_E(Z,V,Pars; Dv=Mats.Dv)
 		#P = Pen_update(X,P,Pars)
+		#N = Pen_update(X,N,Pars)
+		#balance_residuals(X,Z,Mats) #Z
+		#balance_residuals(X,T,Mats,Dsf=true) #T
+		#balance_residuals(Z,V,Mats,Dvf=true) #V
+		#balance_residuals(X,P,Mats,Pos=true) #P
+		#balance_residuals(X,N,Mats,l1=true) #N
+
+		#println("Z: ",Z.rho," ",Z.tau," T: ",T.rho," ",T.tau," V: ",V.rho," ",V.tau," P: ",P.rho," ",N.tau)
 
 	#Step 6: Check for Convergence
 		if Pars.it != 2
@@ -282,8 +297,8 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Pars.chi2= copy(true_chi2)
 		fcn_vals[Pars.it]=J(X,P,T,V,N,DATA,Mats,Pars)
 		if J(X,P,T,V,N,DATA,Mats,Pars) > 1.0e20
-			#Pars.conflag = true
-			println("!!! FUNCTION DIVERGING ABORTING !!!")
+			Pars.conflag = true
+			print_with_color(:red,"!!! FUNCTION DIVERGING ABORTING !!!\n")
 			RepF=false
 			savefits=false
 			plot_A=false
@@ -339,14 +354,14 @@ end
 #=--------------------------------------------------=#
 #=============== Minimization wrt X =================#
 #=--------------------------------------------------=#
-function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats)
+function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 	s = size(X.vdm)
 	vdm = Array(Float64,s[1],s[2])
 	slice_size=size(Mats.W)
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 			#W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
 			W_slice = reshape(Mats.W[l,:,:],slice_size[2],slice_size[3])
-			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Pars.mu_smoo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
 			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
 
 			G=inv(Q)*B
@@ -374,6 +389,7 @@ end
 #alpha is a throttling term on multiplier update.
 function LG_update(U,Z,X,rho,alpha)
 	U = U + (rho/alpha).*(Z - X)
+
 end
 
 #=--------------------------------------------------=#
@@ -445,5 +461,49 @@ function Pen_update_E(X,Y,P;Dv=false,Ds=false)
 		end
 	end
 	Y
-end
-end
+end #end function
+
+#=--------------------------------------------------=#
+#=============== Residual Balancing =================#
+#=--------------------------------------------------=#
+#THIS IS A PENALTY UPDATE STEP.
+function balance_residuals(j,k,Mats;Dvf=false,Dsf=false,Pos=false,l1=false,mu=2.0)
+	if Dvf==false
+		Dv = eye(size(j.vdm)[2])
+	else
+		Dv=Mats.Dv
+	end
+	if Dsf == false
+		Ds = eye(size(j.vdm)[1])
+	else
+		Ds=Mats.Ds
+	end
+	r_rel = ell2norm((Ds*j.vdm*Dv-k.vdm)/maximum([ell2norm(j.vdm),ell2norm(k.vdm)]))
+	s_rel = ell2norm((k.vdm-k.vdm_previous)/ell2norm(k.U))
+	tau=update_tau(k,r_rel,s_rel)
+	rhotemp=k.rho
+	if r_rel > mu*s_rel
+		print_with_color(:red,"+++++\n")
+		k.rho=k.tau*k.rho
+	elseif s_rel > mu*r_rel
+		print_with_color(:green,"-----\n")
+		k.rho=1.0/k.tau*k.rho
+	#else nothing
+	end
+	if k.rho>1.0e6 #Setting maximum penalty
+		k.rho=rhotemp
+	end
+end#end function
+#=--------------------------------------------------=#
+#=================== Tau Update =====================#
+#=--------------------------------------------------=#
+function update_tau(k,r_rel,s_rel)
+	if 1.0 <= sqrt(r_rel/s_rel) < k.tau_max
+		k.tau=sqrt(r_rel/s_rel)
+	elseif 1.0/k.tau_max < sqrt(s_rel/r_rel) < 1.0
+		k.tau = sqrt(s_rel/r_rel)
+	else
+		k.tau=k.tau_max
+	end
+end #end tau update
+end #endmodule

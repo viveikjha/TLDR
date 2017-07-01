@@ -27,9 +27,10 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
 #DATA = load_data("TLDR_data.jld")
 #Pars,Mats=load_vars("TLDR_vars.jld")
+print_with_color(:green,"beginning reconstruction\n")
 scale=1.0e0
 
-Pars.nits=100
+Pars.nits=500
 
 Pars.num_tdf_times=50 #This is the default
 
@@ -39,24 +40,25 @@ Pars.num_tdf_times=50 #This is the default
 #collect(1.0:((50-1.0)/(50-1)):50)
 #Pars.tdf_times=collect(min:stepsize:max)
 #println(Pars.tdf_times)
+rho=1.0e5
 Fit=init_fit()
-Fit.msmo = 1.0e5
-Fit.pz=1.0e8
+Fit.msmo = 10000.0
+#Fit.pz=1.0e5
+Fit.pz=rho
 
+Fit.ml1 = 1.0
+#Fit.pn=1.0e5
+Fit.pn=rho
 
-Fit.ml1 = 1.0e3
-Fit.pn=1.0e6
+Fit.mspe = 1.0    #GOES WITH V
+#Fit.pv=1.0e5
+Fit.pv=rho
 
+Fit.mtem = 1.0    #GOES WITH T
+#Fit.pt=1.0e5
+Fit.pt = 1.0e5
 
-Fit.mspe = 1.0e0    #GOES WITH V
-Fit.pv=1.0e0
-
-
-Fit.mtem = 1.0e0    #GOES WITH T
-Fit.pt=1.0e4
-
-
-Fit.pp=1.0e2
+Fit.pp=1.0e5
 Fit.TI=1629750.8
 
 K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
