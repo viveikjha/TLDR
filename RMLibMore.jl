@@ -3,7 +3,7 @@ using RMTypes
 using GenMatrices
 using PyPlot
 using JLD
-export J,regX,regT,regV,regN,regP,Report,data_report,Write_FITS,interp,gen_UTD,gen_tiksol,plotfin,Model,Chi2,ell1_prox_op,ell2_prox_op,pos_prox_op,ell1norm,ell2norm,ell2normsquared,save_vars,load_vars,save_data,load_data
+export J,regX,regT,regV,regN,regP,Report,data_report,Write_FITS,interp,gen_UTD,gen_tiksol,plotfin,Model,Chi2,ell1_prox_op,ell2_prox_op,pos_prox_op,ell1norm,ell2norm,ell2normsquared,save_vars,load_vars,save_data,load_data,load_record
 #THIS FILE CONTAINS THE BASE LEVEL FUNCTIONS FOR TLDR THAT ARE NOT PART OF THE CORE ADMM ALGORITHM
 #Inputs include all the reconstruction variables. Options are for printed lines.
 
@@ -26,6 +26,10 @@ end
 function load_data(fname)
 	D=load(fname)
 	Data=D["Data"]
+end
+function load_record(fname)
+	D=load(fname)
+	Data=D["Record"]
 end
 #=--------------------------------------------------=#
 #=========== THE Minimization FUNCTION ==============#
@@ -397,7 +401,7 @@ function plotfin(Plot_F,X,Z,T,V)
 	  vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
     slice_size=size(Mats.W)
 	  for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-      
+
 #	    W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
       W_slice = reshape(Mats.W[l,:,:],slice_size[2],slice_size[3])
 

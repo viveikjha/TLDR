@@ -33,11 +33,11 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 DATA = load_data("TLDR_data.jld")
 Pars,Mats=load_vars("TLDR_vars.jld")
 nps=5
-m1=logspace(1.5,2.5,nps)
-m2=logspace(0.0,2.0,nps)
-m3=logspace(2.5,3.5,nps)
+#m1=logspace(1.5,2.5,nps)
+#m2=logspace(0.0,2.0,nps)
+#m3=logspace(2.5,3.5,nps)
 ps=1.0e5
-ps=linspace(5.0e4,5.0e5,nps)
+ps=linspace(5.0e3,5.0e4,nps)
 
 count=0
 mspe=3100.0

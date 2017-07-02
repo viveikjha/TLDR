@@ -42,26 +42,27 @@ Pars.num_tdf_times=50 #This is the default
 #println(Pars.tdf_times)
 rho=1.0e5
 Fit=init_fit()
-Fit.msmo = 10000.0
+Fit.msmo = 1.0
 #Fit.pz=1.0e5
-Fit.pz=rho
+Fit.pz=50000.0
 
-Fit.ml1 = 1.0
+Fit.ml1 = 10.0
 #Fit.pn=1.0e5
-Fit.pn=rho
+Fit.pn=50000.0
 
-Fit.mspe = 1.0    #GOES WITH V
+Fit.mspe = 3100.0    #GOES WITH V
 #Fit.pv=1.0e5
-Fit.pv=rho
+Fit.pv=38750.0
 
-Fit.mtem = 1.0    #GOES WITH T
+Fit.mtem = 100.0   #GOES WITH T
 #Fit.pt=1.0e5
-Fit.pt = 1.0e5
+Fit.pt = 16250.0
 
-Fit.pp=1.0e5
+Fit.pp=16250.0
 Fit.TI=1629750.8
 
-K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+
+K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,RecD=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
 vdm=copy(K.vdm)
 writecsv("RevMapResult.csv",vdm)
 println("wrote result to RevMapResult.csv")

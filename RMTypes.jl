@@ -1,5 +1,5 @@
 module RMTypes
-export ADMM_IMAGE,Params,Fit_Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats,init_fit
+export ADMM_IMAGE,Params,Fit_Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats,init_fit,Init_Record_Data
 type ADMM_IMAGE
 	vdm::Array{Float64}										#1
 	vdm_previous::Array{Float64}					#2
@@ -80,6 +80,20 @@ type Matrices_S
 	GammatdfT::Array{Float64}
 	Gammaspe::Array{Float64}
 	GammaspeT::Array{Float64}
+end
+
+type Rec_Data
+	ConFlag::Array{Float64}
+	J::Array{Float64}
+	Chi2::Array{Float64}
+	Z_res::Array{Float64}
+	N_res::Array{Float64}
+	T_res::Array{Float64}
+	V_res::Array{Float64}
+	P_res::Array{Float64}
+end
+function Init_Record_Data(nits)
+	Rec_Data(ones(nits)+5,zeros(nits),zeros(nits),zeros(nits),zeros(nits),zeros(nits),zeros(nits),zeros(nits))
 end
 
 function init_IMAGE(rho)

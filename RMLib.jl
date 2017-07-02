@@ -1,5 +1,5 @@
 module RMLib
-
+using JLD
 using FITSIO
 using PyPlot
 using RMLibMore
@@ -25,7 +25,8 @@ export HOT_LAUNCH,COLD_LAUNCH
 #otherwise, the values are based on those for mu_smoo.
 #Plot_Live option shows the active reconstruction every so many iterations.
 #Plot_Final option shows the final plot that displays reconstruction images X,Z,V,T.
-function HOT_LAUNCH(Data,Mats,Pars,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,rhoZ=8000.0,rhoN=800.0,rhoP=800.0, rhoV=800.0,rhoT=800.0)
+#RecD option stores convergence data.
+function HOT_LAUNCH(Data,Mats,Pars,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,RecD=false)
 
 	#Data.L=scale*(Data.L)
 	#Data.EL=scale*(Data.EL)
@@ -37,7 +38,7 @@ function HOT_LAUNCH(Data,Mats,Pars,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,
 	scale=1.0
   Fit.msmo=Fit.msmo
 
-  tmp,P = TLDR(1.0,Data,Mats,Pars,Fit;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF)
+  tmp,P = TLDR(1.0,Data,Mats,Pars,Fit;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,RecD=RecD)
   tmp;
 end
 #=--------------------------------------------------=#
@@ -83,7 +84,10 @@ end
 #=--------------------------------------------------=#
 #================ ADMM Algorithm ====================#
 #=--------------------------------------------------=#
-function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,savefits=false)
+function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",RepIt=true,RepF=true,savefits=false,RecD=false)
+	if RecD==true
+		Record=Init_Record_Data(Pars.nits)
+	end
 	Pars.tau=2.0
 	threshold = 1.0e-4 #CONVERGANCE THRESHOLD
 	CX=false
@@ -308,7 +312,17 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			#Report(X,Z,P,T,V,N,DATA,Mats,Pars,Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,s=true,Pres=true,Zres=true,Tres=true,Vres=true,Nres=true)
 			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,s=false,Chi2x=true,Ppen=false,Zpen=false,Tpen=false,Vpen=false,Npen=false)
 		end
-
+		#Recording
+		if RecD==true
+			Record.ConFlag[Pars.it]=Pars.conflag
+			Record.Chi2[Pars.it]=Pars.chi2
+			Record.J[Pars.it]=J(X,P,T,V,N,DATA,Mats,Pars)
+			Record.Z_res[Pars.it]=ell2norm(abs(X.vdm-Z.vdm))
+			Record.N_res[Pars.it]=ell2norm(abs(X.vdm-N.vdm))
+			Record.T_res[Pars.it]=ell2norm(abs(Mats.Ds*X.vdm-T.vdm))
+			Record.V_res[Pars.it]=ell2norm(abs(X.vdm*Mats.Dv-V.vdm))
+			Record.P_res[Pars.it]=ell2norm(abs(X.vdm-P.vdm))
+		end
 		#Plotting
 		if Plot_A == true && (Pars.it%10 == 0)
 			clf()
@@ -332,7 +346,18 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	if savefits==true
 		Write_FITS(X,P);
 	end
-	writecsv("J_vals.csv", fcn_vals)
+	if RecD ==true
+		#save_data("TLDR_Con_data.jld",Record)
+		writecsv("Reconstruction/Conflag.csv",Record.ConFlag)
+		writecsv("Reconstruction/Chi2.csv",Record.Chi2)
+		writecsv("Reconstruction/J.csv",Record.J)
+		writecsv("Reconstruction/Z_res.csv",Record.Z_res)
+		writecsv("Reconstruction/T_res.csv",Record.T_res)
+		writecsv("Reconstruction/V_res.csv",Record.V_res)
+		writecsv("Reconstruction/N_res.csv",Record.N_res)
+		writecsv("Reconstruction/P_res.csv",Record.P_res)
+	end
+	#writecsv("J_vals.csv", fcn_vals)
 	X,Pars
 end
 

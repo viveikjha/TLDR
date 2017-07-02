@@ -29,16 +29,16 @@ Pars.nits=50
 Mats=Gen_Mats(DATA,Pars)
 
 
-msmo = 1.0e5
-mspe =1.0e2     #GOES WITH V
-ml1 =1.0e3
+msmo = 1.0
+mspe =3100.0     #GOES WITH V
+ml1 =10.0
 mtem =1.0e2     #GOES WITH T
 
-pz=1.0e12
-pp=1.0e12
-pn=1.0e14
-pv=1.0e12
-pt=1.0e12
+pz=50000.0
+pp=16250.0
+pn=50000.0
+pv=38750.0
+pt=16250.0
 
 K=HOT_LAUNCH(DATA,Mats,Pars;mu_smoo=msmo,mu_spec=mspe,mu_temp=mtem,mu_l1=ml1,scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=false,rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt);
 println("Done")
