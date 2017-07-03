@@ -1,5 +1,6 @@
 push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 push!(LOAD_PATH,"/home/manderson/TLDR/")
+push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
 
 using PyPlot
 using JLD
@@ -44,23 +45,24 @@ rho=1.0e5
 Fit=init_fit()
 Fit.msmo = 1.0
 #Fit.pz=1.0e5
-Fit.pz=50000.0
+Fit.pz=10000.0
 
-Fit.ml1 = 10.0
+Fit.ml1 = 1.0
 #Fit.pn=1.0e5
-Fit.pn=50000.0
+Fit.pn=7000.0
 
-Fit.mspe = 3100.0    #GOES WITH V
+Fit.mspe = 1.0    #GOES WITH V
 #Fit.pv=1.0e5
-Fit.pv=38750.0
+Fit.pv=10000.0
 
-Fit.mtem = 100.0   #GOES WITH T
+Fit.mtem = 1.0   #GOES WITH T
 #Fit.pt=1.0e5
-Fit.pt = 16250.0
+Fit.pt = 10000.0
 
-Fit.pp=16250.0
+Fit.pp=3300.0
 #Fit.TI=1629750.8 #Box
-Fit.TI=500.0 #Ring
+
+Fit.TI=570.0 #Ring
 
 
 K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,RecD=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
