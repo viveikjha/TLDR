@@ -20,7 +20,7 @@ continuum = FILES_ARR[5]
 #NEW DATASET? IMPORT DATA FILES
 DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 Pars= init_Params()
-Pars.nits=500
+Pars.nits=1000
 Pars.num_tdf_times=50 #This is the default
 Mats=Gen_Mats(DATA,Pars)
 
@@ -32,35 +32,39 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
 DATA = load_data("TLDR_data.jld")
 Pars,Mats=load_vars("TLDR_vars.jld")
-nps=4
-#m1=logspace(1.5,2.5,nps)
+nps=10
+m1=logspace(0.0,4.0,nps)
 #m2=logspace(0.0,2.0,nps)
 #m3=logspace(2.5,3.5,nps)
-ps=1.0e5
+
 
 count=0
 
-ps=linspace(1.0,1.0e4,nps)
+#ps=linspace(1.0e6,1.0e8,nps)
 mspe=1.0
 mtem=1.0
 ml1=1.0
 msmo=1.0
-pv=ps
-pt=ps
-pz=ps
-pn=ps
-pp=1.0e5
+#pv=ps
+#pt=ps
+#pz=ps
+#pn=ps
+pp=1.2e7
 clim=4.0
+pv=500000.0
+pn=500000.0
+pz=500000.0
+pt=1.2e7
 #pz=1.0e5
-#for msmo in m2 # msmo
-#  for ml1 in m2 #ml1
-#    for mspe in m3
-#      for mtem in m1
-for pz in ps # msmo
-  for pn in ps #ml1
-    for pv in ps
-      for pt in ps
-        for pp in ps
+for msmo in m1 # msmo
+  for ml1 in m1 #ml1
+    for mspe in m1
+      for mtem in m1
+#for pz in ps # msmo
+#  for pn in ps #ml1
+#    for pv in ps
+      #for pt in ps
+      #  for pp in ps
           count+=1
           DATA = load_data("TLDR_data.jld")
           Pars,Mats=load_vars("TLDR_vars.jld")
@@ -107,9 +111,9 @@ for pz in ps # msmo
             close("all")
             fname=string("Batch/vdms/",string(count),".csv")
             writecsv(fname,K.vdm)
-          end
+          end #endif
         end
         end
       end
     end
-  end
+  #end

@@ -118,7 +118,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
 	Ini=0 #Memory Release
 	if Plot_A == true
-		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Blues")
+		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None")
 		#colorbar()
 		#show()
 	end
@@ -314,19 +314,19 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		end
 		#Recording
 		if RecD==true
-			Record.ConFlag[Pars.it]=Pars.conflag
-			Record.Chi2[Pars.it]=Pars.chi2
-			Record.J[Pars.it]=J(X,P,T,V,N,DATA,Mats,Pars)
-			Record.Z_res[Pars.it]=ell2norm(abs(X.vdm-Z.vdm))
-			Record.N_res[Pars.it]=ell2norm(abs(X.vdm-N.vdm))
-			Record.T_res[Pars.it]=ell2norm(abs(Mats.Ds*X.vdm-T.vdm))
-			Record.V_res[Pars.it]=ell2norm(abs(X.vdm*Mats.Dv-V.vdm))
-			Record.P_res[Pars.it]=ell2norm(abs(X.vdm-P.vdm))
+			Record.ConFlag[Pars.it-1]=Pars.conflag
+			Record.Chi2[Pars.it-1]=Pars.chi2
+			Record.J[Pars.it-1]=J(X,P,T,V,N,DATA,Mats,Pars)
+			Record.Z_res[Pars.it-1]=ell2norm(abs(X.vdm-Z.vdm))
+			Record.T_res[Pars.it-1]=ell2norm(abs(Mats.Ds*X.vdm-T.vdm))
+			Record.N_res[Pars.it-1]=ell2norm(abs(X.vdm-N.vdm))
+			Record.V_res[Pars.it-1]=ell2norm(abs(X.vdm*Mats.Dv-V.vdm))
+			Record.P_res[Pars.it-1]=ell2norm(abs(X.vdm-P.vdm))
 		end
 		#Plotting
 		if Plot_A == true && (Pars.it%10 == 0)
 			clf()
-			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],cmap="Reds",aspect="auto",origin="lower",interpolation="None")
+			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",interpolation="None")
 			colorbar()
 			draw()
 		end

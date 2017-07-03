@@ -31,7 +31,7 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 print_with_color(:green,"beginning reconstruction\n")
 scale=1.0e0
 
-Pars.nits=500
+Pars.nits=1000
 
 Pars.num_tdf_times=50 #This is the default
 
@@ -41,25 +41,25 @@ Pars.num_tdf_times=50 #This is the default
 #collect(1.0:((50-1.0)/(50-1)):50)
 #Pars.tdf_times=collect(min:stepsize:max)
 #println(Pars.tdf_times)
-rho=1.0e5
+rho=1.2e7
 Fit=init_fit()
 Fit.msmo = 1.0
 #Fit.pz=1.0e5
-Fit.pz=10000.0
+Fit.pz=500000.0
 
 Fit.ml1 = 1.0
 #Fit.pn=1.0e5
-Fit.pn=7000.0
+Fit.pn=500000.0
 
 Fit.mspe = 1.0    #GOES WITH V
 #Fit.pv=1.0e5
-Fit.pv=10000.0
+Fit.pv=500000.0
 
-Fit.mtem = 1.0   #GOES WITH T
+Fit.mtem = 59.0   #GOES WITH T
 #Fit.pt=1.0e5
-Fit.pt = 10000.0
+Fit.pt = 1.2e7
 
-Fit.pp=3300.0
+Fit.pp=1.2e7
 #Fit.TI=1629750.8 #Box
 
 Fit.TI=570.0 #Ring
