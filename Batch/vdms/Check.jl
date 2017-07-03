@@ -1,5 +1,7 @@
 #actual=readcsv("home/manderson/TLDR/UnitTests/UT_vdm.csv");
-actual=readcsv("../../UnitTests/UT_vdm.csv");
+#actual=readcsv("../../UnitTests/UT_vdm.csv");
+actual=readcsv("../../Paper/ring/simulated_ring_vdm.csv");
+
 mindif=100.0
 minf=""
 for f in filter(x -> ismatch(r"\.csv", x),readdir())

@@ -59,7 +59,8 @@ Fit.mtem = 100.0   #GOES WITH T
 Fit.pt = 16250.0
 
 Fit.pp=16250.0
-Fit.TI=1629750.8
+#Fit.TI=1629750.8 #Box
+Fit.TI=500.0 #Ring
 
 
 K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,RecD=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt

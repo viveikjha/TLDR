@@ -25,7 +25,7 @@ Pars=init_Params();
 Pars.num_tdf_times=50
 Mats=Gen_Mats(DATA,Pars);
 
-mus = logspace(5.0,7.0,100)
+mus = logspace(1.0,7.0,100)
 Res = zeros(length(mus),3)
 println("Dimensions: ", size(DATA.L))
 #Find best mu for Tik initialization under given data.
@@ -45,13 +45,5 @@ println(Res)
 
 lvl=0.1
 DSNR=4.0
-#ax=PyPlot.gca()
-#ax[:set_ylim](0,200)
-#semilogx(Res[:,1],Res[:,2])
-#xlabel("Mu")
-#ylabel("Chi2")
-#tstr=string("Lvl= ", string(lvl))
-#title(tstr)
-#show()
 fname=string("TIkSols/Res_L_", string(lvl),".csv")
 writecsv(fname,Res)

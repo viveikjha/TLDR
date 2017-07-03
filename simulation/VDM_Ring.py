@@ -218,5 +218,5 @@ plt.show()
 #np.savetxt('Ring/new_wavelengths.csv',newl_a,delimiter=',')
 #np.savetxt('Ring/simulated_vdm.csv',Fim,delimiter=',')
 
-Fim=(Fim/np.max(Fim))*0.05
+Fim=(Fim/np.max(Fim))*0.1
 np.savetxt('../Paper/simulated_ring_vdm.csv',Fim,delimiter=',')

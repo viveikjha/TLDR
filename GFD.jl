@@ -41,6 +41,9 @@ for i in 1:ntimes
 		end
 	end
 end
+vdm_vert=readcsv("Paper/ring/simulated_ring_vdm.csv")
+#vdm_vert=readcsv("Paper/ring/simulated_spiral_vdm.csv")
+
 writecsv("UnitTests/UT_vdm.csv",vdm_vert)
 #println("Wrote vdm_vert.csv with dimensions: ", size(vdm_vert))
 println("For Box, ", total_lit, " pixels lit.")
