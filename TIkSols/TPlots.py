@@ -17,5 +17,5 @@ plt.ylabel(r'$\chi^2$')
 plt.title(r'Tikhonov Initialization With Various Smoothing Values')
 
 plt.legend()
-#plt.show()
-plt.savefig("Tik_Init.png")
+plt.show()
+#plt.savefig("Tik_Init.png")

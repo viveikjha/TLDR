@@ -41,28 +41,21 @@ Pars.num_tdf_times=50 #This is the default
 #collect(1.0:((50-1.0)/(50-1)):50)
 #Pars.tdf_times=collect(min:stepsize:max)
 #println(Pars.tdf_times)
-rho=1.2e7
+
 Fit=init_fit()
+Fit.pp=3300.0
+Fit.mtem = 100.0   #GOES WITH T
+Fit.pt = 10000.0
+Fit.mspe = 10.0    #GOES WITH V
+Fit.pv=10000.0
+Fit.ml1 = 10.0
+Fit.pn=6600.0
 Fit.msmo = 1.0
-#Fit.pz=1.0e5
-Fit.pz=500000.0
+Fit.pz=10000.0
 
-Fit.ml1 = 1.0
-#Fit.pn=1.0e5
-Fit.pn=500000.0
+Fit.TI=1629750.8 #Box
 
-Fit.mspe = 1.0    #GOES WITH V
-#Fit.pv=1.0e5
-Fit.pv=500000.0
-
-Fit.mtem = 59.0   #GOES WITH T
-#Fit.pt=1.0e5
-Fit.pt = 1.2e7
-
-Fit.pp=1.2e7
-#Fit.TI=1629750.8 #Box
-
-Fit.TI=570.0 #Ring
+#Fit.TI=570.0 #Ring
 
 
 K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,RecD=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt

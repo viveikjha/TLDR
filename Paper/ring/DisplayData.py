@@ -29,6 +29,7 @@ for i in range(0,len(cf)):
         DV=np.append(DV,V[i])
         DP=np.append(DP,P[i])
         DZ=np.append(DZ,Z[i])
+'''
 plt.figure()
 plt.title(r"Reconstruction Residuals")
 #plt.plot(Dchi2/np.max(Dchi2),label=r"$\chi^2_{reduced}$")
@@ -46,3 +47,14 @@ plt.minorticks_on()
 
 #plt.show()
 plt.savefig("Residuals.png")
+'''
+plt.figure()
+plt.title(r"Reconstruction $\chi^2$")
+plt.plot(Dchi2,label=r"$\|\|X-Z\|\|_2$")
+plt.xlabel(r"Iteration")
+plt.ylabel(r"Reduced $\chi^2$")
+plt.legend()
+plt.minorticks_on()
+
+plt.show()
+#plt.savefig("Chi2.png")
