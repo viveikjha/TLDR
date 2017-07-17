@@ -23,7 +23,8 @@ function Gen_Mats(DATA,Params)
 #	Mat.H = H./0.5
 	Mat.H = H
 	#println("		H: ",size(Mat.H))
-	writecsv("H.csv",Mat.H)
+	loc=string(Params.directory,"H.csv")
+	writecsv(loc,Mat.H)
 	Mat.HE = HE
 
 	#= 		FINITE DIFFERENCES MATRICES			=#
@@ -59,7 +60,7 @@ function Gen_Mats(DATA,Params)
 	s=size(Ds)
 	Mat.Ds=eye(s[1],s[2])
 	Mat.Ds = Ds
-	writecsv("Ds.csv",Ds)
+	writecsv(string(Params.directory,"Ds.csv"),Ds)
 	Mat.DsT = Ds'
 
 	#Dv = zeros(DATA.num_lines,DATA.num_lines)
@@ -93,7 +94,7 @@ function Gen_Mats(DATA,Params)
 	Dv=Dv'
 
 	Mat.Dv = Dv
-	writecsv("Dv.csv",Dv)
+	writecsv(string(Params.directory,"Dv.csv"),Dv)
 	Mat.DvT = Dv'
 
 

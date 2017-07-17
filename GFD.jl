@@ -1,6 +1,6 @@
 push!(LOAD_PATH,"/home/manderson/TLDR/")
-#push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
-
+push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
 using RMLib
 using RMLibMore
 using RMTypes
@@ -41,6 +41,7 @@ for i in 1:ntimes
 		end
 	end
 end
+
 #vdm_vert=readcsv("Paper/ring/simulated_ring_vdm.csv")
 #vdm_vert=readcsv("Paper/ring/simulated_spiral_vdm.csv")
 

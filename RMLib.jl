@@ -122,7 +122,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		#colorbar()
 		#show()
 	end
-	writecsv("tiksol_thresh.csv",init_vdm)
+	writecsv(string(Pars.directory,"tiksol_init.csv"),init_vdm)
 	#init_vdm=randn(size(init_vdm)) #Start from Random
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 	tmax=5.0
@@ -348,14 +348,14 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	end
 	if RecD ==true
 		#save_data("TLDR_Con_data.jld",Record)
-		writecsv("Reconstruction/Conflag.csv",Record.ConFlag)
-		writecsv("Reconstruction/Chi2.csv",Record.Chi2)
-		writecsv("Reconstruction/J.csv",Record.J)
-		writecsv("Reconstruction/Z_res.csv",Record.Z_res)
-		writecsv("Reconstruction/T_res.csv",Record.T_res)
-		writecsv("Reconstruction/V_res.csv",Record.V_res)
-		writecsv("Reconstruction/N_res.csv",Record.N_res)
-		writecsv("Reconstruction/P_res.csv",Record.P_res)
+		writecsv(string(Pars.directory,"Reconstruction/Conflag.csv"),Record.ConFlag)
+		writecsv(string(Pars.directory,"Reconstruction/Chi2.csv"),Record.Chi2)
+		writecsv(string(Pars.directory,"Reconstruction/J.csv"),Record.J)
+		writecsv(string(Pars.directory,"Reconstruction/Z_res.csv"),Record.Z_res)
+		writecsv(string(Pars.directory,"Reconstruction/T_res.csv"),Record.T_res)
+		writecsv(string(Pars.directory,"Reconstruction/V_res.csv"),Record.V_res)
+		writecsv(string(Pars.directory,"Reconstruction/N_res.csv"),Record.N_res)
+		writecsv(string(Pars.directory,"Reconstruction/P_res.csv"),Record.P_res)
 	end
 	#writecsv("J_vals.csv", fcn_vals)
 	X,Pars
