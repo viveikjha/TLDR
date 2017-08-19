@@ -33,14 +33,16 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 DATA = load_data("TLDR_data.jld")
 Pars,Mats=load_vars("TLDR_vars.jld")
 nps=4
-m1=logspace(0.0,3.0,nps)
+m1=logspace(0.0,5.0,nps)
 #m2=logspace(0.0,2.0,nps)
 #m3=logspace(2.5,3.5,nps)
 
 
 count=0
 
-#ps=linspace(1.0e6,1.0e8,nps)
+#ps=linspace(1.0e2,1.0e8,nps)
+#ps1=linspace(1.0,1.0e3,nps)
+#ps2=linspace(1.0e8,1.0e9,nps)
 mspe=1.0
 mtem=1.0
 ml1=1.0
@@ -51,19 +53,19 @@ msmo=1.0
 #pn=ps
 pp=3300.0
 clim=4.0
-pv=10000.0
-pn=6600.0
-pz=10000.0
-pt=10000.0
-#pz=1.0e5
+pv=300.0
+pn=1.0
+pz=1.0e8
+pt=1000.0
+
 for msmo in m1 # msmo
   for ml1 in m1 #ml1
     for mspe in m1
       for mtem in m1
-#for pz in ps # msmo
-#  for pn in ps #ml1
-#    for pv in ps
-      #for pt in ps
+#for pz in ps2 # msmo
+#  for pn in ps1 #ml1
+#    for pv in ps1
+#      for pt in ps1
       #  for pp in ps
           count+=1
           DATA = load_data("TLDR_data.jld")
@@ -78,7 +80,7 @@ for msmo in m1 # msmo
           Fit.mtem =mtem
           Fit.pt=pt
           Fit.pp=pp
-          Fit.TI=1629750.8
+          Fit.TI=500.0
           K=HOT_LAUNCH(DATA,Mats,Pars,Fit;nits=Pars.nits,Plot_Live=false,Plot_Final=false,RepIt=false,RepF=false);
           if Pars.conflag==1 && Pars.chi2<clim#converged
             col=:green
@@ -100,7 +102,7 @@ for msmo in m1 # msmo
             s5=string("RhoP: ", pp, " Chi2: ", Pars.chi2, " Con: ", Pars.conflag)
             s6=string(" Con: ", Pars.conflag)
 
-            text(30,0,s1,fontsize=14)
+            text(30,0 ,s1,fontsize=14)
             text(30,10,s2,fontsize=14)
             text(30,20,s3,fontsize=14)
             text(30,30,s4,fontsize=14)
