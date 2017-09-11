@@ -46,8 +46,6 @@ function regX(X,Pars)
 	#A=Pars.mu_smoo*0.5*ell2normsquared(X.vdm)
 	G=copy(X.vdm)
 	A=Pars.mu_smoo*0.5*	sum(G.^2)
-
-
 	A
 end
 #=--------------------------------------------------=#
@@ -456,4 +454,12 @@ function plotfin(Plot_F,X,Z,T,V)
 		Mats=Gen_Mats(DATA,Pars)
 		vdm
 	end
-end
+
+  function primal_residual(X,Y)
+    primal=X.vdm-Y.vdm
+  end
+  function dual_residual()
+    dual=rho*transpose(A)*(X-X.previous)
+  end
+
+end #END MODULE
