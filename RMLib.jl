@@ -113,10 +113,11 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	Con_Arr = zeros(DATA.num_lines)
 
 
-	sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
-	Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
+	#sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
+	#Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
 	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Fit.msmo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
-	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
+	#init_vdm =Ini #FILTER OUT NEGATIVE VALUES
+	init_vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
 	Ini=0 #Memory Release
 	if Plot_A == true
 		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None")
@@ -246,18 +247,13 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			Pars.G = 1.5
 		end
 	#Step 5: Update Penalty Parameters
-
-		#Z = Pen_update(X,Z,Pars)
-		#T = Pen_update_E(X,T,Pars; Ds=Mats.Ds)
-		#V = Pen_update_E(Z,V,Pars; Dv=Mats.Dv)
-		#P = Pen_update(X,P,Pars)
-		#N = Pen_update(X,N,Pars)
-		#balance_residuals(X,Z,Mats) #Z
-		#balance_residuals(X,T,Mats,Dsf=true) #T
-		#balance_residuals(Z,V,Mats,Dvf=true) #V
-		#balance_residuals(X,P,Mats,Pos=true) #P
-		#balance_residuals(X,N,Mats,l1=true) #N
-
+		if Pars.it < 5
+			update_penN(X,N,Pars,Fit)
+			update_penP(X,P,Pars,Fit)
+			update_penT(X,T,Pars,Mats,Fit)
+			update_penV(Z,V,Pars,Mats,Fit)
+			update_penZ(X,Z,Pars,Fit)
+		end #endif
 		#println("Z: ",Z.rho," ",Z.tau," T: ",T.rho," ",T.tau," V: ",V.rho," ",V.tau," P: ",P.rho," ",N.tau)
 
 	#Step 6: Check for Convergence
@@ -422,32 +418,71 @@ end
 #================= Update PenN ======================#
 #=--------------------------------------------------=#
 function update_penN(X,N,Pars,Fit)
-r=X.vdm-N.vdm
-s=rho*(N.vdm-N.vdm_previous)
+	rc=ell2norm(X.vdm-N.vdm)
+	sc=ell2norm(N.rho*(N.vdm-N.vdm_previous))
+	if rc > Fit.ml1*sc
+		N.rho=N.rho*Pars.tau
+	elseif  sc > Fit.ml1*rc
+		N.rho=N.rho/Pars.tau
+	else
+	end #endif
 end
 
 #=--------------------------------------------------=#
 #================= Update PenP ======================#
 #=--------------------------------------------------=#
 function update_penP(X,P,Pars,Fit)
-r= X.vdm-P.vdm
-s=rho*(P.vdm-P.vdm_previous)
+rc= ell2norm(X.vdm-P.vdm)
+sc=ell2norm(P.rho*(P.vdm-P.vdm_previous))
+	if rc > sc
+		P.rho=P.rho*Pars.tau
+	elseif  sc > rc
+		P.rho=P.rho/Pars.tau
+	else
+	end #endif
 end
 
 #=--------------------------------------------------=#
 #================= Update PenT ======================#
 #=--------------------------------------------------=#
 function update_penT(X,T,Pars,Mats,Fit)
-r=T.vdm-Mats.DT*X.vdm
-s=rho*(T.vdm-T.vdm_previous)
+rc=ell2norm(T.vdm-Mats.Ds*X.vdm)
+sc=ell2norm(T.rho*(T.vdm-T.vdm_previous))
+if rc > sc
+	T.rho=T.rho*Pars.tau
+elseif  sc > rc
+	T.rho=T.rho/Pars.tau
+else
+end #endif
+
 end
 
 #=--------------------------------------------------=#
 #================= Update PenV ======================#
 #=--------------------------------------------------=#
-function update_penT(X,V,Pars,Fit)
-r=V.vdm-(Z.vdm*Mats.DV)
-s=rho*(V.vdm-V.vdm_previous)
-end
+function update_penV(Z,V,Pars,Mats,Fit)
+rc=ell2norm(V.vdm-(Z.vdm*Mats.Dv))
+sc=ell2norm(V.rho*(V.vdm-V.vdm_previous))
+if rc > sc
+	V.rho=V.rho*Pars.tau
+elseif  sc > rc
+	V.rho=V.rho/Pars.tau
+else
+end #endif
 
+end
+#=--------------------------------------------------=#
+#================= Update PenZ ======================#
+#=--------------------------------------------------=#
+function update_penZ(X,Z,Pars,Fit)
+rc=ell2norm(X.vdm-Z.vdm)
+sc=ell2norm(Z.rho*(Z.vdm-Z.vdm_previous))
+if rc > sc
+	Z.rho=Z.rho*Pars.tau
+elseif  sc > rc
+	Z.rho=Z.rho/Pars.tau
+else
+end #endif
+
+end
 end #endmodule

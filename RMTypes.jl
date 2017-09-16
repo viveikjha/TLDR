@@ -52,7 +52,7 @@ type Params
 	l1N_state::Bool																					#21
 	l1T_state::Bool																					#22
 	l1V_state::Bool																					#23
-	directory::String
+	directory::AbstractString
 end
 
 type Data
@@ -98,11 +98,11 @@ function Init_Record_Data(nits)
 end
 
 function init_IMAGE(rho)
-	ADMM_IMAGE([],[],[],[],rho,Inf,0.0,0.0,0.0,0.0,1.0e3,1.2)
+	ADMM_IMAGE([],[],[],[],rho,Inf,0.0,0.0,0.0,0.0,1.0e3,2.0)
 end
 
 function init_Params()
-  Params(2,0,50,1.2,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true,"")
+  Params(2,0,50,2.0,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true,"")
 end
 
 function init_Data()
