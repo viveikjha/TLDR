@@ -415,147 +415,39 @@ end
 #alpha is a throttling term on multiplier update.
 function LG_update(U,Z,X,rho,alpha)
 	U = U + (rho/alpha).*(Z - X)
-
 end
 
-#=--------------------------------------------------=#
-#================= Update Penalty ===================#
-#=--------------------------------------------------=#
-function Pen_update(X,Y,P)
-
-	S = Y.rho*(Y.vdm-Y.vdm_previous)
-	R = X.vdm-Y.vdm
-	tau_prim_previous = copy(Y.tau_prim)
-  Y.tau_prim = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*(maximum([ell2norm(X.vdm),ell2norm(Y.vdm)]))
-	tau_dual_previous = copy(Y.tau_dual)
-  Y.tau_dual = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*ell2norm(Y.U)
-	eta = ell2norm(R)*Y.tau_dual / (ell2norm(S)*Y.tau_prim)
-#	eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
-	phi_previous = copy(Y.phi)
-	Y.phi = max(ell2norm(R/Y.tau_prim),ell2norm(S)/Y.tau_dual)
-	if (1.0/P.tau[1] <= eta[1]) && (eta[1] <= P.tau[1]) || (Y.phi[1] < P.sigma[1]*phi_previous[1])
-		#NOTHING HAPPENS IN HERE
-	elseif eta < (1.0/P.tau)
-		Y.rho_max = copy(Y.rho)
-		if Y.rho_min > 0.0
-			Y.rho = sqrt(Y.rho_min*Y.rho_max)
-		else Y.rho = Y.rho_max/P.G
-		end
-	elseif eta > P.tau
-		Y.rho_min = copy(Y.rho)
-		if Y.rho_max < Inf
-			Y.rho = sqrt(Y.rho_min*Y.rho_max)
-		else Y.rho = Y.rho_min*P.G
-		end
-	end
-	Y
-end
-
-#=--------------------------------------------------=#
-#================= Update Penalty ===================#
-#=--------------------------------------------------=#
-function Pen_update_E(X,Y,P;Dv=false,Ds=false)
-	if Dv==false
-		Dv = eye(size(X.vdm)[2])
-	end
-	if Ds == false
-		Ds = eye(size(X.vdm)[1])
-	end
-	S = Y.rho*(Y.vdm-Y.vdm_previous)
-	R = Ds*X.vdm*Dv-Y.vdm
-	tau_prim_previous = copy(Y.tau_prim)
-  Y.tau_prim = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*(maximum([ell2norm(X.vdm),ell2norm(Y.vdm)]))
-	tau_dual_previous = copy(Y.tau_dual)
-  Y.tau_dual = sqrt(P.num_tdf_times)*P.eps_abs + P.eps_rel*ell2norm(Y.U)
-	eta = ell2norm(R)*Y.tau_dual / (ell2norm(S)*Y.tau_prim)
-#	eta = ell2norm(R)*tau_dual_previous[l] / (ell2norm(S)*tau_prim_previous[l])	#OPTION 2
-	phi_previous = copy(Y.phi)
-	Y.phi = max(ell2norm(R/Y.tau_prim),ell2norm(S)/Y.tau_dual)
-	if (1.0/P.tau[1] <= eta[1]) && (eta[1] <= P.tau[1]) || (Y.phi[1] < P.sigma[1]*phi_previous[1])
-		#NOTHING HAPPENS IN HERE
-	elseif eta < (1.0/P.tau)
-		Y.rho_max = Y.rho
-		if Y.rho_min > 0.0
-			Y.rho = sqrt(Y.rho_min*Y.rho_max)
-		else Y.rho = Y.rho_max/P.G
-		end
-	elseif eta > P.tau
-		Y.rho_min = copy(Y.rho)
-		if Y.rho_max < Inf
-			Y.rho = sqrt(Y.rho_min*Y.rho_max)
-		else Y.rho = Y.rho_min*P.G
-		end
-	end
-	Y
-end #end function
-
-#=--------------------------------------------------=#
-#=============== Residual Balancing =================#
-#=--------------------------------------------------=#
-#THIS IS A PENALTY UPDATE STEP.
-function balance_residuals(j,k,Mats;Dvf=false,Dsf=false,Pos=false,l1=false,mu=2.0)
-	if Dvf==false
-		Dv = eye(size(j.vdm)[2])
-	else
-		Dv=Mats.Dv
-	end
-	if Dsf == false
-		Ds = eye(size(j.vdm)[1])
-	else
-		Ds=Mats.Ds
-	end
-	r_rel = ell2norm((Ds*j.vdm*Dv-k.vdm)/maximum([ell2norm(j.vdm),ell2norm(k.vdm)]))
-	s_rel = ell2norm((k.vdm-k.vdm_previous)/ell2norm(k.U))
-	tau=update_tau(k,r_rel,s_rel)
-	rhotemp=k.rho
-	if r_rel > mu*s_rel
-		print_with_color(:red,"+++++\n")
-		k.rho=k.tau*k.rho
-	elseif s_rel > mu*r_rel
-		print_with_color(:green,"-----\n")
-		k.rho=1.0/k.tau*k.rho
-	#else nothing
-	end
-	if k.rho>1.0e6 #Setting maximum penalty
-		k.rho=rhotemp
-	end
-end#end function
-#=--------------------------------------------------=#
-#=================== Tau Update =====================#
-#=--------------------------------------------------=#
-function update_tau(k,r_rel,s_rel)
-	if 1.0 <= sqrt(r_rel/s_rel) < k.tau_max
-		k.tau=sqrt(r_rel/s_rel)
-	elseif 1.0/k.tau_max < sqrt(s_rel/r_rel) < 1.0
-		k.tau = sqrt(s_rel/r_rel)
-	else
-		k.tau=k.tau_max
-	end
-end #end tau update
 
 #=--------------------------------------------------=#
 #================= Update PenN ======================#
 #=--------------------------------------------------=#
-function update_penN(X,N,Pars)
-
+function update_penN(X,N,Pars,Fit)
+r=X.vdm-N.vdm
+s=rho*(N.vdm-N.vdm_previous)
 end
+
 #=--------------------------------------------------=#
 #================= Update PenP ======================#
 #=--------------------------------------------------=#
-function update_penP(X,P,Pars)
+function update_penP(X,P,Pars,Fit)
 r= X.vdm-P.vdm
 s=rho*(P.vdm-P.vdm_previous)
 end
+
 #=--------------------------------------------------=#
 #================= Update PenT ======================#
 #=--------------------------------------------------=#
-function update_penT(X,T,Pars,Mats)
-Mats.DT*(X.vdm-X.vdm_previous)
+function update_penT(X,T,Pars,Mats,Fit)
+r=T.vdm-Mats.DT*X.vdm
+s=rho*(T.vdm-T.vdm_previous)
 end
+
 #=--------------------------------------------------=#
 #================= Update PenV ======================#
 #=--------------------------------------------------=#
-function update_penT(X,V,Pars)
-
+function update_penT(X,V,Pars,Fit)
+r=V.vdm-(Z.vdm*Mats.DV)
+s=rho*(V.vdm-V.vdm_previous)
 end
+
 end #endmodule

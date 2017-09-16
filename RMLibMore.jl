@@ -455,11 +455,4 @@ function plotfin(Plot_F,X,Z,T,V)
 		vdm
 	end
 
-  function primal_residual(X,Y)
-    primal=X.vdm-Y.vdm
-  end
-  function dual_residual()
-    dual=rho*transpose(A)*(X-X.previous)
-  end
-
 end #END MODULE
