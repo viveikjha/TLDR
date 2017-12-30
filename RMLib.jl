@@ -247,13 +247,13 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			Pars.G = 1.5
 		end
 	#Step 5: Update Penalty Parameters
-		if Pars.it < 5
-			update_penN(X,N,Pars,Fit)
-			update_penP(X,P,Pars,Fit)
-			update_penT(X,T,Pars,Mats,Fit)
-			update_penV(Z,V,Pars,Mats,Fit)
-			update_penZ(X,Z,Pars,Fit)
-		end #endif
+		#if Pars.it < 5
+		#	update_penN(X,N,Pars,Fit)
+		#	update_penP(X,P,Pars,Fit)
+		#	update_penT(X,T,Pars,Mats,Fit)
+		#	update_penV(Z,V,Pars,Mats,Fit)
+		#	update_penZ(X,Z,Pars,Fit)
+		#end #endif
 		#println("Z: ",Z.rho," ",Z.tau," T: ",T.rho," ",T.tau," V: ",V.rho," ",V.tau," P: ",P.rho," ",N.tau)
 
 	#Step 6: Check for Convergence
@@ -379,13 +379,9 @@ end
 function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 	s = size(X.vdm)
 	vdm = Array(Float64,s[1],s[2])
-	slice_size=size(Mats.W)
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-			#W_slice = reshape(Mats.W[l,:,:],size(Mats.W[l,:,:])[2],size(Mats.W[l,:,:])[3])
-			W_slice = reshape(Mats.W[l,:,:],slice_size[2],slice_size[3])
-			Q = Mats.HT * W_slice * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-			B = Mats.HT* W_slice * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
-
+			Q = Mats.HT * Mats.W[:,:,l] * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+			B = Mats.HT* Mats.W[:,:,l] * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
 			G=inv(Q)*B
 			#vdm[:,l] = Q\B[:,l]
 			vdm[:,l] = G[:,l]

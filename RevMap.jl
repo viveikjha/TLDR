@@ -37,7 +37,7 @@ save_vars(string(prefix,"TLDR_vars.jld"),Mats,Pars)
 print_with_color(:green,"beginning reconstruction\n")
 scale=1.0e0
 
-Pars.nits=1000
+Pars.nits=100
 
 Pars.num_tdf_times=50 #This is the default
 
