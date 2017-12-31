@@ -79,7 +79,7 @@ function Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=false,L2x=false,L1T=false,L1V=fals
   else Jstring=""
   end
   if L2x==true
-    L2xstring=@sprintf "\tL2x: %0.0f" regX(X,Pars)
+    L2xstring=@sprintf "\tL2x: %0.2f" regX(X,Pars)
   else L2xstring =""
   end
   if L1T==true

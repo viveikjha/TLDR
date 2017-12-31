@@ -1,6 +1,7 @@
-push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
-push!(LOAD_PATH,"/home/manderson/TLDR/")
-push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
+#push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+#push!(LOAD_PATH,"/home/manderson/TLDR/")
+#push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
+push!(LOAD_PATH,"/Users/manderson/TLDR")
 
 using PyPlot
 using JLD
@@ -37,7 +38,6 @@ save_vars(string(prefix,"TLDR_vars.jld"),Mats,Pars)
 print_with_color(:green,"beginning reconstruction\n")
 scale=1.0e0
 
-Pars.nits=100
 
 Pars.num_tdf_times=50 #This is the default
 
@@ -49,21 +49,21 @@ Pars.num_tdf_times=50 #This is the default
 #println(Pars.tdf_times)
 
 Fit=init_fit()
-Fit.pp=3300.0
-Fit.mtem = 1.0e5   #GOES WITH T
-Fit.pt = 1000.0
-Fit.mspe = 40.0    #GOES WITH V
-Fit.pv=300.0
-Fit.ml1 = 40.0
-Fit.pn=1.0
-Fit.msmo = 1.0e5
-Fit.pz=1.0e8
+Fit.pp=100.0
+Fit.mtem = 10.0   #GOES WITH T
+Fit.pt = 100.0
+Fit.mspe = 10.0    #GOES WITH V
+Fit.pv=100.0
+Fit.ml1 = 1000.0
+Fit.pn=100.0
+Fit.msmo = 1000.0
+Fit.pz=100.0
 
 #Fit.TI=1629750.8 #Box
 Fit.TI=1000.0 #Box
 #Fit.TI=570.0 #Ring
 
-
+Pars.nits=50000.0
 K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,RecD=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
 vdm=copy(K.vdm)
 writecsv(string(prefix,"RevMapResult.csv"),vdm)

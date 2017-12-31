@@ -5,14 +5,16 @@ type ADMM_IMAGE
 	vdm_previous::Array{Float64}					#2
 	vdm_squiggle::Array{Float64}					#3
 	U::Array{Float64}											#4
-	rho::Real															#5
-	rho_max::Real													#6
-	rho_min::Real													#7
-	phi::Real															#8
-	tau_prim::Real												#9
-	tau_dual::Real												#10
-	tau_max::Real													#11
-	tau::Real															#12
+	UI::Array{Float64}										#5
+	UI_previous::Array{Float64}						#6
+	rho::Real															#7
+	rho_max::Real													#8
+	rho_min::Real													#9
+	phi::Real															#10
+	tau_prim::Real												#11
+	tau_dual::Real												#12
+	tau_max::Real													#13
+	tau::Real															#14
 end
 
 type Fit_Params
@@ -98,7 +100,8 @@ function Init_Record_Data(nits)
 end
 
 function init_IMAGE(rho)
-	ADMM_IMAGE([],[],[],[],rho,Inf,0.0,0.0,0.0,0.0,1.0e3,2.0)
+	#           1, 2, 3, 4, 5, 6,  7,  8,  9, 10, 11, 12,   13, 14
+	ADMM_IMAGE([],[],[],[],[],[],rho,Inf,0.0,0.0,0.0,0.0,1.0e3,2.0)
 end
 
 function init_Params()

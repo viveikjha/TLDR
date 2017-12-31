@@ -128,18 +128,18 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	#init_vdm=randn(size(init_vdm)) #Start from Random
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 	tmax=5.0
-	 X = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 X.tau_max=tmax
+	 X= Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	 #X.tau_max=tmax
 	 Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 Z.tau_max=tmax
+	 #Z.tau_max=tmax
 	 T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 T.tau_max=tmax
+	 #T.tau_max=tmax
 	 V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 V.tau_max=tmax
+	 #V.tau_max=tmax
 	 P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 P.tau_max=tmax
+	 #P.tau_max=tmax
 	 N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 N.tau_max=tmax
+	 #N.tau_max=tmax
 
 
 	#When loading a known TDF
@@ -160,7 +160,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		end
 	end
 
-	 X.vdm = copy(init_vdm)
+	X.vdm = copy(init_vdm)
 	#zinis=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
 	Z.vdm = copy(init_vdm)
 	T.vdm = Mats.Ds*init_vdm
@@ -208,7 +208,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	#Pars.conflag=true #should never begin main loop.
 	gc() #GARBAGE CLEANUP
 	fcn_vals=zeros(Pars.nits+1)
-	while Pars.it <= Pars.nits && Pars.conflag==0        #ADMM ITERATION LOOP
+	while Pars.it <= Pars.nits #&& Pars.conflag==0        #ADMM ITERATION LOOP
 
 		X.vdm_previous = copy(X.vdm)
 	#Step 1: MINIMIZATION W.R.T. X
@@ -243,20 +243,32 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		P.U = LG_update(P.U,P.vdm,X.vdm,P.rho,Pars.alpha)
 		Z.U = LG_update(Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha)
 
+		#Step 5: UPDATE INTERMEDIATE MULTIPLIERS
+		T.UI_previous=copy(T.UI)
+		T.UI = IM_update(T.UI,T.vdm,Mats.Ds*X.vdm_previous,T.rho)
+		V.UI_previous=copy(V.UI)
+		V.UI = IM_update(V.UI,V.vdm,Z.vdm_previous*Mats.Dv,V.rho)
+		N.UI_previous=copy(N.UI)
+		N.UI = IM_update(N.UI,N.vdm,X.vdm_previous,N.rho)
+		P.UI_previous=copy(P.UI)
+		P.UI = IM_update(P.UI,P.vdm,X.vdm_previous,P.rho)
+		Z.UI_previous=copy(Z.UI)
+		Z.UI = IM_update(Z.UI,Z.vdm,X.vdm_previous,Z.rho)
+
+		#Step 6: UPDATE RHO
+		adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+		adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
+		adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+		adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+		adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+
+
   	if Pars.it == 2
+
 			Pars.G = 1.5
 		end
-	#Step 5: Update Penalty Parameters
-		#if Pars.it < 5
-		#	update_penN(X,N,Pars,Fit)
-		#	update_penP(X,P,Pars,Fit)
-		#	update_penT(X,T,Pars,Mats,Fit)
-		#	update_penV(Z,V,Pars,Mats,Fit)
-		#	update_penZ(X,Z,Pars,Fit)
-		#end #endif
-		#println("Z: ",Z.rho," ",Z.tau," T: ",T.rho," ",T.tau," V: ",V.rho," ",V.tau," P: ",P.rho," ",N.tau)
 
-	#Step 6: Check for Convergence
+		#Step 6: Check for Convergence
 		if Pars.it != 2
 			if abs(regX(X,Pars)-PregX) < threshold
 				CX=true
@@ -284,7 +296,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			end
 		end
 		if CX == true && CN == true && CT == true && CV == true
-			Pars.conflag = 1
+			#Pars.conflag = 1
 			#print_with_color(:blue,"TLDR CONVERGED \n")
 		end
 		PregX=regX(X,Pars)
@@ -299,7 +311,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		fcn_vals[Pars.it]=J(X,P,T,V,N,DATA,Mats,Pars)
 		if J(X,P,T,V,N,DATA,Mats,Pars) > 1.0e20
 			Pars.conflag = 2
-			#print_with_color(:red,"!!! FUNCTION DIVERGING ABORTING !!!\n")
+			print_with_color(:red,"!!! FUNCTION DIVERGING ABORTING !!!\n")
 			RepF=false
 			savefits=false
 			plot_A=false
@@ -321,7 +333,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			Record.P_res[Pars.it-1]=ell2norm(abs(X.vdm-P.vdm))
 		end
 		#Plotting
-		if Plot_A == true && (Pars.it%10 == 0)
+		if Plot_A == true && (Pars.it%500 == 0)
 			clf()
 			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",interpolation="None")
 			colorbar()
@@ -369,6 +381,8 @@ end
 	x.vdm_squiggle = zeros((num_tdf_times,num_lines))
 	fill!(x.vdm_squiggle,psi)
 	x.U=zeros((num_tdf_times,num_lines))
+	x.UI=zeros((num_tdf_times,num_lines))
+	x.UI_previous=zeros((num_tdf_times,num_lines))
 	x
 end
 
@@ -383,9 +397,7 @@ function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 			Q = Mats.HT * Mats.W[:,:,l] * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
 			B = Mats.HT* Mats.W[:,:,l] * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
 			G=inv(Q)*B
-			#vdm[:,l] = Q\B[:,l]
 			vdm[:,l] = G[:,l]
-
 	end
 	X.vdm=copy(vdm) #sdata() pulls the underlying shared array
 	X.vdm
@@ -409,6 +421,67 @@ function LG_update(U,Z,X,rho,alpha)
 	U = U + (rho/alpha).*(Z - X)
 end
 
+#=--------------------------------------------------=#
+#========= Update Intermediate Multipliers ==========#
+#=--------------------------------------------------=#
+#FOR ADAPTIVE GCADMM
+#X and Y are IMAGE structs
+#alpha is a throttling term on multiplier update.
+function IM_update(UI,Z_prev,X,rho)
+	UI = UI + (rho).*(X-Z_prev)
+end
+
+#=--------------------------------------------------=#
+#====================== ADAPT =======================#
+#=--------------------------------------------------=#
+#Pass in the data structs
+#Calculates the stepsize automatically according to Xu et al 2017
+#Must operate on each minimization pair individually
+#J will be the regularization Variable
+#K will be comparision
+#Changes rho in data struct J
+function adapt(J,K,K_previous,K_UI_previous,K_UI,k)
+	tau_previous=J.rho
+	DJUI=J.UI-J.UI_previous
+	DJ=J.vdm-J.vdm_previous
+
+	DKUI=K_UI-K_UI_previous
+	DK=K-K_previous
+	#SPECTRAL STEP SIZES
+	Alpha_SD=dot(DJUI,DJUI)/dot(DJ,DJUI)
+	Alpha_MG=dot(DJ,DJUI)/dot(DJ,DJ)
+
+	if 2.0*Alpha_MG > Alpha_SD
+		Alpha=Alpha_MG
+	else
+		Alpha = Alpha_SD-(Alpha_MG/2.0)
+	end #END IF ELSE
+
+	Beta_SD=dot(DKUI,DKUI)/dot(DK,DJUI)
+	Beta_MG=dot(DK,DKUI)/dot(DK,DK)
+
+	if 2.0*Beta_MG > Beta_SD
+		Beta=Beta_MG
+	else
+		Beta = Beta_SD-(Beta_MG/2.0)
+	end #END IF ELSE
+	#CORRELATIONS
+	Alpha_corr=dot(DJ,DJUI)/(sum(abs(DJ))*sum(abs(DJUI)))
+	Beta_corr=dot(DK,DKUI)/(sum(abs(DK))*sum(abs(DKUI)))
+	eps_corr=0.2
+	CCG=1.0e11
+	if Alpha_corr > eps_corr && Beta_corr > eps_corr
+		tau_hat=sqrt(Alpha*Beta)
+	elseif Alpha_corr > eps_corr && Beta_corr <= eps_corr
+		tau_hat=Alpha
+	elseif Alpha_corr <= eps_corr && Beta_corr > eps_corr
+		tau_hat=Beta
+	else
+			tau_hat=tau_previous
+	end #END IF ELSE BLOCK
+	tau=max(min(tau_hat,(1.0+(CCG/k^2)*tau_previous)),tau_previous/(1.0+(CCG/k^2)))
+	J.rho=tau
+end
 
 #=--------------------------------------------------=#
 #================= Update PenN ======================#
