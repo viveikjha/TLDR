@@ -1,7 +1,7 @@
 #push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 #push!(LOAD_PATH,"/home/manderson/TLDR/")
 #push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
-push!(LOAD_PATH,"/Users/manderson/TLDR")
+push!(LOAD_PATH,"/home/matander/TLDR")
 
 using PyPlot
 using JLD
@@ -27,7 +27,7 @@ continuum = FILES_ARR[5]
 
 #NEW DATASET? IMPORT DATA FILES
 DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
-save_data(string(prefix,"TLDR_data.jld"),DATA)
+#save_data(string(prefix,"TLDR_data.jld"),DATA)
 Pars= init_Params()
 Pars.directory=prefix
 Mats=Gen_Mats(DATA,Pars)
@@ -49,21 +49,22 @@ Pars.num_tdf_times=50 #This is the default
 #println(Pars.tdf_times)
 
 Fit=init_fit()
-Fit.pp=100.0
-Fit.mtem = 10.0   #GOES WITH T
-Fit.pt = 100.0
-Fit.mspe = 10.0    #GOES WITH V
-Fit.pv=100.0
-Fit.ml1 = 1000.0
-Fit.pn=100.0
-Fit.msmo = 1000.0
-Fit.pz=100.0
+Fit.mtem = 50.0   #GOES WITH T
+Fit.mspe = 50.0    #GOES WITH V
+Fit.ml1 = 50.0
+Fit.msmo = 50.0
 
+Fit.pz=100.0
+Fit.pp=100.0
+Fit.pn=100.0
+Fit.pv=100.0
+Fit.pt = 100.0
 #Fit.TI=1629750.8 #Box
 Fit.TI=1000.0 #Box
 #Fit.TI=570.0 #Ring
 
-Pars.nits=50000.0
+Pars.nits=4000
+Pars.alpha=1.2
 K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,RecD=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
 vdm=copy(K.vdm)
 writecsv(string(prefix,"RevMapResult.csv"),vdm)

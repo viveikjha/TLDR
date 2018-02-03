@@ -1,6 +1,4 @@
-push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
-push!(LOAD_PATH,"/home/manderson/TLDR/")
-push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
+push!(LOAD_PATH,"/home/matander/TLDR")
 
 using PyPlot
 using JLD
@@ -20,7 +18,7 @@ continuum = FILES_ARR[5]
 #NEW DATASET? IMPORT DATA FILES
 DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 Pars= init_Params()
-Pars.nits=1000
+Pars.nits=5000
 Pars.num_tdf_times=50 #This is the default
 Mats=Gen_Mats(DATA,Pars)
 
@@ -30,46 +28,36 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 
 
 #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
-DATA = load_data("TLDR_data.jld")
-Pars,Mats=load_vars("TLDR_vars.jld")
-nps=4
+#DATA = load_data("TLDR_data.jld")
+#Pars,Mats=load_vars("TLDR_vars.jld")
+nps=3
 m1=logspace(0.0,5.0,nps)
-#m2=logspace(0.0,2.0,nps)
-#m3=logspace(2.5,3.5,nps)
+#m2=logspace(0.0,5.0,nps)
+#m3=logspace(0.0,5.5,nps)
 
 
 count=0
 
-#ps=linspace(1.0e2,1.0e8,nps)
-#ps1=linspace(1.0,1.0e3,nps)
-#ps2=linspace(1.0e8,1.0e9,nps)
 mspe=1.0
 mtem=1.0
 ml1=1.0
 msmo=1.0
-#pv=ps
-#pt=ps
-#pz=ps
-#pn=ps
-pp=3300.0
+pp=1.0
 clim=4.0
-pv=300.0
+pv=1.0
 pn=1.0
-pz=1.0e8
-pt=1000.0
+pz=1.0
+pt=1.0
 
-for msmo in m1 # msmo
+for msmo in m1 #msmo
   for ml1 in m1 #ml1
     for mspe in m1
       for mtem in m1
-#for pz in ps2 # msmo
-#  for pn in ps1 #ml1
-#    for pv in ps1
-#      for pt in ps1
-      #  for pp in ps
           count+=1
           DATA = load_data("TLDR_data.jld")
           Pars,Mats=load_vars("TLDR_vars.jld")
+          #WILL NEED A NEW IMPORT
+
           Fit=init_fit()
           Fit.msmo = msmo
           Fit.pz=pz

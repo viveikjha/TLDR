@@ -90,7 +90,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Record=Init_Record_Data(Pars.nits)
 	end
 	Pars.tau=2.0
-	threshold = 1.0e-4 #CONVERGANCE THRESHOLD
+	threshold = 1.0e-8 #CONVERGANCE THRESHOLD
 	CX=false
 	CN=false
 	CT=false
@@ -113,14 +113,14 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	Con_Arr = zeros(DATA.num_lines)
 
 
-	#sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
-	#Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
-	#Ini = inv(Mats.H'*Mats.H+(flx_scale^2*Fit.msmo)^2*eye(size(Mats.H)[2]))*(Mats.H'*DATA.L) #INITIALIZATION FROM TIKHONOV SOLUTION
-	#init_vdm =Ini #FILTER OUT NEGATIVE VALUES
-	init_vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
+	sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
+	Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
+
+	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
+	#init_vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
 	Ini=0 #Memory Release
 	if Plot_A == true
-		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None")
+		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Reds")
 		#colorbar()
 		#show()
 	end
@@ -129,17 +129,12 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 	tmax=5.0
 	 X= Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 #X.tau_max=tmax
 	 Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 #Z.tau_max=tmax
 	 T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 #T.tau_max=tmax
 	 V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 #V.tau_max=tmax
 	 P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 #P.tau_max=tmax
 	 N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 #N.tau_max=tmax
+
 
 
 	#When loading a known TDF
@@ -175,9 +170,9 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	V.rho=copy(Fit.pv)
 	N.rho=copy(Fit.pn)
 
-	siglvl=abs(median(DATA.L))
+	siglvl=abs.(median(DATA.L))
 
-#Diagnostics on VDM initialized with Tihonov Solution.
+#Diagnostics on VDM initialized with Tikhonov Solution.
 	#println("-------")
 	init_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
 	Pars.chi2=copy(init_chi2)
@@ -187,15 +182,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	end
 	#=  Calculate Initial Multipliers & RHO =#
 	Z.U=Z.U+1
-	#slice_size=size(Mats.W)
-	#for p in 1:DATA.num_lines
-	#	W_slice = reshape(Mats.W[p,:,:],slice_size[2],slice_size[3])
-	  #Z.U[:,p]=Mats.HT * squeeze(Mats.W[p,:,:],1) * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
-	#	Z.U[:,p]=Mats.HT * W_slice * ( Mats.H * vec(Z.vdm[:,p]) - vec(DATA.L[:,p]))
-	#end
 
-	#println("INITIAL MULTIPLIERS: ",mean(Z.U))
-	#Z.U=ones(size(Z.U))
 
 	V.U = copy(Z.U)
 	T.U = copy(Z.U)
@@ -208,7 +195,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	#Pars.conflag=true #should never begin main loop.
 	gc() #GARBAGE CLEANUP
 	fcn_vals=zeros(Pars.nits+1)
-	while Pars.it <= Pars.nits #&& Pars.conflag==0        #ADMM ITERATION LOOP
+	while Pars.it <= Pars.nits && Pars.conflag==0        #ADMM ITERATION LOOP
 
 		X.vdm_previous = copy(X.vdm)
 	#Step 1: MINIMIZATION W.R.T. X
@@ -235,7 +222,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 
 		Z.vdm_previous = copy(Z.vdm)
 		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats)
-		#Z.vdm = Z.vdm.*(Z.vdm.>0.0)
+
 		#Step 4: UPDATE LAGRANGE MULTIPLIERS
 		T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
 		V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
@@ -256,12 +243,13 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Z.UI = IM_update(Z.UI,Z.vdm,X.vdm_previous,Z.rho)
 
 		#Step 6: UPDATE RHO
-		adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-		adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
-		adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-		adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-		adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-
+		if (Pars.it%50 == 0) #UPUDATE EVERY 2 ITERATIONS
+			adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
+			adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+		end
 
   	if Pars.it == 2
 
@@ -270,16 +258,16 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 
 		#Step 6: Check for Convergence
 		if Pars.it != 2
-			if abs(regX(X,Pars)-PregX) < threshold
+			if abs.(regX(X,Pars)-PregX) < threshold
 				CX=true
 			end
-			if abs(regN(N,Pars)-PregN) < threshold
+			if abs.(regN(N,Pars)-PregN) < threshold
 				CN=true
 			end
-			if abs(regT(T,Pars)-PregT) < threshold
+			if abs.(regT(T,Pars)-PregT) < threshold
 				CT=true
 			end
-			if abs(regV(V,Pars)-PregV) < threshold
+			if abs.(regV(V,Pars)-PregV) < threshold
 				CV=true
 			end
 			if sum(N.vdm) == 0		#CHECK IF L1(N) HAS FAILED
@@ -296,8 +284,8 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			end
 		end
 		if CX == true && CN == true && CT == true && CV == true
-			#Pars.conflag = 1
-			#print_with_color(:blue,"TLDR CONVERGED \n")
+			Pars.conflag = 1
+			print_with_color(:blue,"TLDR CONVERGED \n")
 		end
 		PregX=regX(X,Pars)
 		PregN=regN(N,Pars)
@@ -326,16 +314,21 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			Record.ConFlag[Pars.it-1]=Pars.conflag
 			Record.Chi2[Pars.it-1]=Pars.chi2
 			Record.J[Pars.it-1]=J(X,P,T,V,N,DATA,Mats,Pars)
-			Record.Z_res[Pars.it-1]=ell2norm(abs(X.vdm-Z.vdm))
-			Record.T_res[Pars.it-1]=ell2norm(abs(Mats.Ds*X.vdm-T.vdm))
-			Record.N_res[Pars.it-1]=ell2norm(abs(X.vdm-N.vdm))
-			Record.V_res[Pars.it-1]=ell2norm(abs(X.vdm*Mats.Dv-V.vdm))
-			Record.P_res[Pars.it-1]=ell2norm(abs(X.vdm-P.vdm))
+			Record.Z_res[Pars.it-1]=ell2norm(abs.(X.vdm-Z.vdm))
+
+			Record.T_res[Pars.it-1]=ell2norm(abs.(Mats.Ds*X.vdm-T.vdm))
+
+			Record.N_res[Pars.it-1]=ell2norm(abs.(X.vdm-N.vdm))
+
+			Record.V_res[Pars.it-1]=ell2norm(abs.(X.vdm*Mats.Dv-V.vdm))
+
+			Record.P_res[Pars.it-1]=ell2norm(abs.(X.vdm-P.vdm))
+
 		end
 		#Plotting
-		if Plot_A == true && (Pars.it%500 == 0)
+		if Plot_A == true && (Pars.it%50 == 0)
 			clf()
-			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",interpolation="None")
+			imshow((X.vdm),extent=[minimum(DATA.wavelength),maximum(DATA.wavelength),0.0,50.0],aspect="auto",origin="lower",interpolation="None",cmap="Reds")
 			colorbar()
 			draw()
 		end
@@ -356,7 +349,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Write_FITS(X,P);
 	end
 	if RecD ==true
-		#save_data("TLDR_Con_data.jld",Record)
+		save_data("TLDR_Con_data.jld",Record)
 		writecsv(string(Pars.directory,"Reconstruction/Conflag.csv"),Record.ConFlag)
 		writecsv(string(Pars.directory,"Reconstruction/Chi2.csv"),Record.Chi2)
 		writecsv(string(Pars.directory,"Reconstruction/J.csv"),Record.J)
@@ -392,7 +385,8 @@ end
 #=--------------------------------------------------=#
 function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 	s = size(X.vdm)
-	vdm = Array(Float64,s[1],s[2])
+	#vdm = Array(Float64,s[1],s[2])
+	vdm = Array{Float64}(s[1],s[2]) #UPDATE FOR JV0.6.2
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
 			Q = Mats.HT * Mats.W[:,:,l] * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
 			B = Mats.HT* Mats.W[:,:,l] * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
@@ -426,7 +420,6 @@ end
 #=--------------------------------------------------=#
 #FOR ADAPTIVE GCADMM
 #X and Y are IMAGE structs
-#alpha is a throttling term on multiplier update.
 function IM_update(UI,Z_prev,X,rho)
 	UI = UI + (rho).*(X-Z_prev)
 end
@@ -441,6 +434,7 @@ end
 #K will be comparision
 #Changes rho in data struct J
 function adapt(J,K,K_previous,K_UI_previous,K_UI,k)
+
 	tau_previous=J.rho
 	DJUI=J.UI-J.UI_previous
 	DJ=J.vdm-J.vdm_previous
@@ -466,10 +460,10 @@ function adapt(J,K,K_previous,K_UI_previous,K_UI,k)
 		Beta = Beta_SD-(Beta_MG/2.0)
 	end #END IF ELSE
 	#CORRELATIONS
-	Alpha_corr=dot(DJ,DJUI)/(sum(abs(DJ))*sum(abs(DJUI)))
-	Beta_corr=dot(DK,DKUI)/(sum(abs(DK))*sum(abs(DKUI)))
-	eps_corr=0.2
-	CCG=1.0e11
+	Alpha_corr=dot(DJ,DJUI)/(sum(abs.(DJ))*sum(abs.(DJUI)))
+	Beta_corr=dot(DK,DKUI)/(sum(abs.(DK))*sum(abs.(DKUI)))
+	eps_corr=0.5
+	CCG=1.0e9
 	if Alpha_corr > eps_corr && Beta_corr > eps_corr
 		tau_hat=sqrt(Alpha*Beta)
 	elseif Alpha_corr > eps_corr && Beta_corr <= eps_corr
@@ -483,75 +477,5 @@ function adapt(J,K,K_previous,K_UI_previous,K_UI,k)
 	J.rho=tau
 end
 
-#=--------------------------------------------------=#
-#================= Update PenN ======================#
-#=--------------------------------------------------=#
-function update_penN(X,N,Pars,Fit)
-	rc=ell2norm(X.vdm-N.vdm)
-	sc=ell2norm(N.rho*(N.vdm-N.vdm_previous))
-	if rc > Fit.ml1*sc
-		N.rho=N.rho*Pars.tau
-	elseif  sc > Fit.ml1*rc
-		N.rho=N.rho/Pars.tau
-	else
-	end #endif
-end
 
-#=--------------------------------------------------=#
-#================= Update PenP ======================#
-#=--------------------------------------------------=#
-function update_penP(X,P,Pars,Fit)
-rc= ell2norm(X.vdm-P.vdm)
-sc=ell2norm(P.rho*(P.vdm-P.vdm_previous))
-	if rc > sc
-		P.rho=P.rho*Pars.tau
-	elseif  sc > rc
-		P.rho=P.rho/Pars.tau
-	else
-	end #endif
-end
-
-#=--------------------------------------------------=#
-#================= Update PenT ======================#
-#=--------------------------------------------------=#
-function update_penT(X,T,Pars,Mats,Fit)
-rc=ell2norm(T.vdm-Mats.Ds*X.vdm)
-sc=ell2norm(T.rho*(T.vdm-T.vdm_previous))
-if rc > sc
-	T.rho=T.rho*Pars.tau
-elseif  sc > rc
-	T.rho=T.rho/Pars.tau
-else
-end #endif
-
-end
-
-#=--------------------------------------------------=#
-#================= Update PenV ======================#
-#=--------------------------------------------------=#
-function update_penV(Z,V,Pars,Mats,Fit)
-rc=ell2norm(V.vdm-(Z.vdm*Mats.Dv))
-sc=ell2norm(V.rho*(V.vdm-V.vdm_previous))
-if rc > sc
-	V.rho=V.rho*Pars.tau
-elseif  sc > rc
-	V.rho=V.rho/Pars.tau
-else
-end #endif
-
-end
-#=--------------------------------------------------=#
-#================= Update PenZ ======================#
-#=--------------------------------------------------=#
-function update_penZ(X,Z,Pars,Fit)
-rc=ell2norm(X.vdm-Z.vdm)
-sc=ell2norm(Z.rho*(Z.vdm-Z.vdm_previous))
-if rc > sc
-	Z.rho=Z.rho*Pars.tau
-elseif  sc > rc
-	Z.rho=Z.rho/Pars.tau
-else
-end #endif
-
-end
 end #endmodule

@@ -281,19 +281,6 @@ end
 #mu is the regularization weight
 #rho is the current hyperparameter
 function ell1_prox_op(X,XS,mu,rho)
-#  for i in collect(1:length(X))
-#    if abs(XS[i]) > mu/rho
-#			if XS[i] >= mu/rho
-#				X[i] = XS[i] - mu/rho
-#			else
-#				X[i] = XS[i]+mu/rho
-#			end
-#    else
-		#	println("!!!!!!!")
-#      X[i] = 0
-#    end
-#  end
-#	X #array returned
 	for i in collect(1:length(X))
 		Lam = mu/rho
   	if XS[i] >= Lam
@@ -330,7 +317,7 @@ end
 #=================== Ell 1 Norm =====================#
 #=--------------------------------------------------=#
 function ell1norm(X)
-	sum(abs(X))
+	sum(abs.(X))
 end
 #=--------------------------------------------------=#
 #=================== Ell 2 Norm =====================#
@@ -396,10 +383,10 @@ function plotfin(Plot_F,X,Z,T,V)
 	  #end
 	  Pars.mu_smoo=copy(mu_smoo)
 	  vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
-    slice_size=size(Mats.W)
+    #slice_size=size(Mats.W)
 	  for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-      Q = Mats.HT * W[:,:,l] * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-      B = Mats.HT* W[:,:,l] * DATA.L
+      Q = Mats.HT * Mats.W[:,:,l] * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+      B = Mats.HT* Mats.W[:,:,l] * DATA.L
 			G=inv(Q)*B
 			vdm[:,l] = G[:,l]
 	  end

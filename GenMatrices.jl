@@ -28,69 +28,104 @@ function Gen_Mats(DATA,Params)
 	Mat.HE = HE
 
 	#= 		FINITE DIFFERENCES MATRICES			=#
-	Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
-	for i in collect(1:Params.num_tdf_times)
-		for j in collect(1:Params.num_tdf_times)
+#	Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
+#	for i in collect(1:Params.num_tdf_times)
+#		for j in collect(1:Params.num_tdf_times)
 		#CHANGED TO 2ND ORDER CENTRAL DIFFERENCES
-			if i == j
-				Ds[i,j]= -2.0
-			end
-			if (i+1) == j
-				Ds[i,j] = 1.0
-			end
-			if (i-1) == j
-				Ds[i,j] = 1.0
-			end
+#			if i == j
+#				Ds[i,j]= -2.0
+#			end
+#			if (i+1) == j
+#				Ds[i,j] = 1.0
+#			end
+#			if (i-1) == j
+#				Ds[i,j] = 1.0
+#			end
+#		end
+#	end
+
+#	Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
+#	for i in 1:Params.num_tdf_times
+#		if i == 1
+#			Ds[i,i]=-1
+#			Ds[i,i+1]=1
+#		elseif i == Params.num_tdf_times
+#			Ds[i,i] = -1
+#			Ds[i,i-1]= 1
+#		else
+#			Ds[i,i+1]=-0.5
+#			Ds[i,i-1]= 0.5
+#		end
+#	end
+
+Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
+for i in 1:Params.num_tdf_times
+	if i == 1
+		Ds[i,i]=-1
+		Ds[i,i+1]=1
+	elseif i == Params.num_tdf_times
+		Ds[i,i] = -1
+		Ds[i,i-1]= 1
+	else
+		Ds[i,i]=-1.0
+		if i+1 <= Params.num_tdf_times
+			Ds[i,i+1]= 1.0
 		end
 	end
+end
 
-	#Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
-	#for i in 1:Params.num_tdf_times
-	#	if i == 1
-	#		Ds[i,i]=-1
-	#		Ds[i,i+1]=1
-	#	elseif i == Params.num_tdf_times
-	#		Ds[i,i] = -1
-	#		Ds[i,i-1]= 1
-	#	else
-	#		Ds[i,i+1]=-0.5
-	#		Ds[i,i-1]= 0.5
-	#	end
-	#end
+
 	s=size(Ds)
 	Mat.Ds=eye(s[1],s[2])
 	Mat.Ds = Ds
 	writecsv(string(Params.directory,"Ds.csv"),Ds)
 	Mat.DsT = Ds'
 
-	Dv = zeros(DATA.num_lines,DATA.num_lines)
-	for i in collect(1:DATA.num_lines)
-		for j in collect(1:DATA.num_lines)
-			if i == j
-				Dv[i,j]= -2.0
-			end
-			if (i+1) == j
-				Dv[i,j] = 1.0
-			end
-			if (i-1) == j
-				Dv[i,j] = 1.0
-			end
-		end
-	end
-
 	#Dv = zeros(DATA.num_lines,DATA.num_lines)
-	#for i in 1:DATA.num_lines
-	#	if i == 1
-	#		Dv[i,i]=-1
-	#		Dv[i,i+1]=1
-	#	elseif i == DATA.num_lines
-	#		Dv[i,i] = -1
-	#		Dv[i,i-1]= 1
-	#	else
-	#		Dv[i,i+1]=-0.5
-	#		Dv[i,i-1]= 0.5
+	#for i in collect(1:DATA.num_lines)
+	#	for j in collect(1:DATA.num_lines)
+	#		if i == j
+	#			Dv[i,j]= -2.0
+	#		end
+	#		if (i+1) == j
+	#			Dv[i,j] = 1.0
+	#		end
+	#		if (i-1) == j
+	#			Dv[i,j] = 1.0
+	#		end
 	#	end
 	#end
+
+#	Dv = zeros(DATA.num_lines,DATA.num_lines)
+#	for i in 1:DATA.num_lines
+#		if i == 1
+#			Dv[i,i]=-1
+#			Dv[i,i+1]=1
+#		elseif i == DATA.num_lines
+#			Dv[i,i] = -1
+#			Dv[i,i-1]= 1
+#		else
+#			Dv[i,i+1]=-0.5
+#			Dv[i,i-1]= 0.5
+#		end
+#	end
+Dv = zeros(DATA.num_lines,DATA.num_lines)
+for i in 1:DATA.num_lines
+	if i == 1
+		Dv[i,i]=-1
+		Dv[i,i+1]=1
+	elseif i == DATA.num_lines
+		Dv[i,i] = -1
+		Dv[i,i-1]= 1
+	else
+		Dv[i,i]=-1.0
+		if i+1 <= DATA.num_lines
+			Dv[i,i+1]= 1.0
+		end
+	end
+end
+
+
 	Dv=Dv'
 
 	Mat.Dv = Dv
