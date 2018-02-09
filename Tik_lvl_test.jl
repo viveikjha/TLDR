@@ -1,9 +1,9 @@
 #include("RMLibMore.jl")
 #include("RMLib.jl")
 
-push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR") #LT
-push!(LOAD_PATH,"/home/manderson/TLDR") #WDT
-push!(LOAD_PATH,"/home/manderson/Research/TLDR") #PDT
+#push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR") #LT
+push!(LOAD_PATH,"/home/matander/TLDR") #WDT
+#push!(LOAD_PATH,"/home/manderson/Research/TLDR") #PDT
 using RMTypes
 using RMLib
 using RMLibMore

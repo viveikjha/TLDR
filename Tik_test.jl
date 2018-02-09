@@ -1,8 +1,8 @@
 #include("RMLibMore.jl")
 #include("RMLib.jl")
 using PyPlot
-push!(LOAD_PATH,"/home/manderson/TLDR/")
-push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+push!(LOAD_PATH,"/home/matander/TLDR/")
+#push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 using RMTypes
 using GenMatrices
 using RMLib

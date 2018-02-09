@@ -12,11 +12,12 @@ using DataImportNEW
 #using DataImport
 
 using GenMatrices
-bpf="box_20x50/" #box 20lams 50tau
+#bpf="box_20x50/" #box 20lams 50tau
+bpf="Ring/"
 prefix=bpf
-FILES_ARR=[string(prefix,"Wavelengths.csv"),string(prefix,"Spectra.csv"),string(prefix,"Spectra_Error.csv"),"data/rvm_dates.csv","data/arp151.b.dat"]
+#FILES_ARR=[string(prefix,"Wavelengths.csv"),string(prefix,"Spectra.csv"),string(prefix,"Spectra_Error.csv"),"data/rvm_dates.csv","data/arp151.b.dat"]
 
-#FILES_ARR=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"] #Data files to load.
+FILES_ARR=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"] #Data files to load.
 #FILES_ARR=["data/rvm_wavelengths_trimmed.csv","data/rvm_fluxes_trimmed.csv", "data/rvm_errfluxes_trimmed.csv","data/rvm_dates.csv","data/arp151.b.dat"]
 
 wavelengths=FILES_ARR[1]
@@ -49,21 +50,21 @@ Pars.num_tdf_times=50 #This is the default
 #println(Pars.tdf_times)
 
 Fit=init_fit()
-Fit.mtem = 50.0   #GOES WITH T
-Fit.mspe = 50.0    #GOES WITH V
-Fit.ml1 = 50.0
-Fit.msmo = 50.0
+Fit.mtem = 2.0   #GOES WITH T
+Fit.mspe = 2.0    #GOES WITH V
+Fit.ml1 = 20.0
+Fit.msmo = 200.0
 
 Fit.pz=100.0
 Fit.pp=100.0
 Fit.pn=100.0
 Fit.pv=100.0
-Fit.pt = 100.0
+Fit.pt = 1000.0
 #Fit.TI=1629750.8 #Box
-Fit.TI=1000.0 #Box
+Fit.TI=5000.0 #Box
 #Fit.TI=570.0 #Ring
 
-Pars.nits=4000
+Pars.nits=5000
 Pars.alpha=1.2
 K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,RecD=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
 vdm=copy(K.vdm)

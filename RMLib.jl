@@ -90,7 +90,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Record=Init_Record_Data(Pars.nits)
 	end
 	Pars.tau=2.0
-	threshold = 1.0e-8 #CONVERGANCE THRESHOLD
+	threshold = 1.0e-9 #CONVERGANCE THRESHOLD
 	CX=false
 	CN=false
 	CT=false
@@ -243,7 +243,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Z.UI = IM_update(Z.UI,Z.vdm,X.vdm_previous,Z.rho)
 
 		#Step 6: UPDATE RHO
-		if (Pars.it%50 == 0) #UPUDATE EVERY 2 ITERATIONS
+		if (Pars.it%5 == 0) #UPUDATE EVERY ## ITERATIONS
 			adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
 			adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
 			adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
