@@ -33,24 +33,24 @@ DSNR=33.33
 
 flx_scale=1.0
 
-vdm_vert = zeros(ntimes,nlams)+0.001
+vdm = zeros(ntimes,nlams)+0.001
 total_lit=0
 for i in 1:ntimes
 	for j in 1:nlams
 		if i >= (ntimes/2)-(spread/2) && i<(ntimes/2)+spread/2 && j > ((nlams/2)-(spread/2)) && j<=((nlams/2)+(spread/2))
-			vdm_vert[i,j]=lvl*flx_scale
+			vdm[i,j]=lvl*flx_scale
 			total_lit+=1
 		end
 	end
 end
 
-vdm_vert=readcsv("Paper/ring/simulated_ring_vdm.csv")
-#vdm_vert=readcsv("Paper/ring/simulated_spiral_vdm.csv")
-
-writecsv("UnitTests/UT_vdm.csv",vdm_vert)
-#println("Wrote vdm_vert.csv with dimensions: ", size(vdm_vert))
+#If another pattern is used, load here!
+#vdm=readcsv("Paper/ring/simulated_ring_vdm.csv")
+#vdm=readcsv("Paper/ring/simulated_spiral_vdm.csv")
+vdm=readcsv("checkerboard_20x50/original_checkerboard.csv")
+writecsv("UnitTests/UT_vdm.csv",vdm)
+#println("Wrote vdm.csv with dimensions: ", size(vdm))
 println("For Box, ", total_lit, " pixels lit.")
-#Create VDM Horizontal Stripe
 
 #Initialize ADMM Parameters
 Pars = init_Params()
@@ -60,7 +60,7 @@ Pars = init_Params()
 #println("Getting H:")
 Mats = Gen_Mats(DATA,Pars)
 writecsv("UT_H.csv",Mats.H)
-Spectra_Vert = Mats.H*vdm_vert
+Spectra_Vert = Mats.H*vdm
 #writecsv("UnitTests/Spectrac_V.csv", Spectra_Vert)
 
 
@@ -77,10 +77,6 @@ println("Power level of spectra: ", Spectra_Power)
 n =randn((dims))
 RN_Power = sum(abs.(n).*abs.(n))/length(n)
 println("Power level of raw noise: ", RN_Power)
-#DSNR=Spectra_Power/(RN_Power*sf)
-#1/DSNR=(RN_Power*sf)/Spectra_Power
-#Spectra_Power/DSNR=RN_Power*sf
-#Spectra_Power/(DSNR*RN_Power)=sf
 sf=Spectra_Power/(DSNR*RN_Power)
 SN=sqrt(sf)*n
 SN_Power= sum(abs.(SN).*abs.(SN))/length(SN)

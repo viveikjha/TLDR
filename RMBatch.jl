@@ -32,8 +32,8 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
 #DATA = load_data("TLDR_data.jld")
 #Pars,Mats=load_vars("TLDR_vars.jld")
-nps=5
-m1=logspace(2.0,5.0,nps)
+nps=4
+m1=logspace(0.0,5.0,nps)
 #m2=logspace(2.0,2.0,nps)
 #m3=logspace(2.0,2.5,nps)
 

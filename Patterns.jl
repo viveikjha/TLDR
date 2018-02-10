@@ -1,4 +1,4 @@
-using PyPlot
+#using PyPlot
 
 nx=50
 ny=20
@@ -26,7 +26,11 @@ for i in collect(1:nx)
 
   end
 end
-figure()
-imshow(ring,interpolation="None",cmap="Greys",origin="Lower")
-colorbar()
-show()
+#figure()
+#imshow(ring,interpolation="None",cmap="Greys",origin="Lower")
+#colorbar()
+#show()
+
+writecsv("checkerboard_20x50/original_checkerboard.csv",checkerboard)
+writecsv("circle_20x50/original_circle.csv",circle)
+writecsv("ring_20x50/original_ring.csv",ring)

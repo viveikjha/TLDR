@@ -13,7 +13,9 @@ using DataImportNEW
 
 using GenMatrices
 #bpf="box_20x50/" #box 20lams 50tau
-bpf="Ring/"
+bpf="checkerboard_20x50/"
+#bpf="Ring/"
+
 prefix=bpf
 #FILES_ARR=[string(prefix,"Wavelengths.csv"),string(prefix,"Spectra.csv"),string(prefix,"Spectra_Error.csv"),"data/rvm_dates.csv","data/arp151.b.dat"]
 
