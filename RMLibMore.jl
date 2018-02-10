@@ -54,15 +54,18 @@ end
 #These functions give the value of the given regularization term.
 #The functions are identical, which is silly.
 function regT(T,Pars)
-	Pars.mu_temp*ell1norm(T.vdm)
+	#Pars.mu_temp*ell1norm(T.vdm)
+  Pars.mu_temp*vecnorm(T.vdm,1)
 end
 
 function regV(V,Pars)
-	Pars.mu_spec*ell1norm(V.vdm)
+	#Pars.mu_spec*ell1norm(V.vdm)
+  Pars.mu_spec*vecnorm(V.vdm,1)
 end
 
 function regN(N,Pars)
-	Pars.mu_l1*ell1norm(N.vdm)
+	#Pars.mu_l1*ell1norm(N.vdm)
+  Pars.mu_l1*vecnorm(N.vdm,1)
 end
 
 
@@ -104,33 +107,40 @@ function Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=false,L2x=false,L1T=false,L1V=fals
   else chi2zstring=""
   end
 
-	rx=ell2norm(X.vdm)
+	#rx=ell2norm(X.vdm)
+  rx=vecnorm(X.vdm,2)
   if s==true
 			println("dims of x:", size(X.vdm))
 			println("dims of xp:", size(X.vdm_previous))
-			sstring=@sprintf "\ts: %0.3e" ell2norm(X.rho*(X.vdm-X.vdm_previous))/rx
+			#sstring=@sprintf "\ts: %0.3e" ell2norm(X.rho*(X.vdm-X.vdm_previous))/rx
+      sstring=@sprintf "\ts: %0.3e" vecnorm(X.rho*(X.vdm-X.vdm_previous),2)/rx
   else sstring=""
   end
 #Residuals
 
   if Pres==true
-    PRstring=@sprintf "\trP: %0.1e" ell2norm(P.vdm-X.vdm)/rx							#P residual
+    #PRstring=@sprintf "\trP: %0.1e" ell2norm(P.vdm-X.vdm)/rx							#P residual
+    PRstring=@sprintf "\trP: %0.1e" vecnorm(P.vdm-X.vdm,2)/rx							#P residual
   else PRstring=""
   end
   if Zres==true
-    ZRstring=@sprintf "\trZ: %0.1e" ell2norm(Z.vdm-X.vdm)/rx							#Z residual
+    #ZRstring=@sprintf "\trZ: %0.1e" ell2norm(Z.vdm-X.vdm)/rx							#Z residual
+    ZRstring=@sprintf "\trZ: %0.1e" vecnorm(Z.vdm-X.vdm,2)/rx							#Z residual
   else ZRstring=""
   end
   if Vres==true
-    VRstring=@sprintf "\trV: %0.1e" ell2norm(V.vdm-Z.vdm*Mats.Dv)/rx			#V residual
+    #VRstring=@sprintf "\trV: %0.1e" ell2norm(V.vdm-Z.vdm*Mats.Dv)/rx			#V residual
+    VRstring=@sprintf "\trV: %0.1e" vecnorm(V.vdm-Z.vdm*Mats.Dv,2)/rx			#V residual
   else VRstring=""
   end
   if Tres==true
-    TRstring=@sprintf "\trT: %0.1e" ell2norm(T.vdm-Mats.Ds*X.vdm)/rx			#T residual
+    #TRstring=@sprintf "\trT: %0.1e" ell2norm(T.vdm-Mats.Ds*X.vdm)/rx			#T residual
+    TRstring=@sprintf "\trT: %0.1e" vecnorm(T.vdm-Mats.Ds*X.vdm,2)/rx			#T residual
   else TRstring=""
   end
   if Nres==true
-    NRstring=@sprintf "\trN: %0.1e" ell2norm(N.vdm-X.vdm)/rx							#N residual
+    #NRstring=@sprintf "\trN: %0.1e" ell2norm(N.vdm-X.vdm)/rx							#N residual
+    NRstring=@sprintf "\trN: %0.1e" vecnorm(N.vdm-X.vdm,2)/rx							#N residual
   else NRstring=""
   end
   if Zpen==true

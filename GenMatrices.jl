@@ -58,28 +58,29 @@ function Gen_Mats(DATA,Params)
 #		end
 #	end
 
-Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
-for i in 1:Params.num_tdf_times
-	if i == 1
-		Ds[i,i]=-1
-		Ds[i,i+1]=1
-	elseif i == Params.num_tdf_times
-		Ds[i,i] = -1
-		Ds[i,i-1]= 1
-	else
-		Ds[i,i]=-1.0
-		if i+1 <= Params.num_tdf_times
-			Ds[i,i+1]= 1.0
-		end
-	end
-end
+#Ds = zeros(Params.num_tdf_times,Params.num_tdf_times)
+#for i in 1:Params.num_tdf_times
+#	if i == 1
+#		Ds[i,i]=-1
+#		Ds[i,i+1]=1
+#	elseif i == Params.num_tdf_times
+#		Ds[i,i] = -1
+#		Ds[i,i-1]= 1
+#	else
+#		Ds[i,i]=-1.0
+#		if i+1 <= Params.num_tdf_times
+#			Ds[i,i+1]= 1.0
+#		end
+#	end
+#end
 
-
-	s=size(Ds)
-	Mat.Ds=eye(s[1],s[2])
-	Mat.Ds = Ds
-	writecsv(string(Params.directory,"Ds.csv"),Ds)
-	Mat.DsT = Ds'
+o=ones(Params.num_tdf_times)
+Ds=spdiagm((-o[1:Params.num_tdf_times-1],o), (-1.0,0.0),Params.num_tdf_times,Params.num_tdf_times)
+s=size(Ds)
+Mat.Ds=eye(s[1],s[2])
+Mat.Ds = Ds
+writecsv(string(Params.directory,"Ds.csv"),Ds)
+Mat.DsT = Ds'
 
 	#Dv = zeros(DATA.num_lines,DATA.num_lines)
 	#for i in collect(1:DATA.num_lines)
@@ -109,25 +110,26 @@ end
 #			Dv[i,i-1]= 0.5
 #		end
 #	end
-Dv = zeros(DATA.num_lines,DATA.num_lines)
-for i in 1:DATA.num_lines
-	if i == 1
-		Dv[i,i]=-1
-		Dv[i,i+1]=1
-	elseif i == DATA.num_lines
-		Dv[i,i] = -1
-		Dv[i,i-1]= 1
-	else
-		Dv[i,i]=-1.0
-		if i+1 <= DATA.num_lines
-			Dv[i,i+1]= 1.0
-		end
-	end
-end
+#Dv = zeros(DATA.num_lines,DATA.num_lines)
+#for i in 1:DATA.num_lines
+#	if i == 1
+#		Dv[i,i]=-1
+#		Dv[i,i+1]=1
+#	elseif i == DATA.num_lines
+#		Dv[i,i] = -1
+#		Dv[i,i-1]= 1
+#	else
+#		Dv[i,i]=-1.0
+#		if i+1 <= DATA.num_lines
+#			Dv[i,i+1]= 1.0
+#		end
+#	end
+#end
+o=ones(DATA.num_lines)
+Dv=spdiagm((-o[1:DATA.num_lines-1],o), (-1.0,0.0),DATA.num_lines,DATA.num_lines)
 
 
-	Dv=Dv'
-
+	Dv=Dv'#THE SWITCHEROO
 	Mat.Dv = Dv
 	writecsv(string(Params.directory,"Dv.csv"),Dv)
 	Mat.DvT = Dv'
@@ -146,6 +148,10 @@ end
 		W[:,:,lam] = T # New  Version
 
 	end
+
+#where nx would be the array on the diagonal.
+#W=spdiagm((o[1:nx],0), (0,1), nx, nx)
+#Not sure how to get 3d. CANT DO RECTANGULAR
 	Mat.W= W
 	Mat.HT = H'
 	Mat.Gammatdf = eye(Params.num_tdf_times)

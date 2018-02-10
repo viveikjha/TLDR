@@ -314,16 +314,17 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			Record.ConFlag[Pars.it-1]=Pars.conflag
 			Record.Chi2[Pars.it-1]=Pars.chi2
 			Record.J[Pars.it-1]=J(X,P,T,V,N,DATA,Mats,Pars)
-			Record.Z_res[Pars.it-1]=ell2norm(abs.(X.vdm-Z.vdm))
 
-			Record.T_res[Pars.it-1]=ell2norm(abs.(Mats.Ds*X.vdm-T.vdm))
-
-			Record.N_res[Pars.it-1]=ell2norm(abs.(X.vdm-N.vdm))
-
-			Record.V_res[Pars.it-1]=ell2norm(abs.(X.vdm*Mats.Dv-V.vdm))
-
-			Record.P_res[Pars.it-1]=ell2norm(abs.(X.vdm-P.vdm))
-
+			#Record.Z_res[Pars.it-1]=ell2norm(abs.(X.vdm-Z.vdm))
+			Record.Z_res[Pars.it-1]=vecnorm(abs.(X.vdm-Z.vdm),2)
+			#Record.T_res[Pars.it-1]=ell2norm(abs.(Mats.Ds*X.vdm-T.vdm))
+			Record.T_res[Pars.it-1]=vecnorm(abs.(Mats.Ds*X.vdm-T.vdm),2)
+			#Record.N_res[Pars.it-1]=ell2norm(abs.(X.vdm-N.vdm))
+			Record.N_res[Pars.it-1]=vecnorm(abs.(X.vdm-N.vdm),2)
+			#Record.V_res[Pars.it-1]=ell2norm(abs.(X.vdm*Mats.Dv-V.vdm))
+			Record.V_res[Pars.it-1]=vecnorm(abs.(X.vdm*Mats.Dv-V.vdm),2)
+			#Record.P_res[Pars.it-1]=ell2norm(abs.(X.vdm-P.vdm))
+			Record.P_res[Pars.it-1]=vecnorm(abs.(X.vdm-P.vdm),2)
 		end
 		#Plotting
 		if Plot_A == true && (Pars.it%50 == 0)
