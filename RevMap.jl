@@ -13,14 +13,17 @@ using DataImportNEW
 
 using GenMatrices
 #bpf="box_20x50/" #box 20lams 50tau
-bpf="checkerboard_20x50/"
+#bpf="checkerboard_20x50/"
+#bpf="circle_20x50"
 #bpf="Ring/"
-
+bpf="10x10/box/"
 prefix=bpf
 #FILES_ARR=[string(prefix,"Wavelengths.csv"),string(prefix,"Spectra.csv"),string(prefix,"Spectra_Error.csv"),"data/rvm_dates.csv","data/arp151.b.dat"]
 
-FILES_ARR=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"] #Data files to load.
+#FILES_ARR=["UnitTests/UT_Wavelengths.csv","UnitTests/UT_Spectra.csv","UnitTests/UT_Spectra_Error.csv","data/rvm_dates.csv","data/arp151.b.dat"] #Data files to load.
 #FILES_ARR=["data/rvm_wavelengths_trimmed.csv","data/rvm_fluxes_trimmed.csv", "data/rvm_errfluxes_trimmed.csv","data/rvm_dates.csv","data/arp151.b.dat"]
+filenames=["UT_Wavelengths.csv","UT_Spectra.csv","UT_Spectra_Error.csv"]
+FILES_ARR=[string(bpf,filenames[1]),string(bpf,filenames[2]),string(bpf,filenames[3]),"data/rvm_dates.csv","data/arp151.b.dat"]
 
 wavelengths=FILES_ARR[1]
 spectra = FILES_ARR[2]
@@ -32,9 +35,11 @@ continuum = FILES_ARR[5]
 DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 #save_data(string(prefix,"TLDR_data.jld"),DATA)
 Pars= init_Params()
+Pars.num_tdf_times=10
+DATA.num_spectra_samples=10
 Pars.directory=prefix
 Mats=Gen_Mats(DATA,Pars)
-save_vars(string(prefix,"TLDR_vars.jld"),Mats,Pars)
+#save_vars(string(prefix,"TLDR_vars.jld"),Mats,Pars)
 #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
 #DATA = load_data("TLDR_data.jld")
 #Pars,Mats=load_vars("TLDR_vars.jld")
@@ -42,33 +47,24 @@ print_with_color(:green,"beginning reconstruction\n")
 scale=1.0e0
 
 
-Pars.num_tdf_times=50 #This is the default
-
-#min=0.0
-#max=20.0
-#stepsize=(max-min)/(Pars.num_tdf_times-1)
-#collect(1.0:((50-1.0)/(50-1)):50)
-#Pars.tdf_times=collect(min:stepsize:max)
-#println(Pars.tdf_times)
-
 Fit=init_fit()
-Fit.mtem = 2.0   #GOES WITH T
-Fit.mspe = 2.0    #GOES WITH V
-Fit.ml1 = 20.0
-Fit.msmo = 200.0
+Fit.mtem = 1.0   #GOES WITH T
+Fit.mspe = 1.0    #GOES WITH V
+Fit.ml1 = 1.0
+Fit.msmo = 1.0
 
-Fit.pz=100.0
-Fit.pp=100.0
-Fit.pn=100.0
-Fit.pv=100.0
-Fit.pt = 1000.0
+Fit.pz=1.0
+Fit.pp=1.0
+Fit.pn=1.0
+Fit.pv=1.0
+Fit.pt = 1.0
 #Fit.TI=1629750.8 #Box
-Fit.TI=5000.0 #Box
+Fit.TI=10000.0 #Box
 #Fit.TI=570.0 #Ring
 
 Pars.nits=5000
 Pars.alpha=1.2
-K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,RecD=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=true,RepIt=false,RepF=true,RecD=false); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
 vdm=copy(K.vdm)
-writecsv(string(prefix,"RevMapResult.csv"),vdm)
-println("wrote result to RevMapResult.csv")
+#writecsv(string(prefix,"RevMapResult.csv"),vdm)
+#println("wrote result to RevMapResult.csv")

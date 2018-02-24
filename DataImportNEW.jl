@@ -5,7 +5,7 @@ export Import_DataN
 
 #include("RMTypes.jl")
 function Import_DataN(path="data/",waves="rvm_wavelengths.csv",spectra="rvm_fluxes.csv",spectraerr="rvm_errfluxes.csv",spectradate="rvm_dates.csv",continuum="arp151.b.dat";cont_scale=1.0,spec_scale=1.0,Reports=false)
-	Data_Arrs = init_Data()
+
 
 #Import_DataN("simulation/","simulated_vdm.csv","spectra_simulated.csv", "errspectra_simulated.csv","rvm_dates.csv","arp151.b.dat")
 	#=IMPORTING FILES=#
@@ -25,39 +25,41 @@ function Import_DataN(path="data/",waves="rvm_wavelengths.csv",spectra="rvm_flux
 	#SPECTRA
 	spec_scale=1.0
 	wavelength_path = string(path,wavelength_filename)
-	Data_Arrs.wavelength = readcsv(wavelength_path)         #List of measured wavelengths
-	#println("Read: ", wavelength_path, " size: ", size(Data_Arrs.wavelength))
+	wavelength = readcsv(wavelength_path)         #List of measured wavelengths
+	#println("Read: ", wavelength_path, " size: ", size(wavelength))
 	spectrapath = string(path,spectra_filename)
 
-	Data_Arrs.L = spec_scale.*(readcsv(spectrapath))'                      			#SPECTRAL FLUXES (L)
-	#println("Read: ",spectrapath, " size: ",size(Data_Arrs.L))
-	Data_Arrs.num_lines = size(Data_Arrs.L,2)                  			#NUMBER OF SPECTRAL LINES
-#	Data_Arrs.num_lines = size(Data_Arrs.L,1)                  			#NUMBER OF SPECTRAL LINES
+	L = spec_scale.*(readcsv(spectrapath))'                      			#SPECTRAL FLUXES (L)
+#	println("Read: ",spectrapath, " size: ",size(L))
+	num_lines = size(L,2)                  			#NUMBER OF SPECTRAL LINES
+#	num_lines = size(L,1)                  			#NUMBER OF SPECTRAL LINES
 
 	spectra_error_path = string(path,spectra_error_filename)
-	Data_Arrs.EL = spec_scale.*(readcsv(spectra_error_path))'            			#SPECTRAL FLUX ERRORS
-	#println("Read: ",spectra_error_path, " size: ",size(Data_Arrs.EL))
+	EL = spec_scale.*(readcsv(spectra_error_path))'            			#SPECTRAL FLUX ERRORS
+	#println("Read: ",spectra_error_path, " size: ",size(EL))
 
 
 	spectra_dates_path = string(path,spectra_dates_filename)
-	Data_Arrs.spectra_dates = readcsv(spectra_dates_path)           #SPECTRAL SAMPLING DATES
-	#println("Read: ",spectra_dates_path, " size: ",size(Data_Arrs.spectra_dates))
+	spectra_dates = readcsv(spectra_dates_path)           #SPECTRAL SAMPLING DATES
+	#println("Read: ",spectra_dates_path, " size: ",size(spectra_dates))
 
 
-	Data_Arrs.num_spectra_samples = length(Data_Arrs.spectra_dates) #NUMBER OF DATA POINTS IN SPECTRA
+	num_spectra_samples = length(spectra_dates) #NUMBER OF DATA POINTS IN SPECTRA
 	#CONTINUUM
 	#CONTINUUM_ARRAY CONTAINTS THE CONTINUUM DATES, FLUX, AND FLUX ERRORS.
 	#IN THAT ORDER.
-	Data_Arrs.continuum_dates = continuum_array[:,1]
+	continuum_dates = continuum_array[:,1]
 	continuum_scale = 1.0
-	Data_Arrs.continuum_flux = cont_scale.*continuum_array[:,2]*cont_scale
-	Data_Arrs.continuum_error_flux = cont_scale.*continuum_array[:,3]
-	Data_Arrs.num_continuum_dates = length(Data_Arrs.continuum_dates)
+	continuum_flux = cont_scale.*continuum_array[:,2]*cont_scale
+	continuum_error_flux = cont_scale.*continuum_array[:,3]
+	num_continuum_dates = length(continuum_dates)
+	Data_Arrs = Data(wavelength,L,EL,num_lines,num_spectra_samples,spectra_dates,continuum_dates,continuum_flux,continuum_error_flux,num_continuum_dates)
+
 	if Reports == true
 		println("Import Summary:")
-		println( "		Wavelengths: ", length(Data_Arrs.wavelength))
-		println( "		Spectra: ", size(Data_Arrs.L))
-		println( "		Continuum: ", size(Data_Arrs.continuum_flux))
+		println( "		Wavelengths: ", length(wavelength))
+		println( "		Spectra: ", size(L))
+		println( "		Continuum: ", size(continuum_flux))
 	end
 	Data_Arrs
 end

@@ -90,7 +90,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Record=Init_Record_Data(Pars.nits)
 	end
 	Pars.tau=2.0
-	threshold = 1.0e-9 #CONVERGANCE THRESHOLD
+	threshold = 1.0e-6 #CONVERGANCE THRESHOLD
 	CX=false
 	CN=false
 	CT=false
@@ -113,11 +113,11 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	Con_Arr = zeros(DATA.num_lines)
 
 
-	sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
-	Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
+	#sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
+	#Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
 
-	init_vdm =Ini #FILTER OUT NEGATIVE VALUES
-	#init_vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
+
+	init_vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
 	Ini=0 #Memory Release
 	if Plot_A == true
 		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Reds")
@@ -169,20 +169,19 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	T.rho=copy(Fit.pt)
 	V.rho=copy(Fit.pv)
 	N.rho=copy(Fit.pn)
-
-	siglvl=abs.(median(DATA.L))
+	#println(typeof(DATA.L))
+	siglvl=abs(median(DATA.L))
 
 #Diagnostics on VDM initialized with Tikhonov Solution.
 	#println("-------")
-	init_chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
-	Pars.chi2=copy(init_chi2)
-	init_chi2=0 #Memory Release
+	chi2 = Chi2(Model(X.vdm,Mats.H),DATA.L,DATA.EL)/(DATA.num_spectra_samples*DATA.num_lines)
+	Pars.chi2=copy(chi2)
+
 	if RepIt==true
 			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -Tik_Init-")
 	end
 	#=  Calculate Initial Multipliers & RHO =#
 	Z.U=Z.U+1
-
 
 	V.U = copy(Z.U)
 	T.U = copy(Z.U)
@@ -243,7 +242,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Z.UI = IM_update(Z.UI,Z.vdm,X.vdm_previous,Z.rho)
 
 		#Step 6: UPDATE RHO
-		if (Pars.it%5 == 0) #UPUDATE EVERY ## ITERATIONS
+		if (Pars.it%2 == 0) #UPUDATE EVERY ## ITERATIONS
 			adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
 			adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
 			adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
@@ -369,7 +368,7 @@ end
 #=--------------------------------------------------=#
 #Intializes and fills the regularization terms for ADMM
  function Gen_Var(rhoi, num_tdf_times,num_lines,psi)
-	x = init_IMAGE(rhoi)
+	x = init_IMAGE(rhoi,num_tdf_times,num_lines)
 	x.vdm = zeros((num_tdf_times,num_lines))
 	fill!(x.vdm,psi)
 	x.vdm_squiggle = zeros((num_tdf_times,num_lines))
@@ -422,7 +421,8 @@ end
 #FOR ADAPTIVE GCADMM
 #X and Y are IMAGE structs
 function IM_update(UI,Z_prev,X,rho)
-	UI = UI + (rho).*(X-Z_prev)
+	#UI = UI + (rho).*(X-Z_prev)
+	UI = UI + rho.*(Z_prev-X) #According to the paper.
 end
 
 #=--------------------------------------------------=#
@@ -434,17 +434,21 @@ end
 #J will be the regularization Variable
 #K will be comparision
 #Changes rho in data struct J
-function adapt(J,K,K_previous,K_UI_previous,K_UI,k)
+function adapt(J,Kvdm,Kvdm_previous,KUI_previous,KUI,k)
 
 	tau_previous=J.rho
-	DJUI=J.UI-J.UI_previous
-	DJ=J.vdm-J.vdm_previous
+	DJUI=J.UI.-J.UI_previous
+	DJ=J.vdm.-J.vdm_previous
 
-	DKUI=K_UI-K_UI_previous
-	DK=K-K_previous
+	DKUI=KUI-KUI_previous
+	DK=Kvdm-Kvdm_previous
+
 	#SPECTRAL STEP SIZES
 	Alpha_SD=dot(DJUI,DJUI)/dot(DJ,DJUI)
 	Alpha_MG=dot(DJ,DJUI)/dot(DJ,DJ)
+	#Alpha_SD=vecdot(DJUI,DJUI)/vecdot(DJ,DJUI)
+	#Alpha_MG=vecdot(DJ,DJUI)/vecdot(DJ,DJ)
+
 
 	if 2.0*Alpha_MG > Alpha_SD
 		Alpha=Alpha_MG
@@ -454,6 +458,8 @@ function adapt(J,K,K_previous,K_UI_previous,K_UI,k)
 
 	Beta_SD=dot(DKUI,DKUI)/dot(DK,DJUI)
 	Beta_MG=dot(DK,DKUI)/dot(DK,DK)
+	#Beta_SD=vecdot(DKUI,DKUI)/vecdot(DK,DJUI)
+	#Beta_MG=vecdot(DK,DKUI)/vecdot(DK,DK)
 
 	if 2.0*Beta_MG > Beta_SD
 		Beta=Beta_MG
@@ -461,20 +467,30 @@ function adapt(J,K,K_previous,K_UI_previous,K_UI,k)
 		Beta = Beta_SD-(Beta_MG/2.0)
 	end #END IF ELSE
 	#CORRELATIONS
-	Alpha_corr=dot(DJ,DJUI)/(sum(abs.(DJ))*sum(abs.(DJUI)))
-	Beta_corr=dot(DK,DKUI)/(sum(abs.(DK))*sum(abs.(DKUI)))
-	eps_corr=0.5
-	CCG=1.0e9
+	Alpha_corr=dot(DJ,DJUI)/(BLAS.asum(DJ)*BLAS.asum(DJUI))
+	Beta_corr=dot(DK,DKUI)/(BLAS.asum(DK)*BLAS.asum(DKUI))
+	#Alpha_corr=vecdot(DJ,DJUI)/(BLAS.asum(DJ)*BLAS.asum(DJUI))
+	#Beta_corr=vecdot(DK,DKUI)/(BLAS.asum(DK)*BLAS.asum(DKUI))
+	#println("Alpha_Corr: ", Alpha_corr, " Beta_Corr: ", Beta_corr)
+	eps_corr=0.05 #Correlation 0.2 recommended
+	CCG=1.0e10	 #10e10 recommended
 	if Alpha_corr > eps_corr && Beta_corr > eps_corr
+		#println("SSS")
 		tau_hat=sqrt(Alpha*Beta)
 	elseif Alpha_corr > eps_corr && Beta_corr <= eps_corr
+		#println("XXX")
 		tau_hat=Alpha
 	elseif Alpha_corr <= eps_corr && Beta_corr > eps_corr
+		#println("ZZZ")
 		tau_hat=Beta
 	else
+		#println("===")
 			tau_hat=tau_previous
 	end #END IF ELSE BLOCK
 	tau=max(min(tau_hat,(1.0+(CCG/k^2)*tau_previous)),tau_previous/(1.0+(CCG/k^2)))
+	#if J.rho != tau
+	#	println("Rho changed from ", J.rho, " to ", tau)
+	#end
 	J.rho=tau
 end
 

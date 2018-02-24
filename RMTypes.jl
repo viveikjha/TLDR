@@ -1,6 +1,7 @@
 module RMTypes
-export ADMM_IMAGE,Params,Fit_Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats,init_fit,Init_Record_Data
-type ADMM_IMAGE
+export ADMM_IMAGE,Data,Params,Fit_Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats,init_fit,Init_Record_Data
+#export ADMM_IMAGE,Fit_Params,Params,Matrices_S,Data,Rec_Data
+mutable struct ADMM_IMAGE
 	vdm::Array{Float64}										#1
 	vdm_previous::Array{Float64}					#2
 	vdm_squiggle::Array{Float64}					#3
@@ -17,7 +18,7 @@ type ADMM_IMAGE
 	tau::Real															#14
 end
 
-type Fit_Params
+mutable struct Fit_Params
 	msmo::Real
 	pz::Real
 	ml1::Real
@@ -30,34 +31,34 @@ type Fit_Params
 	TI::Real
 end
 
-type Params
-	it::Int 				#Iteration Counter											#1
-	conflag::Int		#Convergence Flag												#2
+mutable struct Params
+	it::Int 				#Iteration Counter										#1
+	conflag::Int		#Convergence Flag											#2
 	nits::Int				#Total Iterations Allowed								#3
-	tau::Real																								#4
-	num_lines::Int																					#5
-	num_tdf_times::Int																			#6
-	initial_psi::Real																				#7
+	tau::Real																		#4
+	num_lines::Int																	#5
+	num_tdf_times::Int																#6
+	initial_psi::Real																#7
 	mu_smoo::Real		#Tik Smoothing Weight										#8
-	mu_l1::Real			#Ell1 Reg weight												#9
+	mu_l1::Real			#Ell1 Reg weight											#9
 	mu_spec::Real		#Spectral Reg Weight										#10
 	mu_temp::Real		#Temporal Reg Weight										#11
-	eps_abs::Real																						#12
-	eps_rel::Real																						#13
-	sigma::Real																							#14
-	G::Real																									#15
-	alpha::Real																							#16
-	rho0::Real																							#17
-	chi2::Real																							#18
-	tdf_times::Array{Float64}																#19
-	tdf_values::Array{Float64}															#20
-	l1N_state::Bool																					#21
-	l1T_state::Bool																					#22
-	l1V_state::Bool																					#23
-	directory::AbstractString
+	eps_abs::Real																	#12
+	eps_rel::Real																	#13
+	sigma::Real																		#14
+	G::Real																			#15
+	alpha::Real																		#16
+	rho0::Real																		#17
+	chi2::Real																		#18
+	tdf_times::Array{Float64}														#19
+	tdf_values::Array{Float64}														#20
+	l1N_state::Bool																	#21
+	l1T_state::Bool																	#22
+	l1V_state::Bool																	#23
+	directory::String
 end
 
-type Data
+mutable struct Data
 	wavelength::Array{Float64}
 	L::Array{Float64}
 	EL::Array{Float64}
@@ -70,7 +71,7 @@ type Data
 	num_continuum_dates::Int
 end
 
-type Matrices_S
+mutable struct Matrices_S
 	H::Array{Float64}
 	HE::Array{Float64}
 	HT::Array{Float64}
@@ -85,7 +86,7 @@ type Matrices_S
 	GammaspeT::Array{Float64}
 end
 
-type Rec_Data
+mutable struct Rec_Data
 	ConFlag::Array{Float64}
 	J::Array{Float64}
 	Chi2::Array{Float64}
@@ -95,13 +96,14 @@ type Rec_Data
 	V_res::Array{Float64}
 	P_res::Array{Float64}
 end
+
 function Init_Record_Data(nits)
 	Rec_Data(ones(nits)+5,zeros(nits),zeros(nits),zeros(nits),zeros(nits),zeros(nits),zeros(nits),zeros(nits))
 end
 
-function init_IMAGE(rho)
+function init_IMAGE(rho,nt,nl)
 	#           1, 2, 3, 4, 5, 6,  7,  8,  9, 10, 11, 12,   13, 14
-	ADMM_IMAGE([],[],[],[],[],[],rho,Inf,0.0,0.0,0.0,0.0,1.0e3,2.0)
+	ADMM_IMAGE(Array{Float64}(nt,nl),Array{Float64}(nt,nl),Array{Float64}(nt,nl),Array{Float64}(nt,nl),Array{Float64}(nt,nl),Array{Float64}(nt,nl),rho,Inf,0.0,0.0,0.0,0.0,1.0e3,2.0)
 end
 
 function init_Params()

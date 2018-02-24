@@ -48,6 +48,9 @@ function Gen_Mats(DATA,Params)
 
 	num_spectra_dates=size(DATA.spectra_dates)[1]
 	W = zeros((DATA.num_lines,size(DATA.L)[1],size(DATA.L)[1]))	#Old Version
+	
+	#println(DATA.num_lines)
+	#println(num_spectra_dates)
 	W = zeros((size(DATA.L)[1],size(DATA.L)[1],DATA.num_lines)) 	#New Version
 	#println("AT W Generation: ", size(W))
 		for lam in collect(1:DATA.num_lines)

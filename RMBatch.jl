@@ -18,7 +18,7 @@ continuum = FILES_ARR[5]
 #NEW DATASET? IMPORT DATA FILES
 DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 Pars= init_Params()
-Pars.nits=2000
+Pars.nits=5000
 Pars.alpha=1.2
 
 Pars.num_tdf_times=50 #This is the default
@@ -32,24 +32,25 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
 #DATA = load_data("TLDR_data.jld")
 #Pars,Mats=load_vars("TLDR_vars.jld")
-nps=4
-m1=logspace(0.0,5.0,nps)
+nps=5
+#m1=logspace(0.0,3.0,nps)
+m1=linspace(0.0,100.0,nps)
 #m2=logspace(2.0,2.0,nps)
 #m3=logspace(2.0,2.5,nps)
 
 
 count=0
 
-mspe=1.0
-mtem=1.0
-ml1=1.0
+mspe=4.0
+mtem=4.0
+ml1=15.0
 msmo=1.0
 pp=1.0
 clim=4.0
-pv=100.0
-pn=100.0
-pz=100.0
-pt=100.0
+pv=1.0
+pn=1.0
+pz=1.0
+pt=1.0
 
 for msmo in m1 #msmo
   for ml1 in m1 #ml1
@@ -70,7 +71,7 @@ for msmo in m1 #msmo
           Fit.mtem =mtem
           Fit.pt=pt
           Fit.pp=pp
-          Fit.TI=500.0
+          Fit.TI=0.1
           K=HOT_LAUNCH(DATA,Mats,Pars,Fit;nits=Pars.nits,Plot_Live=false,Plot_Final=false,RepIt=false,RepF=false);
           if Pars.conflag==1 && Pars.chi2<clim#converged
             col=:green
@@ -83,7 +84,7 @@ for msmo in m1 #msmo
           if Pars.chi2 < clim
             fname=string("Batch/",string(count),".png")
             figure()
-            imshow((K.vdm),aspect="auto",origin="lower",interpolation="None")
+            imshow((K.vdm),aspect="auto",origin="lower",interpolation="None",cmap="Greys")
             subplots_adjust(right=0.25)
             s1=string("Msmo: ",msmo, " RhoS: ",pz )
             s2=string("Ml1: ",ml1, " RhoN: ",pn )

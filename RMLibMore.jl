@@ -110,8 +110,8 @@ function Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=false,L2x=false,L1T=false,L1V=fals
 	#rx=ell2norm(X.vdm)
   rx=vecnorm(X.vdm,2)
   if s==true
-			println("dims of x:", size(X.vdm))
-			println("dims of xp:", size(X.vdm_previous))
+			#println("dims of x:", size(X.vdm))
+			#println("dims of xp:", size(X.vdm_previous))
 			#sstring=@sprintf "\ts: %0.3e" ell2norm(X.rho*(X.vdm-X.vdm_previous))/rx
       sstring=@sprintf "\ts: %0.3e" vecnorm(X.rho*(X.vdm-X.vdm_previous),2)/rx
   else sstring=""
@@ -280,7 +280,7 @@ end
 # D should be the spectral data
 # Sigma should be the error on the spectral data
 function Chi2(M,D,Sigma)
-		sum(   ((M-D)./(Sigma)).^2)
+    sum(   ((M-D)./(Sigma)).^2)
 end
 
 #=--------------------------------------------------=#

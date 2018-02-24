@@ -29,7 +29,7 @@ spread=10.0
 lvl=0.1
 
 #DSNR=100.0
-DSNR=33.33
+DSNR=50.0 #33.33 is the proper test value
 
 flx_scale=1.0
 
@@ -47,7 +47,9 @@ end
 #If another pattern is used, load here!
 #vdm=readcsv("Paper/ring/simulated_ring_vdm.csv")
 #vdm=readcsv("Paper/ring/simulated_spiral_vdm.csv")
-vdm=readcsv("checkerboard_20x50/original_checkerboard.csv")
+#vdm=readcsv("checkerboard_20x50/original_checkerboard.csv")
+#vdm=readcsv("circle_20x50/original_circle.csv")
+vdm=readcsv("ring_20x50/original_ring.csv")
 writecsv("UnitTests/UT_vdm.csv",vdm)
 #println("Wrote vdm.csv with dimensions: ", size(vdm))
 println("For Box, ", total_lit, " pixels lit.")
