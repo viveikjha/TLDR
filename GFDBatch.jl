@@ -38,8 +38,12 @@ flx_scale=1.0
 
 
 pb="10x10/"
-names=["box","checkerboard","circle","diagonal","diagonalinverted","halfbottom","halfleft","halfright","halftop","horizontalstripe","invertedbox","invertedhorizontalstripe","invertedverticalstripe","lowertri","reverseddiagonal","reverseddiagonalinverted","ring","uppertri","verticalstripe"]
+
+#names=["box","checkerboard","circle","diagonal","diagonalinverted","halfbottom","halfleft","halfright","halftop","horizontalstripe","invertedbox","invertedhorizontalstripe","invertedverticalstripe","lowertri","reverseddiagonal","reverseddiagonalinverted","ring","uppertri","verticalstripe"]
+names=["reverseddiagonal","reverseddiagonalinverted"]
+
 for i in range(1,length(names))
+
 	name=names[i]
 	fname=string(pb,name,"/",name,".csv")
 	vdm=readcsv(fname)
