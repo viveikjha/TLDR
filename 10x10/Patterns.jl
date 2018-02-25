@@ -42,8 +42,8 @@ end
 #imshow(ring,interpolation="None",cmap="Greys",origin="Lower")
 #colorbar()
 #show()
-diagrev=copy(diag[end:-1:1,end:-1:1])
-diaginvrev=copy(diaginv[end:-1:1,end:-1:1])
+diagrev=copy(diag[end:-1:1,1:1:end])
+diaginvrev=copy(diaginv[end:-1:1,1:1:end])
 
 box=zeros(nx,ny);box[Int(nx/2-2):Int(nx/2+2),Int(ny/2-2):Int(ny/2+2)]=1.0
 ibox=ones(nx,ny);ibox[Int(nx/2-2):Int(nx/2+2),Int(ny/2-2):Int(ny/2+2)]=0.0
@@ -58,25 +58,25 @@ hmi=zeros(nx,ny);hmi[Int(nx/2),:]=1
 ht=zeros(nx,ny);ht[1:Int(nx/2),:]=1
 hb=zeros(nx,ny);hb[Int(nx/2):nx,:]=1
 
-writecsv("checkerboard.csv",checkerboard)
-writecsv("circle.csv",circle)
-writecsv("ring.csv",ring)
-writecsv("lowertri.csv",lowertri)
-writecsv("uppertri.csv",uppertri)
-writecsv("diagonal.csv",diag)
-writecsv("diagonalinverted.csv",diaginv)
+#writecsv("checkerboard.csv",checkerboard)
+#writecsv("circle.csv",circle)
+#writecsv("ring.csv",ring)
+#writecsv("lowertri.csv",lowertri)
+#writecsv("uppertri.csv",uppertri)
+#writecsv("diagonal.csv",diag)
+#writecsv("diagonalinverted.csv",diaginv)
 writecsv("reverseddiagonal.csv",diagrev)
 writecsv("reverseddiagonalinverted.csv",diaginvrev)
-writecsv("box.csv",box)
-writecsv("invertedbox.csv",ibox)
-writecsv("halfleft.csv",vl)
-writecsv("halfright.csv",vr)
-writecsv("verticalstripe.csv",vm)
-writecsv("invertedverticalstripe.csv",vmi)
-writecsv("horizontalstripe.csv",hm)
-writecsv("invertedhorizontalstripe.csv",hmi)
-writecsv("halftop.csv",ht)
-writecsv("halfbottom.csv",hb)
+#writecsv("box.csv",box)
+#writecsv("invertedbox.csv",ibox)
+#writecsv("halfleft.csv",vl)
+#writecsv("halfright.csv",vr)
+#writecsv("verticalstripe.csv",vm)
+#writecsv("invertedverticalstripe.csv",vmi)
+#writecsv("horizontalstripe.csv",hm)
+#writecsv("invertedhorizontalstripe.csv",hmi)
+#writecsv("halftop.csv",ht)
+#writecsv("halfbottom.csv",hb)
 
 
 #writecsv("checkerboard_20x50/original_checkerboard.csv",checkerboard)

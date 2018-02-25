@@ -24,3 +24,5 @@ for f in filter(x -> ismatch(r"\.csv", x),readdir("batch"))
 end
 println("Minimum Difference: ", mindif, " File: ", minf)
 println("Best PSNR: ", BPSNR, " dB File: ", minp)
+data=[minp,BPSNR]
+writecsv("result.csv",data)

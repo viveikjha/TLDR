@@ -11,11 +11,11 @@ using GenMatrices
 
 mastercount=0
 pb="10x10/"
-names=["box","checkerboard","circle","diagonal","diagonalinverted","halfbottom","halfleft","halfright","halftop","horizontalstripe","invertedbox","invertedhorizontalstripe","invertedverticalstripe","lowertri","reverseddiagonal","reverseddiagonalinverted","ring","uppertri","verticalstripe"]
-
-nps=4
+#names=["box","checkerboard","circle","diagonal","diagonalinverted","halfbottom","halfleft","halfright","halftop","horizontalstripe","invertedbox","invertedhorizontalstripe","invertedverticalstripe","lowertri","reverseddiagonal","reverseddiagonalinverted","ring","uppertri","verticalstripe"]
+names=["reverseddiagonal","reverseddiagonalinverted"]
+nps=7
 #m1=logspace(0.0,3.0,nps)
-m1=linspace(1.0,50.0,nps)
+m1=linspace(1.0,30.0,nps)
 #m2=logspace(2.0,2.0,nps)
 #m3=logspace(2.0,2.5,nps)
 count=0
