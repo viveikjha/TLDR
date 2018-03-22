@@ -1,4 +1,5 @@
-push!(LOAD_PATH,"/home/matander/TLDR/")
+#push!(LOAD_PATH,"/home/matander/TLDR/")
+push!(LOAD_PATH,"/home/manderson/TLDR/")
 #push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 #push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
 using RMLib
@@ -45,11 +46,11 @@ for i in 1:ntimes
 end
 
 #If another pattern is used, load here!
-#vdm=readcsv("Paper/ring/simulated_ring_vdm.csv")
+vdm=readcsv("Paper/ring/simulated_ring_vdm.csv")
 #vdm=readcsv("Paper/ring/simulated_spiral_vdm.csv")
 #vdm=readcsv("checkerboard_20x50/original_checkerboard.csv")
 #vdm=readcsv("circle_20x50/original_circle.csv")
-vdm=readcsv("ring_20x50/original_ring.csv")
+#vdm=readcsv("ring_20x50/original_ring.csv")
 writecsv("UnitTests/UT_vdm.csv",vdm)
 #println("Wrote vdm.csv with dimensions: ", size(vdm))
 println("For Box, ", total_lit, " pixels lit.")

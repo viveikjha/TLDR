@@ -10,6 +10,7 @@ function Gen_Mats(DATA,Params)
 	#= COMPUTING THE CONTINUUM FUNCTION FOR REQUIRED POINTS =#
 	interpolation_points = zeros(DATA.num_spectra_samples,Params.num_tdf_times)
 #	println("interpolation points:",size(interpolation_points))
+
 	H = zeros(DATA.num_spectra_samples,Params.num_tdf_times)
 	HE= zeros(DATA.num_spectra_samples,Params.num_tdf_times)
 	for date in collect(1:DATA.num_spectra_samples)
@@ -48,7 +49,7 @@ function Gen_Mats(DATA,Params)
 
 	num_spectra_dates=size(DATA.spectra_dates)[1]
 	W = zeros((DATA.num_lines,size(DATA.L)[1],size(DATA.L)[1]))	#Old Version
-	
+
 	#println(DATA.num_lines)
 	#println(num_spectra_dates)
 	W = zeros((size(DATA.L)[1],size(DATA.L)[1],DATA.num_lines)) 	#New Version
@@ -72,6 +73,7 @@ function Gen_Mats(DATA,Params)
 	Mat.GammatdfT = Mat.Gammatdf'
 	Mat.Gammaspe = eye(DATA.num_lines)
 	Mat.GammaspeT = Mat.Gammaspe'
+	gc()
 	Mat #Return Data Structure
 end #endfunction
 end #endmodule

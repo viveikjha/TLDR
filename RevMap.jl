@@ -1,5 +1,5 @@
 #push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
-#push!(LOAD_PATH,"/home/manderson/TLDR/")
+push!(LOAD_PATH,"/home/manderson/TLDR/")
 #push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
 push!(LOAD_PATH,"/home/matander/TLDR")
 
@@ -15,8 +15,8 @@ using GenMatrices
 #bpf="box_20x50/" #box 20lams 50tau
 #bpf="checkerboard_20x50/"
 #bpf="circle_20x50"
-#bpf="Ring/"
-bpf="10x10/box/"
+bpf="Ring/"
+#bpf="10x10/box/"
 prefix=bpf
 #FILES_ARR=[string(prefix,"Wavelengths.csv"),string(prefix,"Spectra.csv"),string(prefix,"Spectra_Error.csv"),"data/rvm_dates.csv","data/arp151.b.dat"]
 
@@ -32,13 +32,13 @@ dates = FILES_ARR[4]
 continuum = FILES_ARR[5]
 
 #NEW DATASET? IMPORT DATA FILES
-DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
+const DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 #save_data(string(prefix,"TLDR_data.jld"),DATA)
 Pars= init_Params()
-Pars.num_tdf_times=10
-DATA.num_spectra_samples=10
+#Pars.num_tdf_times=50
+#DATA.num_spectra_samples=20
 Pars.directory=prefix
-Mats=Gen_Mats(DATA,Pars)
+const Mats=Gen_Mats(DATA,Pars)
 #save_vars(string(prefix,"TLDR_vars.jld"),Mats,Pars)
 #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
 #DATA = load_data("TLDR_data.jld")
@@ -46,7 +46,7 @@ Mats=Gen_Mats(DATA,Pars)
 print_with_color(:green,"beginning reconstruction\n")
 scale=1.0e0
 
-
+Pars.threshold=1.0e-8
 Fit=init_fit()
 Fit.mtem = 1.0   #GOES WITH T
 Fit.mspe = 1.0    #GOES WITH V
@@ -62,9 +62,11 @@ Fit.pt = 1.0
 Fit.TI=10000.0 #Box
 #Fit.TI=570.0 #Ring
 
-Pars.nits=5000
+Pars.nits=500
 Pars.alpha=1.2
-K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=true,RepIt=false,RepF=true,RecD=false); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+tic()
+K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=true,RepIt=true,RepF=true,RecD=false); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+toc()
 vdm=copy(K.vdm)
 #writecsv(string(prefix,"RevMapResult.csv"),vdm)
 #println("wrote result to RevMapResult.csv")

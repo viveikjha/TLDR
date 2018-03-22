@@ -1,5 +1,5 @@
-push!(LOAD_PATH,"/home/matander/TLDR")
-
+#push!(LOAD_PATH,"/home/matander/TLDR")
+push!(LOAD_PATH,"/home/manderson/TLDR")
 using PyPlot
 using JLD
 using RMLib
@@ -18,11 +18,12 @@ continuum = FILES_ARR[5]
 #NEW DATASET? IMPORT DATA FILES
 DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 Pars= init_Params()
-Pars.nits=5000
+Pars.nits=10000
+
 Pars.alpha=1.2
 
 Pars.num_tdf_times=50 #This is the default
-Mats=Gen_Mats(DATA,Pars)
+const Mats=Gen_Mats(DATA,Pars)
 
 #SAVE DATASET
 save_data("TLDR_data.jld",DATA)
@@ -32,9 +33,11 @@ save_vars("TLDR_vars.jld",Mats,Pars)
 #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
 #DATA = load_data("TLDR_data.jld")
 #Pars,Mats=load_vars("TLDR_vars.jld")
-nps=5
+nps=6
 #m1=logspace(0.0,3.0,nps)
-m1=linspace(0.0,100.0,nps)
+m1=linspace(1.0,10.0,nps)
+m2=linspace(40.0,60.0,nps)
+m3=linspace(20.0,40.0,nps)
 #m2=logspace(2.0,2.0,nps)
 #m3=logspace(2.0,2.5,nps)
 
@@ -51,11 +54,12 @@ pv=1.0
 pn=1.0
 pz=1.0
 pt=1.0
+recs2do=nps^4
 
-for msmo in m1 #msmo
-  for ml1 in m1 #ml1
+for msmo in m2 #msmo
+  for ml1 in m3 #ml1
     for mspe in m1
-      for mtem in m1
+      for mtem in m2
           count+=1
           DATA = load_data("TLDR_data.jld")
           Pars,Mats=load_vars("TLDR_vars.jld")
@@ -80,7 +84,8 @@ for msmo in m1 #msmo
           else
             col=:blue #did not converge
           end
-          print_with_color(col,string(count, " chi2: ", round(Pars.chi2), " Iterations: ", Pars.it, "\n"))
+          print_with_color(col,string(count," of ",recs2do, " chi2: ", round(Pars.chi2), " Iterations: ", Pars.it, "\n"))
+
           if Pars.chi2 < clim
             fname=string("Batch/",string(count),".png")
             figure()

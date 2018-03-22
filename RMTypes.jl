@@ -29,6 +29,7 @@ mutable struct Fit_Params
 	pt::Real
 	pp::Real
 	TI::Real
+	TI2::Real
 end
 
 mutable struct Params
@@ -56,6 +57,7 @@ mutable struct Params
 	l1T_state::Bool																	#22
 	l1V_state::Bool																	#23
 	directory::String
+	threshold::Real
 end
 
 mutable struct Data
@@ -107,7 +109,7 @@ function init_IMAGE(rho,nt,nl)
 end
 
 function init_Params()
-  Params(2,0,50,2.0,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true,"")
+  Params(2,0,50,2.0,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true,"",1.0e-7)
 end
 
 function init_Data()
@@ -119,7 +121,7 @@ function init_Mats()
 end
 
 function init_fit()
-	Fit_Params(1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3)
+	Fit_Params(1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,NaN,NaN)
 end
 
 end #end module

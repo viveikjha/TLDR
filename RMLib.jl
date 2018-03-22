@@ -29,14 +29,11 @@ export HOT_LAUNCH,COLD_LAUNCH
 #RecD option stores convergence data.
 function HOT_LAUNCH(Data,Mats,Pars,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot_Final=true,RepIt=true,RepF=true,RecD=false)
 
-	#Data.L=scale*(Data.L)
-	#Data.EL=scale*(Data.EL)
-	#Data.continuum_flux=scale*Data.continuum_flux
-	#Data.continuum_error_flux=scale*Data.continuum_error_flux
+
 	Pars.nits=nits
 
 	#SET RECONSTRUCTION PARAMETERS
-	scale=1.0
+
   Fit.msmo=Fit.msmo
 
   tmp,P = TLDR(1.0,Data,Mats,Pars,Fit;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,RecD=RecD)
@@ -61,12 +58,8 @@ function COLD_LAUNCH(FILES_ARR,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot
 	errspectra = FILES_ARR[3]
 	dates = FILES_ARR[4]
 	continuum = FILES_ARR[5]
-	 DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
+	DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 
-	DATA.L=scale*(DATA.L)
-	DATA.EL=scale*(DATA.EL)
-	DATA.continuum_flux=scale*DATA.continuum_flux
-	DATA.continuum_error_flux=scale*DATA.continuum_error_flux
 
 	#data_report(DATA)
 	Pars = init_Params()
@@ -77,7 +70,7 @@ function COLD_LAUNCH(FILES_ARR,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot
 	Pars.nits=nits
 
 	#SET RECONSTRUCTION PARAMETERS
-	scale=1.0
+
     tmp,P = TLDR(1.0,DATA,Mats,Pars,Fit;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm)
 end
 
@@ -90,7 +83,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Record=Init_Record_Data(Pars.nits)
 	end
 	Pars.tau=2.0
-	threshold = 1.0e-6 #CONVERGANCE THRESHOLD
+
 	CX=false
 	CN=false
 	CT=false
@@ -111,14 +104,41 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	initial_psi = 0.0  #Initial value for PSI
 	#ADMM ARRAYS:
 	Con_Arr = zeros(DATA.num_lines)
+	X= Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+	N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 
-
-	#sol=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
-	#Ini=sol.*(sol .>= 0.0) #sdata() pulls the underlying shared array
-
-
-	init_vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
-	Ini=0 #Memory Release
+	if isnan(Fit.TI) == false && isnan(Fit.TI2) == false
+		if Fit.TI != Fit.TI2
+			sol1=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
+			writecsv(string(Pars.directory,"tiksol_init.csv"),sol1)
+			X.vdm=copy(sol1)
+			sol1=0
+			sol2=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI2,plotting=false,save=false)
+			writecsv(string(Pars.directory,"tiksol_init2.csv"),sol2)
+			Z.vdm=copy(sol2)
+			sol2=0
+		else
+			sol1=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
+			writecsv(string(Pars.directory,"tiksol_init.csv"),sol1)
+			X.vdm=copy(sol1)
+			Z.vdm=copy(sol1)
+			sol1=0
+		end
+	elseif isnan(Fit.TI) == false && isnan(Fit.TI2) == true
+		sol1=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
+		writecsv(string(Pars.directory,"tiksol_init.csv"),sol1)
+		X.vdm=copy(sol1)
+		Z.vdm=copy(sol1)
+		sol1=0
+	else
+		println("You have made an error with Tikhonov initialization. If only one Tikhonov initialization is to be used, Fit.TI should be used, not Fit.TI2")
+		X.vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
+		Z.vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
+	end
 	if Plot_A == true
 		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Reds")
 		#colorbar()
@@ -128,12 +148,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	#init_vdm=randn(size(init_vdm)) #Start from Random
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 	tmax=5.0
-	 X= Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	 N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+
 
 
 
@@ -155,13 +170,13 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		end
 	end
 
-	X.vdm = copy(init_vdm)
+#	X.vdm = copy(init_vdm)
 	#zinis=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
-	Z.vdm = copy(init_vdm)
-	T.vdm = Mats.Ds*init_vdm
-	V.vdm = init_vdm*Mats.Dv
-	P.vdm = pos_prox_op(init_vdm)
-	N.vdm = copy(init_vdm)
+	#Z.vdm = copy(init_vdm)
+	T.vdm = Mats.Ds*copy(X.vdm)
+	V.vdm = copy(Z.vdm)*Mats.Dv
+	P.vdm = pos_prox_op(copy(X.vdm))
+	N.vdm = copy(X.vdm)
 	init_vdm=0 #Memory Release
 	#Initiailize Penalty Parameters.
 	Z.rho= Fit.pz
@@ -257,16 +272,16 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 
 		#Step 6: Check for Convergence
 		if Pars.it != 2
-			if abs.(regX(X,Pars)-PregX) < threshold
+			if abs.(regX(X,Pars)-PregX) < Pars.threshold
 				CX=true
 			end
-			if abs.(regN(N,Pars)-PregN) < threshold
+			if abs.(regN(N,Pars)-PregN) < Pars.threshold
 				CN=true
 			end
-			if abs.(regT(T,Pars)-PregT) < threshold
+			if abs.(regT(T,Pars)-PregT) < Pars.threshold
 				CT=true
 			end
-			if abs.(regV(V,Pars)-PregV) < threshold
+			if abs.(regV(V,Pars)-PregV) < Pars.threshold
 				CV=true
 			end
 			if sum(N.vdm) == 0		#CHECK IF L1(N) HAS FAILED

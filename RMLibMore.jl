@@ -267,7 +267,6 @@ end
 #=--------------------------------------------------=#
 #X is the current TDF being modeled.
 #ICF is the interpolated continuum flux.
-#function Model(X,ICF)
 function Model(X,H)
 	MF = H*X
   MF #Array Returned!
@@ -366,8 +365,6 @@ function plotfin(Plot_F,X,Z,T,V)
 	function gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=40.0,plotting=false,save=false)
 	  #Par,Mats,DATA=getdata(f)
 	  #println("µ: ",mu_smoo)
-	  DATA.L = scale.*DATA.L
-	  DATA.EL = scale.*DATA.EL
 	  Pars= init_Params()
 	  Mats = Gen_Mats(DATA,Pars)
 
