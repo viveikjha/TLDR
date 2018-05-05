@@ -1,4 +1,4 @@
-push!(LOAD_PATH,"/home/matander/TLDR")
+push!(LOAD_PATH,"/home/manderson/TLDR")
 
 using PyPlot
 using JLD
@@ -12,17 +12,18 @@ using GenMatrices
 mastercount=0
 pb="10x10/"
 #names=["box","checkerboard","circle","diagonal","diagonalinverted","halfbottom","halfleft","halfright","halftop","horizontalstripe","invertedbox","invertedhorizontalstripe","invertedverticalstripe","lowertri","reverseddiagonal","reverseddiagonalinverted","ring","uppertri","verticalstripe"]
-names=["reverseddiagonal","reverseddiagonalinverted"]
-nps=5
+#names=["reverseddiagonal","reverseddiagonalinverted"]
+names=["random"]
+nps=10
 #m1=logspace(0.0,3.0,nps)
-m1=linspace(1.0,30.0,nps)
+m1=linspace(100.0,1000.0,nps)
 #m2=logspace(2.0,2.0,nps)
 #m3=logspace(2.0,2.5,nps)
 count=0
 totalcount=length(names)*nps^4
-mspe=4.0
-mtem=4.0
-ml1=15.0
+mspe=1.0
+mtem=1.0
+ml1=1.0
 msmo=1.0
 pp=1.0
 clim=4.0
@@ -33,6 +34,7 @@ pt=1.0
 
 for i in range(1,length(names))
     name=names[i]
+    println(name)
 	#fname=string(pb,name,"/",name,".csv")
 	#vdm=readcsv(fname)
     bpf=string(pb,name,"/")
@@ -48,9 +50,9 @@ for i in range(1,length(names))
     #NEW DATASET? IMPORT DATA FILES
     DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
     Pars= init_Params()
-    Pars.nits=2500
+    Pars.nits=2000
     Pars.alpha=1.2
-    Pars.num_tdf_times=10 #This is the default
+    Pars.num_tdf_times=10
     Mats=Gen_Mats(DATA,Pars)
 
     #SAVE DATASET

@@ -1,7 +1,7 @@
 #push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
 push!(LOAD_PATH,"/home/manderson/TLDR/")
 #push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
-push!(LOAD_PATH,"/home/matander/TLDR")
+#push!(LOAD_PATH,"/home/matander/TLDR")
 
 using PyPlot
 using JLD
@@ -65,7 +65,7 @@ Fit.TI=10000.0 #Box
 Pars.nits=500
 Pars.alpha=1.2
 tic()
-K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=true,RepIt=true,RepF=true,RecD=false); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=true,RepIt=true,RepF=true,RecD=true); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
 toc()
 vdm=copy(K.vdm)
 #writecsv(string(prefix,"RevMapResult.csv"),vdm)

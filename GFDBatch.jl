@@ -1,5 +1,5 @@
-push!(LOAD_PATH,"/home/matander/TLDR/")
-#push!(LOAD_PATH,"/home/manderson/Research/TLDR/")
+#push!(LOAD_PATH,"/home/matander/TLDR/")
+push!(LOAD_PATH,"/home/manderson/TLDR/")
 #push!(LOAD_PATH,"/Users/manderson/Software/ReverbMap/JuliaVersions/TLDR")
 using RMLib
 using RMLibMore
@@ -40,8 +40,8 @@ flx_scale=1.0
 pb="10x10/"
 
 #names=["box","checkerboard","circle","diagonal","diagonalinverted","halfbottom","halfleft","halfright","halftop","horizontalstripe","invertedbox","invertedhorizontalstripe","invertedverticalstripe","lowertri","reverseddiagonal","reverseddiagonalinverted","ring","uppertri","verticalstripe"]
-names=["reverseddiagonal","reverseddiagonalinverted"]
-
+#names=["reverseddiagonal","reverseddiagonalinverted"]
+names=["random"]
 for i in range(1,length(names))
 
 	name=names[i]

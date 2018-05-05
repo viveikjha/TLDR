@@ -6,10 +6,9 @@ import numpy as np
 import PlotPretty
 
 PlotPretty.pp('white')
-names=["checkerboard","circle","diagonal","diagonalinverted","halfbottom","halfleft","halfright","halftop","horizontalstripe","invertedbox","invertedhorizontalstripe","invertedverticalstripe","lowertri","reverseddiagonal","reverseddiagonalinverted","ring","uppertri","verticalstripe"]
-names2=["checkerboard","circle","diagonal","diagonalinverted","halfbottom","halfleft","halfright","halftop","horizontalstripe","invertedbox","invertedhorizontalstripe","invertedverticalstripe","lowertri","reverseddiagonal","reverseddiagonalinverted","ring","uppertri","verticalstripe"]
+names=["checkerboard","circle","diagonal","halfbottom","random","halfright","halftop","horizontalstripe","lowertri","reverseddiagonal","uppertri","verticalstripe","ring"]
 #18
-
+#names=["verticalstripe","horizontalstripe","halfleft","halftop","diagonal","reverseddiagonal","uppertri","lowertri","checkerboard","circle","random"]
 #i=1
 #im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 #im2=np.loadtxt((names[i]+"/"+names2[i]+".csv"),delimiter=",")
@@ -21,7 +20,7 @@ gs = gridspec.GridSpec(6, 17,hspace=0.05,wspace=0.1,width_ratios=wratios, height
 #Set1
 row=0
 place=row*17
-i=0
+i=0#0
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
 im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
@@ -42,7 +41,7 @@ ax.axis('off')
 plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 #Set2
-i=1
+i=1#1
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
 im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
@@ -106,54 +105,54 @@ ax.axis('off')
 plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 #Set5
-i=4
-im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
-info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
-im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
-ax=plt.subplot(gs[place+12])
-ax.imshow(im1,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
-ax=plt.subplot(gs[place+13])
-ax.imshow(im2,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
+#i=10#4
+#im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
+#info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
+#im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
+#ax=plt.subplot(gs[place+12])
+#ax.imshow(im1,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax=plt.subplot(gs[place+13])
+#ax.imshow(im2,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
 
-txt=str(np.round(float(info[1]),2))+" dB"
-ax=plt.subplot(gs[1,12:14])
-ax.set_xticks([])
-ax.set_yticks([])
-ax.axis('off')
-plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
+#txt=str(np.round(float(info[1]),2))+" dB"
+#ax=plt.subplot(gs[1,12:14])
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax.axis('off')
+#plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 
 #Set6
-i=5
-im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
-info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
-im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
-ax=plt.subplot(gs[place+15])
-ax.imshow(im1,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
-ax=plt.subplot(gs[place+16])
-ax.imshow(im2,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
+#i=11#5
+#im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
+#info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
+#im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
+#ax=plt.subplot(gs[place+15])
+#ax.imshow(im1,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax=plt.subplot(gs[place+16])
+#ax.imshow(im2,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
 
-txt=str(np.round(float(info[1]),2))+" dB"
-ax=plt.subplot(gs[1,15:17])
-ax.set_xticks([])
-ax.set_yticks([])
-ax.axis('off')
-plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
+#txt=str(np.round(float(info[1]),2))+" dB"
+#ax=plt.subplot(gs[1,15:17])
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax.axis('off')
+#plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 #labels
 
 
 #Set1
 row=2
 place=row*17
-i=6
+i=4
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
 im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
@@ -174,7 +173,7 @@ ax.axis('off')
 plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 #Set2
-i=7
+i=5
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
 im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
@@ -195,7 +194,7 @@ plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 
 #Set3
-i=8
+i=6#8
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
 im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
@@ -215,7 +214,7 @@ ax.axis('off')
 plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 #Set4
-i=9
+i=7#9
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
 im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
@@ -233,53 +232,54 @@ ax.set_xticks([])
 ax.set_yticks([])
 ax.axis('off')
 plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
-#Set5
-i=10
-im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
-info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
-im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
-ax=plt.subplot(gs[place+12])
-ax.imshow(im1,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
-ax=plt.subplot(gs[place+13])
-ax.imshow(im2,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
-txt=str(np.round(float(info[1]),2))+" dB"
 
-ax=plt.subplot(gs[3,12:14])
-ax.set_xticks([])
-ax.set_yticks([])
-ax.axis('off')
-plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
+#Set5
+#i=10
+#im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
+#info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
+#im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
+#ax=plt.subplot(gs[place+12])
+#ax.imshow(im1,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax=plt.subplot(gs[place+13])
+#ax.imshow(im2,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
+#txt=str(np.round(float(info[1]),2))+" dB"
+
+#ax=plt.subplot(gs[3,12:14])
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax.axis('off')
+#plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 
 #Set6
-i=11
-im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
-info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
-im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
-ax=plt.subplot(gs[place+15])
-ax.imshow(im1,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
-ax=plt.subplot(gs[place+16])
-ax.imshow(im2,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
-txt=str(np.round(float(info[1]),2))+" dB"
-ax=plt.subplot(gs[3,15:17])
-ax.set_xticks([])
-ax.set_yticks([])
-ax.axis('off')
-plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
+#i=11
+#im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
+#info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
+#im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
+#ax=plt.subplot(gs[place+15])
+#ax.imshow(im1,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax=plt.subplot(gs[place+16])
+#ax.imshow(im2,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
+#txt=str(np.round(float(info[1]),2))+" dB"
+#ax=plt.subplot(gs[3,15:17])
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax.axis('off')
+#plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 
 #Set1
 row=4
 place=row*17
-i=12
+i=8
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
 im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
@@ -300,7 +300,7 @@ plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 
 #Set2
-i=13
+i=9
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
 im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
@@ -321,7 +321,7 @@ plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 
 #Set3
-i=14
+i=10
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
 im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
@@ -343,7 +343,7 @@ plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 
 #Set4
-i=15
+i=11
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
 im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
@@ -363,50 +363,50 @@ ax.axis('off')
 plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 #Set5
-i=16
-im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
-info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
-im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
-ax=plt.subplot(gs[place+12])
-ax.imshow(im1,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
-ax=plt.subplot(gs[place+13])
-ax.imshow(im2,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
-txt=str(np.round(float(info[1]),2))+" dB"
+#i=13
+#im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
+#info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
+#im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
+#ax=plt.subplot(gs[place+12])
+#ax.imshow(im1,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax=plt.subplot(gs[place+13])
+#ax.imshow(im2,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
+#txt=str(np.round(float(info[1]),2))+" dB"
 
-ax=plt.subplot(gs[5,12:14])
-ax.set_xticks([])
-ax.set_yticks([])
-ax.axis('off')
-plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
+#ax=plt.subplot(gs[5,12:14])
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax.axis('off')
+#plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 
 #Set6
-i=17
-im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
-info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
-im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
-ax=plt.subplot(gs[place+15])
-ax.imshow(im1,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
-ax=plt.subplot(gs[place+16])
-ax.imshow(im2,interpolation="none",cmap="Greys")
-ax.set_xticks([])
-ax.set_yticks([])
-txt=str(np.round(float(info[1]),2))+" dB"
+#i=17
+#im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
+#info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
+#im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
+#ax=plt.subplot(gs[place+15])
+#ax.imshow(im1,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax=plt.subplot(gs[place+16])
+#ax.imshow(im2,interpolation="none",cmap="Greys")
+#ax.set_xticks([])
+#ax.set_yticks([])
+#txt=str(np.round(float(info[1]),2))+" dB"
 
-ax=plt.subplot(gs[5,15:17])
-ax.set_xticks([])
-ax.set_yticks([])
-ax.axis('off')
-plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
+#ax=plt.subplot(gs[5,15:17])
+#ax.set_xticks([])
+#ax.set_yticks([])
+#ax.axis('off')
+#plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 gs.update(left=0.1,right=0.9,top=0.9,bottom=0.1,wspace=0.1,hspace=00.001)
 
-plt.tight_layout()
+#plt.tight_layout()
 #plt.show()
 plt.savefig("RecSwatches.png", bbox_inches='tight')

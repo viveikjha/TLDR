@@ -63,7 +63,7 @@ function COLD_LAUNCH(FILES_ARR,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot
 
 	#data_report(DATA)
 	Pars = init_Params()
-	Pars.num_tdf_times=50
+	Pars.num_tdf_times=10
 
 	 Mats=Gen_Mats(DATA,Pars)
 
@@ -111,40 +111,41 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 	N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
 
-	if isnan(Fit.TI) == false && isnan(Fit.TI2) == false
-		if Fit.TI != Fit.TI2
-			sol1=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
-			writecsv(string(Pars.directory,"tiksol_init.csv"),sol1)
-			X.vdm=copy(sol1)
-			sol1=0
-			sol2=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI2,plotting=false,save=false)
-			writecsv(string(Pars.directory,"tiksol_init2.csv"),sol2)
-			Z.vdm=copy(sol2)
-			sol2=0
-		else
-			sol1=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
-			writecsv(string(Pars.directory,"tiksol_init.csv"),sol1)
-			X.vdm=copy(sol1)
-			Z.vdm=copy(sol1)
-			sol1=0
-		end
-	elseif isnan(Fit.TI) == false && isnan(Fit.TI2) == true
-		sol1=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
-		writecsv(string(Pars.directory,"tiksol_init.csv"),sol1)
-		X.vdm=copy(sol1)
-		Z.vdm=copy(sol1)
-		sol1=0
-	else
-		println("You have made an error with Tikhonov initialization. If only one Tikhonov initialization is to be used, Fit.TI should be used, not Fit.TI2")
-		X.vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
-		Z.vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
-	end
-	if Plot_A == true
-		imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Reds")
+	#if isnan(Fit.TI) == false && isnan(Fit.TI2) == false
+		#if Fit.TI != Fit.TI2
+			#sol1=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
+			#writecsv(string(Pars.directory,"tiksol_init.csv"),sol1)
+			#X.vdm=copy(sol1)
+			#sol1=0
+			#sol2=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI2,plotting=false,save=false)
+			#writecsv(string(Pars.directory,"tiksol_init2.csv"),sol2)
+			#Z.vdm=copy(sol2)
+			#sol2=0
+		#else
+			#sol1=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
+			#writecsv(string(Pars.directory,"tiksol_init.csv"),sol1)
+			#X.vdm=copy(sol1)
+			#Z.vdm=copy(sol1)
+			#sol1=0
+		#end
+	#elseif isnan(Fit.TI) == false && isnan(Fit.TI2) == true
+		#sol1=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=Fit.TI,plotting=false,save=false)
+		#writecsv(string(Pars.directory,"tiksol_init.csv"),sol1)
+		#X.vdm=copy(sol1)
+		#Z.vdm=copy(sol1)
+		#sol1=0
+	#else
+		#println("You have made an error with Tikhonov initialization. If only one Tikhonov initialization is to be used, Fit.TI should be used, not Fit.TI2")
+		#X.vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
+		#Z.vdm=zeros(Pars.num_tdf_times,DATA.num_lines)
+	#end
+	#if Plot_A == true
+		#imshow(init_vdm,aspect="auto",origin="lower",interpolation="None",cmap="Reds")
 		#colorbar()
 		#show()
-	end
-	writecsv(string(Pars.directory,"tiksol_init.csv"),init_vdm)
+
+	#end
+	#writecsv(string(Pars.directory,"tiksol_init.csv"),init_vdm)
 	#init_vdm=randn(size(init_vdm)) #Start from Random
 	#init_vdm=0.0*randn(size(init_vdm)) #Start from Random
 	tmax=5.0
@@ -330,15 +331,15 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			Record.J[Pars.it-1]=J(X,P,T,V,N,DATA,Mats,Pars)
 
 			#Record.Z_res[Pars.it-1]=ell2norm(abs.(X.vdm-Z.vdm))
-			Record.Z_res[Pars.it-1]=vecnorm(abs.(X.vdm-Z.vdm),2)
+			Record.Z_res[Pars.it-1]=vecnorm(abs.(X.vdm-Z.vdm)[:],2)
 			#Record.T_res[Pars.it-1]=ell2norm(abs.(Mats.Ds*X.vdm-T.vdm))
-			Record.T_res[Pars.it-1]=vecnorm(abs.(Mats.Ds*X.vdm-T.vdm),2)
+			Record.T_res[Pars.it-1]=vecnorm(abs.(Mats.Ds*X.vdm-T.vdm)[:],2)
 			#Record.N_res[Pars.it-1]=ell2norm(abs.(X.vdm-N.vdm))
-			Record.N_res[Pars.it-1]=vecnorm(abs.(X.vdm-N.vdm),2)
+			Record.N_res[Pars.it-1]=vecnorm(abs.(X.vdm-N.vdm)[:],2)
 			#Record.V_res[Pars.it-1]=ell2norm(abs.(X.vdm*Mats.Dv-V.vdm))
-			Record.V_res[Pars.it-1]=vecnorm(abs.(X.vdm*Mats.Dv-V.vdm),2)
+			Record.V_res[Pars.it-1]=vecnorm(abs.(X.vdm*Mats.Dv-V.vdm)[:],2)
 			#Record.P_res[Pars.it-1]=ell2norm(abs.(X.vdm-P.vdm))
-			Record.P_res[Pars.it-1]=vecnorm(abs.(X.vdm-P.vdm),2)
+			Record.P_res[Pars.it-1]=vecnorm(abs.(X.vdm-P.vdm)[:],2)
 		end
 		#Plotting
 		if Plot_A == true && (Pars.it%50 == 0)
@@ -459,8 +460,8 @@ function adapt(J,Kvdm,Kvdm_previous,KUI_previous,KUI,k)
 	DK=Kvdm-Kvdm_previous
 
 	#SPECTRAL STEP SIZES
-	Alpha_SD=dot(DJUI,DJUI)/dot(DJ,DJUI)
-	Alpha_MG=dot(DJ,DJUI)/dot(DJ,DJ)
+	Alpha_SD=vecdot(DJUI,DJUI)/vecdot(DJ,DJUI)
+	Alpha_MG=vecdot(DJ,DJUI)/vecdot(DJ,DJ)
 	#Alpha_SD=vecdot(DJUI,DJUI)/vecdot(DJ,DJUI)
 	#Alpha_MG=vecdot(DJ,DJUI)/vecdot(DJ,DJ)
 
@@ -509,5 +510,23 @@ function adapt(J,Kvdm,Kvdm_previous,KUI_previous,KUI,k)
 	J.rho=tau
 end
 
-
-end #endmodule
+#=--------------------------------------------------=#
+#===============  Wavelets  =================#
+#=--------------------------------------------------=#
+	#wavelet_bases=[WT.db1,WT.db2,WT.db3,WT.db4,WT.db5,WT.db7,WT.db8,WT.haar]; #Set once at beginning
+#	Wx=Array{Floag64}(nx*ny,length(wavelet_bases)) #nx and ny will be num_tdf_times and num???
+#	IWx=Array{Floag64}(nx*ny,length(wavelet_bases)) #nx and ny will be num_tdf_times and num???
+#	function W(mat)
+#		for i=1:length(wavelet_bases)
+#			Wu[:,i]=vec(dwt(reshape(mat,nx,ny),wavelet(wavelet_bases[i])))
+#		end
+#		Wu
+#	end
+#	function Wt(mat)
+#		for i:length(wavelet_bases)
+#			IWu[:,i]=vec(idwt(reshape(mat[:,i],(nx,ny)), wavelet(wavelet_bases[i])))
+#		end
+#		sum(IWu,2); #/length(wavelet_bases) ##Not sure why the divide isn't used.
+#	end
+#	WtW=length(wavelet_bases*eye(nx,ny))
+#end #endmodule
