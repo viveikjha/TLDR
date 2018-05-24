@@ -1,4 +1,5 @@
 module RMTypes
+using Wavelets
 export ADMM_IMAGE,Data,Params,Fit_Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats,init_fit,Init_Record_Data
 #export ADMM_IMAGE,Fit_Params,Params,Matrices_S,Data,Rec_Data
 mutable struct ADMM_IMAGE
@@ -58,6 +59,11 @@ mutable struct Params
 	l1V_state::Bool																	#23
 	directory::String
 	threshold::Real
+	wavelet_bases::AbstractArray{}
+	DvM::Array{Float64}
+	DsM::Array{Float64}
+	IDvM::Array{Float64}
+	IDsM::Array{Float64}
 end
 
 mutable struct Data
@@ -103,13 +109,13 @@ function Init_Record_Data(nits)
 	Rec_Data(ones(nits)+5,zeros(nits),zeros(nits),zeros(nits),zeros(nits),zeros(nits),zeros(nits),zeros(nits))
 end
 
-function init_IMAGE(rho,nt,nl)
+function init_IMAGE(rho,dims)
 	#           1, 2, 3, 4, 5, 6,  7,  8,  9, 10, 11, 12,   13, 14
-	ADMM_IMAGE(Array{Float64}(nt,nl),Array{Float64}(nt,nl),Array{Float64}(nt,nl),Array{Float64}(nt,nl),Array{Float64}(nt,nl),Array{Float64}(nt,nl),rho,Inf,0.0,0.0,0.0,0.0,1.0e3,2.0)
+	ADMM_IMAGE(Array{Float64}(dims),Array{Float64}(dims),Array{Float64}(dims),Array{Float64}(dims),Array{Float64}(dims),Array{Float64}(dims),rho,Inf,0.0,0.0,0.0,0.0,1.0e3,2.0)
 end
 
 function init_Params()
-  Params(2,0,50,2.0,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true,"",1.0e-7)
+  Params(2,0,50,2.0,0.0,50,0.1,1.0,1.0,1.0,1.0,0.0,0.01,0.75,10.0,1.0,50.0,Inf,collect(1.0:((50-1.0)/(50-1)):50),zeros(50),true,true,true,"",1.0e-7,[],[],[],[],[])
 end
 
 function init_Data()

@@ -7,7 +7,7 @@ using RMLibMore
 using RMTypes
 using DataImportNEW
 using GenMatrices
-
+using Wavelets
 #include("RMLibMore.jl")
 #include("RMTypes.jl")
 #include("DataImport.jl")
@@ -104,12 +104,26 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	initial_psi = 0.0  #Initial value for PSI
 	#ADMM ARRAYS:
 	Con_Arr = zeros(DATA.num_lines)
-	X= Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	Z = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	T = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	V = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	P = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
-	N = Gen_Var(Pars.rho0,Pars.num_tdf_times,DATA.num_lines,initial_psi)
+
+	dims=(Pars.num_tdf_times,DATA.num_lines)
+	Pars.wavelet_bases=[WT.db1,WT.db2,WT.db3,WT.db4,WT.db5,WT.db7,WT.db8,WT.haar];
+	Pars.DvM=Array{Float64}(dims[1],dims[2],length(Pars.wavelet_bases))
+	Pars.DsM=Array{Float64}(dims[1],dims[2],length(Pars.wavelet_bases))
+
+	#IWx=Array{Floa64}(nx*ny,length(wavelet_bases)) #nx and ny will be num_tdf_times and num???
+	Pars.IDvM=Array{Float64}(dims[1],dims[2],length(Pars.wavelet_bases))
+	Pars.IDsM=Array{Float64}(dims[1],dims[2],length(Pars.wavelet_bases))
+
+
+	X= Gen_Var(Pars.rho0,dims,initial_psi)
+	Z = Gen_Var(Pars.rho0,dims,initial_psi)
+	P = Gen_Var(Pars.rho0,dims,initial_psi)
+	N = Gen_Var(Pars.rho0,dims,initial_psi)
+
+	#THESE WILL NEED TO CHANGE FOR WAVELETS. 3D OR JUST EXTENDED...
+	wdims=(Pars.num_tdf_times,DATA.num_lines,length(Pars.wavelet_bases)) #WAVELETS
+	T = Gen_Var(Pars.rho0,wdims,initial_psi)
+	V = Gen_Var(Pars.rho0,wdims,initial_psi)
 
 	#if isnan(Fit.TI) == false && isnan(Fit.TI2) == false
 		#if Fit.TI != Fit.TI2
@@ -171,20 +185,24 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		end
 	end
 
-#	X.vdm = copy(init_vdm)
+	#X.vdm = copy(init_vdm)
 	#zinis=gen_tiksol(Pars,Mats,DATA;scale=1.0,mu_smoo=1000.0,plotting=false,save=false)
 	#Z.vdm = copy(init_vdm)
-	T.vdm = Mats.Ds*copy(X.vdm)
-	V.vdm = copy(Z.vdm)*Mats.Dv
-	P.vdm = pos_prox_op(copy(X.vdm))
-	N.vdm = copy(X.vdm)
+	#T.vdm = Mats.Ds*copy(X.vdm)
+	#T.vdm = Ds(X.vdm) #Wavelets
+	#V.vdm = copy(Z.vdm)*Mats.Dv
+	#V.vdm = Dv(Z.vdm) #WAVELETS
+	#P.vdm = pos_prox_op(copy(X.vdm))
+	#N.vdm = copy(X.vdm)
 	init_vdm=0 #Memory Release
+
 	#Initiailize Penalty Parameters.
 	Z.rho= Fit.pz
 	P.rho=copy(Fit.pp)
+	N.rho=copy(Fit.pn)
 	T.rho=copy(Fit.pt)
 	V.rho=copy(Fit.pv)
-	N.rho=copy(Fit.pn)
+
 	#println(typeof(DATA.L))
 	siglvl=abs(median(DATA.L))
 
@@ -197,12 +215,12 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			Report(X,Z,P,T,V,N,DATA,Mats,Pars;Jf=true,s=false,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,Msg=" -Tik_Init-")
 	end
 	#=  Calculate Initial Multipliers & RHO =#
-	Z.U=Z.U+1
-
-	V.U = copy(Z.U)
-	T.U = copy(Z.U)
-	P.U = copy(Z.U)
-	N.U = copy(Z.U)
+	IU=1.0
+	fill!(Z.U,IU)
+	fill!(V.U,IU)
+	fill!(T.U,IU)
+	fill!(P.U,IU)
+	fill!(N.U,IU)
 
 	Qinv = zeros(Pars.num_tdf_times,Pars.num_tdf_times)
 	B = zeros(Pars.num_tdf_times,DATA.num_lines)
@@ -221,12 +239,14 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		P.vdm_previous = copy(P.vdm)
 		P.vdm = pos_prox_op(P.vdm_squiggle)
 
-		T.vdm_squiggle = Mats.Ds*X.vdm-T.U./T.rho
+		#T.vdm_squiggle = Mats.Ds*X.vdm-T.U./T.rho
+		T.vdm_squiggle = Ds(X.vdm,Pars)-T.U./T.rho	#WAVELETS
 		T.vdm_previous = copy(T.vdm)
 		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Fit.mtem,T.rho)
 		#T.vdm=ell2_prox_op(T.vdm_squiggle,Fit.mtem,T.rho)
 
-		V.vdm_squiggle = Z.vdm*Mats.Dv - V.U./V.rho
+		#V.vdm_squiggle = Z.vdm*Mats.Dv - V.U./V.rho
+		V.vdm_squiggle = Dv(Z.vdm,Pars) - V.U./V.rho	#WAVELETS
 		V.vdm_previous = copy(V.vdm)
 		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Fit.mspe,V.rho)
 		#V.vdm=ell2_prox_op(V.vdm_squiggle,Fit.mspe,V.rho)
@@ -239,17 +259,27 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats)
 
 		#Step 4: UPDATE LAGRANGE MULTIPLIERS
-		T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
-		V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
+		#CHANGE
+		#T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
+		T.U = LG_update(T.U,T.vdm,Ds(X.vdm,Pars),T.rho,Pars.alpha)	#WAVELETS
+
+		#V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
+		V.U = LG_update(V.U,V.vdm,Dv(Z.vdm,Pars),V.rho,Pars.alpha) #WAVELETS
+
+
 		N.U = LG_update(N.U,N.vdm,X.vdm,N.rho,Pars.alpha)
 		P.U = LG_update(P.U,P.vdm,X.vdm,P.rho,Pars.alpha)
 		Z.U = LG_update(Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha)
 
 		#Step 5: UPDATE INTERMEDIATE MULTIPLIERS
 		T.UI_previous=copy(T.UI)
-		T.UI = IM_update(T.UI,T.vdm,Mats.Ds*X.vdm_previous,T.rho)
+		#T.UI = IM_update(T.UI,T.vdm,Mats.Ds*X.vdm_previous,T.rho)
+		T.UI = IM_update(T.UI,T.vdm,Ds(X.vdm_previous,Pars),T.rho) #Wavelets
 		V.UI_previous=copy(V.UI)
-		V.UI = IM_update(V.UI,V.vdm,Z.vdm_previous*Mats.Dv,V.rho)
+		#V.UI = IM_update(V.UI,V.vdm,Z.vdm_previous*Mats.Dv,V.rho)
+		V.UI = IM_update(V.UI,V.vdm,Dv(Z.vdm_previous,Pars),V.rho)	#WAVELETS
+
+
 		N.UI_previous=copy(N.UI)
 		N.UI = IM_update(N.UI,N.vdm,X.vdm_previous,N.rho)
 		P.UI_previous=copy(P.UI)
@@ -258,13 +288,17 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Z.UI = IM_update(Z.UI,Z.vdm,X.vdm_previous,Z.rho)
 
 		#Step 6: UPDATE RHO
-		if (Pars.it%2 == 0) #UPUDATE EVERY ## ITERATIONS
-			adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-			adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
-			adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-			adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-			adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-		end
+#		if (Pars.it%2 == 0) #UPUDATE EVERY ## ITERATIONS
+			#adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+#			adapt(T,Ds(X.vdm),Ds(X.vdm_previous),Z.UI_previous,Z.UI,Pars.it) #WAVELETS #TROUBLE HERE!
+
+			#adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
+#			adapt(V,Dv(Z.vdm),Dv(Z.vdm_previous),Z.UI_previous,Z.UI,Pars.it) #WAVELETS #TROUBLE HERE!
+#
+#			adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+#			adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+#			adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+#		end
 
   	if Pars.it == 2
 
@@ -383,15 +417,16 @@ end
 #============= Generate ADMM Variable ===============#
 #=--------------------------------------------------=#
 #Intializes and fills the regularization terms for ADMM
- function Gen_Var(rhoi, num_tdf_times,num_lines,psi)
-	x = init_IMAGE(rhoi,num_tdf_times,num_lines)
-	x.vdm = zeros((num_tdf_times,num_lines))
+ function Gen_Var(rhoi, dims,psi)
+	#dims=num_tdf_times,num_lines
+	x = init_IMAGE(rhoi,dims)
+	x.vdm = zeros(dims)
 	fill!(x.vdm,psi)
-	x.vdm_squiggle = zeros((num_tdf_times,num_lines))
+	x.vdm_squiggle = zeros(dims)
 	fill!(x.vdm_squiggle,psi)
-	x.U=zeros((num_tdf_times,num_lines))
-	x.UI=zeros((num_tdf_times,num_lines))
-	x.UI_previous=zeros((num_tdf_times,num_lines))
+	x.U=zeros(dims)
+	x.UI=zeros(dims)
+	x.UI_previous=zeros(dims)
 	x
 end
 
@@ -404,8 +439,12 @@ function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 	#vdm = Array(Float64,s[1],s[2])
 	vdm = Array{Float64}(s[1],s[2]) #UPDATE FOR JV0.6.2
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-			Q = Mats.HT * Mats.W[:,:,l] * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-			B = Mats.HT* Mats.W[:,:,l] * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+			#Q = Mats.HT * Mats.W[:,:,l] * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+			#B = Mats.HT* Mats.W[:,:,l] * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+			DsTDs=length(Pars.wavelet_bases)*eye(s[1],s[2]) #not sure where the length( should end......
+			Q = Mats.HT * Mats.W[:,:,l] * Mats.H + T.rho*DsTDs+(Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+			B = Mats.HT* Mats.W[:,:,l] * DATA.L + DsT(T.U+T.rho.*T.vdm,Pars)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+
 			G=inv(Q)*B
 			vdm[:,l] = G[:,l]
 	end
@@ -417,9 +456,13 @@ end
 #=============== Minimization wrt Z =================#
 #=--------------------------------------------------=#
 function min_wrt_z(X,V,Z,Pars,DATA,Mats)
-  	Rinv = inv(V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe)
-    C = (V.U+V.rho.*V.vdm)*Mats.DvT-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
-		Z.vdm = 	C*Rinv
+  	#Rinv = inv(V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe)
+    #C = (V.U+V.rho.*V.vdm)*Mats.DvT-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
+	dims=size(X.vdm)
+	DvTDv=length(Pars.wavelet_bases)*eye(dims[1],dims[2]) #not sure where the length( should end......
+	Rinv = inv(V.rho.*DvTDv+Z.rho.*Mats.Gammaspe)
+    C = DvT(V.U+V.rho.*V.vdm,Pars)-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
+	Z.vdm = 	C*Rinv
 end
 
 #=--------------------------------------------------=#
@@ -462,9 +505,6 @@ function adapt(J,Kvdm,Kvdm_previous,KUI_previous,KUI,k)
 	#SPECTRAL STEP SIZES
 	Alpha_SD=vecdot(DJUI,DJUI)/vecdot(DJ,DJUI)
 	Alpha_MG=vecdot(DJ,DJUI)/vecdot(DJ,DJ)
-	#Alpha_SD=vecdot(DJUI,DJUI)/vecdot(DJ,DJUI)
-	#Alpha_MG=vecdot(DJ,DJUI)/vecdot(DJ,DJ)
-
 
 	if 2.0*Alpha_MG > Alpha_SD
 		Alpha=Alpha_MG
@@ -514,19 +554,62 @@ end
 #===============  Wavelets  =================#
 #=--------------------------------------------------=#
 	#wavelet_bases=[WT.db1,WT.db2,WT.db3,WT.db4,WT.db5,WT.db7,WT.db8,WT.haar]; #Set once at beginning
-#	Wx=Array{Floag64}(nx*ny,length(wavelet_bases)) #nx and ny will be num_tdf_times and num???
-#	IWx=Array{Floag64}(nx*ny,length(wavelet_bases)) #nx and ny will be num_tdf_times and num???
-#	function W(mat)
-#		for i=1:length(wavelet_bases)
-#			Wu[:,i]=vec(dwt(reshape(mat,nx,ny),wavelet(wavelet_bases[i])))
-#		end
-#		Wu
-#	end
+	#Wx=Array{Float64}(nx*ny,length(wavelet_bases)) #nx and ny will be num_tdf_times and num???
+	#DvM=Array{Float64}(nx,ny,length(wavelet_bases))
+	#DsM=Array{Float64}(nx,ny,length(wavelet_bases))
+
+	#IWx=Array{Floa64}(nx*ny,length(wavelet_bases)) #nx and ny will be num_tdf_times and num???
+	#IDvM=Array{Float64}(nx,ny,length(wavelet_bases))
+	#IDsM=Array{Float64}(nx,ny,length(wavelet_bases))
+
+
+	#X[:,#] gives columns X[#,:] gives rows
+	function Dv(mat,Params)
+		for i = 1:length(Params.wavelet_bases)
+			for j = 1:size(mat)[1]
+				Params.DvM[j,:,i]=vec(dwt(vec(mat[j,:]),wavelet(Params.wavelet_bases[i])))
+			end
+		end
+		Params.DvM
+	end
+
+	function Ds(mat,Params)
+		for i = 1:length(Params.wavelet_bases)
+			for j = 1:size(mat)[2]
+				Params.DsM[:,j,i]=vec(dwt(vec(mat[:,j]),wavelet(Params.wavelet_bases[i])))
+			end
+		end
+		Params.DsM
+	end
+
+
 #	function Wt(mat)
 #		for i:length(wavelet_bases)
 #			IWu[:,i]=vec(idwt(reshape(mat[:,i],(nx,ny)), wavelet(wavelet_bases[i])))
 #		end
-#		sum(IWu,2); #/length(wavelet_bases) ##Not sure why the divide isn't used.
+#		sum(IWu,2);
 #	end
-#	WtW=length(wavelet_bases*eye(nx,ny))
-#end #endmodule
+
+	function DvT(mat,Params)
+		for i = 1:length(Params.wavelet_bases)
+			for j=1:size(mat)[1]
+				Params.IDvM[j,:,i]=vec(idwt(vec(mat[j,:,i]),wavelet(Params.wavelet_bases[i])))
+			end
+		end
+		reshape(sum(Params.IDvM,3)/length(Params.wavelet_bases),(size(mat)[1],size(mat)[2]));
+	end
+
+	function DsT(mat,Params)
+		for i = 1:length(Params.wavelet_bases)
+			for j=1:size(mat)[2]
+				Params.IDsM[:,j,i]=vec(idwt(vec(mat[:,j]),wavelet(Params.wavelet_bases[i])))
+			end
+		end
+		reshape(sum(Params.IDsM,3)/length(Params.wavelet_bases),(size(mat)[1],size(mat)[2]));
+	end
+
+
+
+	#DvTDv=length(wavelet_bases*eye(nx,ny))
+	#DsTDs=length(wavelet_bases*eye(nx,ny))
+end #endmodule

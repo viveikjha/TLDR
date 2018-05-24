@@ -191,8 +191,8 @@ end
 #Writes VDM and relevent info to FITS file & Header
 function Write_FITS(X,P)
 	Date = ["Date",string(Dates.today()),""]
-	it = ["it", P.it, "Iterations to convergence"]
-	conflag = ["ConFlag", P.conflag, "Convergence Flag"]
+	it = ["it", P.it, "Iterations to converce"]
+	conflag = ["ConFlag", P.conflag, "Converce Flag"]
 	nit = ["max_its", P.nits, "Max number of iterations allowed."]
 	mu_smoo = ["mu_smo", P.mu_smoo,"Weight of smoothing regularizer."]
 	mu_spec = ["mu_spe", P.mu_spec, "Weight of spectral regularizer."]
@@ -359,14 +359,14 @@ function plotfin(Plot_F,X,Z,T,V)
   	end
   end
 
-	#function gen_tiksol(DATA,Pars,Mats;scale=1.0,mu_smoo=40.0)
+	#function _tiksol(DATA,Pars,Mats;scale=1.0,mu_smoo=40.0)
 
 
-	function gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=40.0,plotting=false,save=false)
+	function _tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=40.0,plotting=false,save=false)
 	  #Par,Mats,DATA=getdata(f)
 	  #println("µ: ",mu_smoo)
 	  Pars= init_Params()
-	  Mats = Gen_Mats(DATA,Pars)
+	  Mats = _Mats(DATA,Pars)
 
 	  #end
 	  Pars.mu_smoo=copy(mu_smoo)
