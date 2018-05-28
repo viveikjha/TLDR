@@ -63,7 +63,7 @@ function COLD_LAUNCH(FILES_ARR,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,Plot
 
 	#data_report(DATA)
 	Pars = init_Params()
-	Pars.num_tdf_times=10
+	Pars.num_tdf_times=10 #SHOULD NOT BE HARDcoded
 
 	 Mats=Gen_Mats(DATA,Pars)
 
@@ -288,17 +288,17 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		Z.UI = IM_update(Z.UI,Z.vdm,X.vdm_previous,Z.rho)
 
 		#Step 6: UPDATE RHO
-#		if (Pars.it%2 == 0) #UPUDATE EVERY ## ITERATIONS
+		if (Pars.it%10 == 0 || Pars.it==2) #UPUDATE EVERY ## ITERATIONS
 			#adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-#			adapt(T,Ds(X.vdm),Ds(X.vdm_previous),Z.UI_previous,Z.UI,Pars.it) #WAVELETS #TROUBLE HERE!
+			adapt(T,Ds(X.vdm,Pars),Ds(X.vdm_previous,Pars),Ds(Z.UI_previous,Pars),Ds(Z.UI,Pars),Pars.it) #WAVELETS #TROUBLE HERE!
 
 			#adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
-#			adapt(V,Dv(Z.vdm),Dv(Z.vdm_previous),Z.UI_previous,Z.UI,Pars.it) #WAVELETS #TROUBLE HERE!
+			adapt(V,Dv(Z.vdm,Pars),Dv(Z.vdm_previous,Pars),Dv(Z.UI_previous,Pars),Dv(Z.UI,Pars),Pars.it) #WAVELETS #TROUBLE HERE!
 #
-#			adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-#			adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-#			adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-#		end
+			adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+		end
 
   	if Pars.it == 2
 
