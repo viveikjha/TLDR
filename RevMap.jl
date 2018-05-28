@@ -29,7 +29,7 @@ DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 #save_data(string(prefix,"TLDR_data.jld"),DATA)
 Pars= init_Params()
 Pars.directory=prefix
-Pars.nits=500
+Pars.nits=1000
 Pars.num_tdf_times=10
 Pars.alpha=1.2
 Mats=Gen_Mats(DATA,Pars)
@@ -40,12 +40,13 @@ Mats=Gen_Mats(DATA,Pars)
 print_with_color(:green,"beginning reconstruction\n")
 scale=1.0e0
 
-Pars.threshold=1.0e-5
+Pars.threshold=1.0e-4
 Fit=init_fit()
-Fit.mtem = 10.0   #GOES WITH T
-Fit.mspe = 10.0    #GOES WITH V
-Fit.ml1 = 10.0
-Fit.msmo = 10.0
+Fit.waves=false   #Use wavelets
+Fit.mtem = 1.0   #GOES WITH T
+Fit.mspe = 1.0    #GOES WITH V
+Fit.ml1 = 1.0
+Fit.msmo = 1.0
 
 Fit.pz=1.0
 Fit.pp=1.0
@@ -61,5 +62,5 @@ tic()
 K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=false,RepIt=true,RepF=false,RecD=false); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
 toc()
 vdm=copy(K.vdm)
-writecsv(string(prefix,"RevMapResult.csv"),vdm)
-#println("wrote result to RevMapResult.csv")
+writecsv(string("RevMapResult.csv"),vdm)
+")

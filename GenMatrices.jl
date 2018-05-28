@@ -48,11 +48,14 @@ function Gen_Mats(DATA,Params)
 
 
 	num_spectra_dates=size(DATA.spectra_dates)[1]
-	W = zeros((DATA.num_lines,size(DATA.L)[1],size(DATA.L)[1]))	#Old Version
 
 	#println(DATA.num_lines)
 	#println(num_spectra_dates)
+	Mat.HT = H'
+
 	W = zeros((size(DATA.L)[1],size(DATA.L)[1],DATA.num_lines)) 	#New Version
+	HTWH=zeros((size(Mat.HT)[1],size(H)[2],DATA.num_lines))
+	HTWL=zeros((size(Mat.HT)[1],size(DATA.L)[2],DATA.num_lines))
 	#println("AT W Generation: ", size(W))
 		for lam in collect(1:DATA.num_lines)
 		  T = eye(num_spectra_dates)
@@ -61,18 +64,21 @@ function Gen_Mats(DATA,Params)
 		  end
 		  #W[lam,:,:] = T #Old Version
 			W[:,:,lam] = T # New  Version
-
+			tmp1=Mat.HT*T*Mat.H
+			tmp2=Mat.HT*T*DATA.L
+			HTWH[:,:,lam]=tmp1
+			HTWL[:,:,lam]=tmp2
 		end
 
-	#where nx would be the array on the diagonal.
-	#W=spdiagm((o[1:nx],0), (0,1), nx, nx)
-	#Not sure how to get 3d. CANT DO RECTANGULAR
+
 	Mat.W= W
-	Mat.HT = H'
 	Mat.Gammatdf = eye(Params.num_tdf_times)
 	Mat.GammatdfT = Mat.Gammatdf'
 	Mat.Gammaspe = eye(DATA.num_lines)
 	Mat.GammaspeT = Mat.Gammaspe'
+	Mat.HTWH=HTWH
+	writecsv("HTWL.csv",HTWL)
+	Mat.HTWL=HTWL
 	gc()
 	Mat #Return Data Structure
 end #endfunction

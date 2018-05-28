@@ -16,7 +16,7 @@ pb="10x10/"
 names=["box"]
 nps=3
 #m1=logspace(0.0,3.0,nps)
-m1=linspace(1.0,100.0,nps)
+m1=linspace(1.0,60.0,nps)
 #m2=logspace(2.0,2.0,nps)
 #m3=logspace(2.0,2.5,nps)
 count=0
@@ -53,6 +53,8 @@ for i in range(1,length(names))
     Pars.nits=2000
     Pars.alpha=1.2
     Pars.num_tdf_times=10
+    Pars.threshold=1.0e-5
+
     Mats=Gen_Mats(DATA,Pars)
 
     #SAVE DATASET
@@ -92,7 +94,7 @@ for i in range(1,length(names))
               else
                 col=:blue #did not converge
               end
-              print_with_color(col,string("#",mastercount, " of ", totalcount, " chi2: ", round(Pars.chi2), " Iterations: ", Pars.it, "\n"))
+              print_with_color(col,string("#",mastercount, " of ", totalcount, " chi2: ", round(Pars.chi2,4), " Iterations: ", Pars.it, "\n"))
               if Pars.chi2 < clim
                 repname=string(bpf,"batch/",string(count),".txt")
                 s1=string("Msmo: ",msmo, " RhoS: ",pz )

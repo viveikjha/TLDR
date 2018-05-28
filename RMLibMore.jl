@@ -359,24 +359,23 @@ function plotfin(Plot_F,X,Z,T,V)
   	end
   end
 
-	#function _tiksol(DATA,Pars,Mats;scale=1.0,mu_smoo=40.0)
 
 
-	function _tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=40.0,plotting=false,save=false)
+	function gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=40.0,plotting=false,save=false)
 	  #Par,Mats,DATA=getdata(f)
 	  #println("µ: ",mu_smoo)
 	  Pars= init_Params()
-	  Mats = _Mats(DATA,Pars)
+	  Mats = Gen_Mats(DATA,Pars)
 
 	  #end
 	  Pars.mu_smoo=copy(mu_smoo)
 	  vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
     #slice_size=size(Mats.W)
 	  for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-      Q = Mats.HT * Mats.W[:,:,l] * Mats.H +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-      B = Mats.HT* Mats.W[:,:,l] * DATA.L
-			G=inv(Q)*B
-			vdm[:,l] = G[:,l]
+          Q = Mats.HTWH[:,:,l] +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+          B = Mats.HTWL[:,:,l]
+		  G=inv(Q)*B
+		  vdm[:,l] = G[:,l]
 	  end
 	  vdm =vdm.*(vdm.>0.0) #FILTER OUT NEGATIVE VALUES
 	  if save==true
