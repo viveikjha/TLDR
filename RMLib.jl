@@ -36,8 +36,8 @@ function HOT_LAUNCH(Data,Mats,Pars,Fit;scale=1.0,nits=50,Tvdm="",Plot_Live=true,
 
   Fit.msmo=Fit.msmo
 
-  tmp,P = TLDR(1.0,Data,Mats,Pars,Fit;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,RecD=RecD)
-  tmp;
+  tmp,P,Fit = TLDR(1.0,Data,Mats,Pars,Fit;Plot_A=Plot_Live,Plot_F=Plot_Final,vdmact=Tvdm,RepIt=RepIt,RepF=RepF,RecD=RecD)
+  tmp,Fit;
 end
 #=--------------------------------------------------=#
 #================= TLDR COLD LAUNCHER ====================#
@@ -232,6 +232,29 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	#Pars.conflag=true #should never begin main loop.
 	gc() #GARBAGE CLEANUP
 	fcn_vals=zeros(Pars.nits+1)
+
+	if Fit.fast==true
+		Qinv=zeros(Pars.num_tdf_times,Pars.num_tdf_times,DATA.num_lines)
+		DsTDs=length(Pars.wavelet_bases)
+		for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
+			if Fit.waves==true
+				Q = Mats.HTWH[:,:,l] + T.rho*DsTDs+(Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+			else
+				Q = Mats.HTWH[:,:,l] + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+			end
+			Qinv[:,:,l]=inv(Q)
+		end
+		Mats.Qinv=Qinv
+		if Fit.waves==true
+			dims=size(X.vdm)
+			DvTDv=length(Pars.wavelet_bases)#*eye(dims[1],dims[2]) #not sure where the length( should end......
+			R = V.rho.*DvTDv+Z.rho.*Mats.Gammaspe
+	    else
+			R = V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe
+		end
+		Mats.Rinv=inv(R)
+	end
+
 	while Pars.it <= Pars.nits && Pars.conflag==0        #ADMM ITERATION LOOP
 
 		X.vdm_previous = copy(X.vdm)
@@ -281,42 +304,39 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		P.U = LG_update(P.U,P.vdm,X.vdm,P.rho,Pars.alpha)
 		Z.U = LG_update(Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha)
 
-		#Step 5: UPDATE INTERMEDIATE MULTIPLIERS
-		T.UI_previous=copy(T.UI)
-		V.UI_previous=copy(V.UI)
-		if Fit.waves == true
-			T.UI = IM_update(T.UI,T.vdm,Ds(X.vdm_previous,Pars),T.rho) #Wavelets
-			V.UI = IM_update(V.UI,V.vdm,Dv(Z.vdm_previous,Pars),V.rho)	#WAVELETS
-		else
-			T.UI = IM_update(T.UI,T.vdm,Mats.Ds*X.vdm_previous,T.rho)
-			V.UI = IM_update(V.UI,V.vdm,Z.vdm_previous*Mats.Dv,V.rho)
-		end
 
-		N.UI_previous=copy(N.UI)
-		N.UI = IM_update(N.UI,N.vdm,X.vdm_previous,N.rho)
-		P.UI_previous=copy(P.UI)
-		P.UI = IM_update(P.UI,P.vdm,X.vdm_previous,P.rho)
-		Z.UI_previous=copy(Z.UI)
-		Z.UI = IM_update(Z.UI,Z.vdm,X.vdm_previous,Z.rho)
-
-		#Step 6: UPDATE RHO
-		if (Pars.it%10 == 0 || Pars.it==2) #UPUDATE EVERY ## ITERATIONS
+		if Fit.fast==false && (Pars.it%10 == 0 || Pars.it==2) #UPUDATE EVERY ## ITERATIONS
+			#Step 5: UPDATE INTERMEDIATE MULTIPLIERS
+			T.UI_previous=copy(T.UI)
+			V.UI_previous=copy(V.UI)
 			if Fit.waves == true
-				adapt(T,Ds(X.vdm,Pars),Ds(X.vdm_previous,Pars),Ds(Z.UI_previous,Pars),Ds(Z.UI,Pars),Pars.it) #WAVELETS #TROUBLE HERE!
-				adapt(V,Dv(Z.vdm,Pars),Dv(Z.vdm_previous,Pars),Dv(Z.UI_previous,Pars),Dv(Z.UI,Pars),Pars.it) #WAVELETS #TROUBLE HERE!
+				T.UI = IM_update(T.UI,T.vdm,Ds(X.vdm_previous,Pars),T.rho) #Wavelets
+				V.UI = IM_update(V.UI,V.vdm,Dv(Z.vdm_previous,Pars),V.rho)	#WAVELETS
 			else
-				adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-				adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
+				T.UI = IM_update(T.UI,T.vdm,Mats.Ds*X.vdm_previous,T.rho)
+				V.UI = IM_update(V.UI,V.vdm,Z.vdm_previous*Mats.Dv,V.rho)
 			end
-			adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-			adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-			adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+
+			N.UI_previous=copy(N.UI)
+			N.UI = IM_update(N.UI,N.vdm,X.vdm_previous,N.rho)
+			P.UI_previous=copy(P.UI)
+			P.UI = IM_update(P.UI,P.vdm,X.vdm_previous,P.rho)
+			Z.UI_previous=copy(Z.UI)
+			Z.UI = IM_update(Z.UI,Z.vdm,X.vdm_previous,Z.rho)
+			#Step 6: UPDATE RHO
+			if Fit.waves == true
+				T.rho=adapt(T,Ds(X.vdm,Pars),Ds(X.vdm_previous,Pars),Ds(Z.UI_previous,Pars),Ds(Z.UI,Pars),Pars.it) #WAVELETS #TROUBLE HERE!
+				V.rho=adapt(V,Dv(Z.vdm,Pars),Dv(Z.vdm_previous,Pars),Dv(Z.UI_previous,Pars),Dv(Z.UI,Pars),Pars.it) #WAVELETS #TROUBLE HERE!
+			else
+				T.rho=adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+				V.rho=adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
+			end
+			N.rho=adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			P.rho=adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			Z.rho=adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
 		end
 
-  	if Pars.it == 2
 
-			Pars.G = 1.5
-		end
 
 		#Step 6: Check for Convergence
 		if Pars.it != 2
@@ -396,6 +416,12 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 			draw()
 		end
   end
+  Fit.pz=Z.rho
+  Fit.pn=N.rho
+  Fit.pv=V.rho
+  Fit.pt=T.rho
+  Fit.pp=P.rho
+  println(T.rho)
 	if RepF==true
 		Report(X,Z,P,T,V,N,DATA,Mats,Pars,Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,s=true,Pres=true,Zres=true,Tres=true,Vres=true,Nres=true,Msg=" -Final-")
 	end
@@ -423,7 +449,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 		writecsv(string(Pars.directory,"Reconstruction/P_res.csv"),Record.P_res)
 	end
 	#writecsv("J_vals.csv", fcn_vals)
-	X,Pars
+	X,Pars,Fit
 end
 
 #=--------------------------------------------------=#
@@ -452,22 +478,30 @@ function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 	#vdm = Array(Float64,s[1],s[2])
 	vdm = Array{Float64}(s[1],s[2]) #UPDATE FOR JV0.6.2
 	tmp=Array{Float64}(size(Mats.HT)[1],size(Mats.H)[2])
+	DsTDs=length(Pars.wavelet_bases)#*eye(s[1],s[2]) #not sure where the length( should end......
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-		if Fit.waves == true
-			DsTDs=length(Pars.wavelet_bases)*eye(s[1],s[2]) #not sure where the length( should end......
-#			Q = Mats.HT * Mats.W[:,:,l] * Mats.H + T.rho*DsTDs+(Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-#			B = Mats.HT* Mats.W[:,:,l] * DATA.L + DsT(T.U+T.rho.*T.vdm,Pars)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
-			Q = Mats.HTWH[:,:,l] + T.rho*DsTDs+(Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-			B = Mats.HTWL[:,:,l] + DsT(T.U+T.rho.*T.vdm,Pars)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+		if Fit.fast==true
+			if Fit.waves==true
+				B = Mats.HTWL[:,:,l] + DsT(T.U+T.rho.*T.vdm,Pars)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+			else
+				B = Mats.HTWL[:,:,l] + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+			end
+			G=Mats.Qinv[:,:,l]*B
 		else
-			#Q = Mats.HT * Mats.W[:,:,l] * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-			#B = Mats.HT* Mats.W[:,:,l] * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
-			Q = Mats.HTWH[:,:,l] + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
-			B = Mats.HTWL[:,:,l] + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+			if Fit.waves==true
+	#			Q = Mats.HT * Mats.W[:,:,l] * Mats.H + T.rho*DsTDs+(Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+	#			B = Mats.HT* Mats.W[:,:,l] * DATA.L + DsT(T.U+T.rho.*T.vdm,Pars)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+				Q = Mats.HTWH[:,:,l] + T.rho*DsTDs+(Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+				B = Mats.HTWL[:,:,l] + DsT(T.U+T.rho.*T.vdm,Pars)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+			else
+				#Q = Mats.HT * Mats.W[:,:,l] * Mats.H + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+				#B = Mats.HT* Mats.W[:,:,l] * DATA.L + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+				Q = Mats.HTWH[:,:,l] + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+				B = Mats.HTWL[:,:,l] + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
+			end
+				G=Q\B
 		end
-
-			G=inv(Q)*B
-			vdm[:,l] = G[:,l]
+		vdm[:,l] = G[:,l]
 	end
 	X.vdm=copy(vdm) #sdata() pulls the underlying shared array
 	X.vdm
@@ -477,16 +511,26 @@ end
 #=============== Minimization wrt Z =================#
 #=--------------------------------------------------=#
 function min_wrt_z(X,V,Z,Pars,DATA,Mats,Fit)
-	if Fit.waves==true
-		dims=size(X.vdm)
-		DvTDv=length(Pars.wavelet_bases)*eye(dims[1],dims[2]) #not sure where the length( should end......
-		Rinv = inv(V.rho.*DvTDv+Z.rho.*Mats.Gammaspe)
-    	C = DvT(V.U+V.rho.*V.vdm,Pars)-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
+	if Fit.fast==true
+		if Fit.waves==true
+			C = DvT(V.U+V.rho.*V.vdm,Pars)-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
+		else
+			C = (V.U+V.rho.*V.vdm)*Mats.DvT-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
+		end
+		Z.vdm=Mats.Rinv*C
 	else
-		Rinv = inv(V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe)
-		C = (V.U+V.rho.*V.vdm)*Mats.DvT-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
+		if Fit.waves==true
+			dims=size(X.vdm)
+			DvTDv=length(Pars.wavelet_bases)#*eye(dims[1],dims[2]) #not sure where the length( should end......
+			R = V.rho.*DvTDv+Z.rho.*Mats.Gammaspe
+	    	C = DvT(V.U+V.rho.*V.vdm,Pars)-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
+		else
+			R = V.rho.*Mats.Dv*Mats.DvT+Z.rho.*Mats.Gammaspe
+			C = (V.U+V.rho.*V.vdm)*Mats.DvT-Z.U+(Z.rho.*X.vdm)	#ORIGINAL PAPER VERSION
+		end
+		Z.vdm =R\C
 	end
-	Z.vdm = 	C*Rinv
+	Z.vdm
 end
 
 #=--------------------------------------------------=#
@@ -568,9 +612,9 @@ function adapt(J,Kvdm,Kvdm_previous,KUI_previous,KUI,k)
 			tau_hat=tau_previous
 	end #END IF ELSE BLOCK
 	tau=max(min(tau_hat,(1.0+(CCG/k^2)*tau_previous)),tau_previous/(1.0+(CCG/k^2)))
-	#if J.rho != tau
-	#	println("Rho changed from ", J.rho, " to ", tau)
-	#end
+	if J.rho != tau
+		println("Rho changed from ", J.rho, " to ", tau)
+	end
 	J.rho=tau
 end
 

@@ -32,6 +32,7 @@ mutable struct Fit_Params
 	TI::Real
 	TI2::Real
 	waves::Bool
+	fast::Bool
 end
 
 mutable struct Params
@@ -95,6 +96,8 @@ mutable struct Matrices_S
 	GammaspeT::Array{Float64}
 	HTWH::Array{Float64}
 	HTWL::Array{Float64}
+	Qinv::Array{Float64}
+	Rinv::Array{Float64}
 end
 
 mutable struct Rec_Data
@@ -126,11 +129,11 @@ function init_Data()
 end
 
 function init_Mats()
-	Matrices_S([],[],[],[],[],[],[],[],[],[],[],[],[],[])
+	Matrices_S([],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[])
 end
 
 function init_fit()
-	Fit_Params(1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,NaN,NaN,true)
+	Fit_Params(1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,1.0e3,NaN,NaN,true,false)
 end
 
 end #end module

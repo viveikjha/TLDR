@@ -15,7 +15,7 @@ using GenMatrices
 
 
 prefix="10x10/"
-name="box"
+name="gradh"
 bpf=string(prefix,name,"/")
 filenames=["UT_Wavelengths.csv","UT_Spectra.csv","UT_Spectra_Error.csv"]
 FILES_ARR=[string(bpf,filenames[1]),string(bpf,filenames[2]),string(bpf,filenames[3]),"data/rvm_dates.csv","data/arp151.b.dat"]
@@ -29,7 +29,7 @@ DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
 #save_data(string(prefix,"TLDR_data.jld"),DATA)
 Pars= init_Params()
 Pars.directory=prefix
-Pars.nits=1000
+Pars.nits=9
 Pars.num_tdf_times=10
 Pars.alpha=1.2
 Mats=Gen_Mats(DATA,Pars)
@@ -40,27 +40,24 @@ Mats=Gen_Mats(DATA,Pars)
 print_with_color(:green,"beginning reconstruction\n")
 scale=1.0e0
 
-Pars.threshold=1.0e-4
+Pars.threshold=1.0e-7
 Fit=init_fit()
-Fit.waves=false   #Use wavelets
-Fit.mtem = 1.0   #GOES WITH T
-Fit.mspe = 1.0    #GOES WITH V
-Fit.ml1 = 1.0
-Fit.msmo = 1.0
+#Fit.waves=false   #True = Use wavelets False= Use TV
+Fit.mtem = 46.0   #GOES WITH T
+Fit.mspe = 6.0    #GOES WITH V
+Fit.ml1 = 133.0       #L1--N
+Fit.msmo = 143.0      #L2--Tik
 
 Fit.pz=1.0
 Fit.pp=1.0
 Fit.pn=1.0
 Fit.pv=1.0
 Fit.pt = 1.0
-#Fit.TI=1629750.8 #Box
-Fit.TI=1.0 #Box
-#Fit.TI=570.0 #Ring
-
+Fit.TI=1.0 #Box #Tikhonov initialization currently disabled in RMLib
+Fit.fast=true
 
 tic()
-K=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=false,RepIt=true,RepF=false,RecD=false); #RHOS: rhoZ=pz,rhoN=pn,rhoP=pp, rhoV=pv,rhoT=pt
+K,Fit=HOT_LAUNCH(DATA,Mats,Pars,Fit;scale=1.0,nits=Pars.nits,Plot_Live=false,Plot_Final=false,RepIt=true,RepF=false,RecD=false);
 toc()
 vdm=copy(K.vdm)
 writecsv(string("RevMapResult.csv"),vdm)
-")

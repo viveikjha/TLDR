@@ -13,18 +13,21 @@ mastercount=0
 pb="10x10/"
 #names=["box","checkerboard","circle","diagonal","diagonalinverted","halfbottom","halfleft","halfright","halftop","horizontalstripe","invertedbox","invertedhorizontalstripe","invertedverticalstripe","lowertri","reverseddiagonal","reverseddiagonalinverted","ring","uppertri","verticalstripe"]
 #names=["reverseddiagonal","reverseddiagonalinverted"]
-names=["box"]
+names=["gradh"]
 nps=3
 #m1=logspace(0.0,3.0,nps)
-m1=linspace(1.0,60.0,nps)
+m1=linspace(140.0,143.0,nps)
+m1b=linspace(130.0,134.0,nps)
+m2=linspace(6.0,8.0,nps)
+m3=linspace(44.0,48.0,nps)
 #m2=logspace(2.0,2.0,nps)
 #m3=logspace(2.0,2.5,nps)
 count=0
 totalcount=length(names)*nps^4
 mspe=1.0
-mtem=1.0
-ml1=1.0
-msmo=1.0
+mtem=46.0
+ml1=133.0
+msmo=143.0
 pp=1.0
 clim=4.0
 pv=1.0
@@ -50,10 +53,10 @@ for i in range(1,length(names))
     #NEW DATASET? IMPORT DATA FILES
     DATA = Import_DataN("",wavelengths,spectra,errspectra,dates,continuum)
     Pars= init_Params()
-    Pars.nits=2000
+    Pars.nits=3000
     Pars.alpha=1.2
     Pars.num_tdf_times=10
-    Pars.threshold=1.0e-5
+    Pars.threshold=1.0e-7
 
     Mats=Gen_Mats(DATA,Pars)
 
@@ -67,15 +70,16 @@ for i in range(1,length(names))
     #Pars,Mats=load_vars("TLDR_vars.jld")
 
     for msmo in m1 #msmo
-      for ml1 in m1 #ml1
-        for mspe in m1
-          for mtem in m1
+      for ml1 in ml1 #ml1
+        for mspe in m2
+          for mtem in mtem
               mastercount+=1
               count+=1
               DATA = load_data("TLDR_data.jld")
               Pars,Mats=load_vars("TLDR_vars.jld")
               #WILL NEED A NEW IMPORT
               Fit=init_fit()
+              Fit.waves=true
               Fit.msmo = msmo
               Fit.pz=pz
               Fit.ml1 = ml1
@@ -86,7 +90,8 @@ for i in range(1,length(names))
               Fit.pt=pt
               Fit.pp=pp
               Fit.TI=0.1
-              K=HOT_LAUNCH(DATA,Mats,Pars,Fit;nits=Pars.nits,Plot_Live=false,Plot_Final=false,RepIt=false,RepF=false);
+              Fit.fast=true
+              K,Fit=HOT_LAUNCH(DATA,Mats,Pars,Fit;nits=Pars.nits,Plot_Live=false,Plot_Final=false,RepIt=false,RepF=false);
               if Pars.conflag==1 && Pars.chi2<clim#converged
                 col=:green
               elseif Pars.conflag==2 #diverged
@@ -97,10 +102,10 @@ for i in range(1,length(names))
               print_with_color(col,string("#",mastercount, " of ", totalcount, " chi2: ", round(Pars.chi2,4), " Iterations: ", Pars.it, "\n"))
               if Pars.chi2 < clim
                 repname=string(bpf,"batch/",string(count),".txt")
-                s1=string("Msmo: ",msmo, " RhoS: ",pz )
-                s2=string("Ml1: ",ml1, " RhoN: ",pn )
-                s3=string("Mspe: ",mspe, " RhoV: ",pv )
-                s4=string("Mtem: ",mtem, " RhoT: ",pt )
+                s1=string("Msmo: ",msmo, " RhoS: ",Fit.pz )
+                s2=string("Ml1: ",ml1, " RhoN: ",Fit.pn )
+                s3=string("Mspe: ",mspe, " RhoV: ",Fit.pv )
+                s4=string("Mtem: ",mtem, " RhoT: ",Fit.pt )
                 s5=string("RhoP: ", pp, " Chi2: ", Pars.chi2, " Con: ", Pars.conflag)
                 s6=string(" Con: ", Pars.conflag)
                 writedlm(repname,[s1,s2,s3,s4,s5,s6],"\n")
