@@ -8,11 +8,7 @@ using RMTypes
 using DataImportNEW
 using GenMatrices
 using Wavelets
-#include("RMLibMore.jl")
-#include("RMTypes.jl")
-#include("DataImport.jl")
-#include("DataImportNEW.jl")
-#include("GenMatrices.jl")
+
 export HOT_LAUNCH,COLD_LAUNCH
 #=--------------------------------------------------=#
 #================= TLDR HOT LAUNCHER ====================#
@@ -421,7 +417,7 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
   Fit.pv=V.rho
   Fit.pt=T.rho
   Fit.pp=P.rho
-  println(T.rho)
+  #println(T.rho)
 	if RepF==true
 		Report(X,Z,P,T,V,N,DATA,Mats,Pars,Jf=true,L2x=true,L1T=true,L1V=true,L1N=true,Chi2x=true,s=true,Pres=true,Zres=true,Tres=true,Vres=true,Nres=true,Msg=" -Final-")
 	end
@@ -499,7 +495,7 @@ function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 				Q = Mats.HTWH[:,:,l] + T.rho*Mats.DsT*Mats.Ds + (Fit.msmo+Z.rho+T.rho+N.rho)*Mats.Gammatdf #INCLUCES L1 NORM ON X
 				B = Mats.HTWL[:,:,l] + Mats.DsT*(T.U+T.rho.*T.vdm)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
 			end
-				G=Q\B
+			G=Q\B
 		end
 		vdm[:,l] = G[:,l]
 	end

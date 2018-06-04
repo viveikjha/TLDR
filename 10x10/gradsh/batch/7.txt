@@ -1,0 +1,6 @@
+Msmo: 1.0 RhoS: 1.0
+Ml1: 1.0 RhoN: 1.0
+Mspe: 30.8 RhoV: 1.0
+Mtem: 1.0 RhoT: 1.0
+RhoP: 1.0 Chi2: 0.9775621409478225 Con: 0
+ Con: 0
