@@ -364,15 +364,15 @@ function plotfin(Plot_F,X,Z,T,V)
 	function gen_tiksol(Par,Mats,DATA;scale=1.0,mu_smoo=40.0,plotting=false,save=false)
 	  #Par,Mats,DATA=getdata(f)
 	  #println("µ: ",mu_smoo)
-	  Pars= init_Params()
-	  Mats = Gen_Mats(DATA,Pars)
+	  #Pars= init_Params()
+	  #Mats = Gen_Mats(DATA,Pars)
 
 	  #end
-	  Pars.mu_smoo=copy(mu_smoo)
-	  vdm = zeros(Pars.num_tdf_times,DATA.num_lines)
+	  Par.mu_smoo=copy(mu_smoo)
+	  vdm = zeros(Par.num_tdf_times,DATA.num_lines)
     #slice_size=size(Mats.W)
 	  for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
-          Q = Mats.HTWH[:,:,l] +  (Pars.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
+          Q = Mats.HTWH[:,:,l] +  (Par.mu_smoo)*Mats.Gammatdf #INCLUCES L1 NORM ON X
           B = Mats.HTWL[:,:,l]
 		  G=inv(Q)*B
 		  vdm[:,l] = G[:,l]

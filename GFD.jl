@@ -30,7 +30,7 @@ spread=10.0
 lvl=0.1
 
 #DSNR=100.0
-DSNR=50.0 #33.33 is the proper test value
+DSNR=100.0 #33.33 is the proper test value
 
 flx_scale=1.0
 
@@ -46,7 +46,7 @@ for i in 1:ntimes
 end
 
 #If another pattern is used, load here!
-vdm=readcsv("Paper/ring/simulated_ring_vdm.csv")
+#vdm=readcsv("Paper/ring/simulated_ring_vdm.csv")
 #vdm=readcsv("Paper/ring/simulated_spiral_vdm.csv")
 #vdm=readcsv("checkerboard_20x50/original_checkerboard.csv")
 #vdm=readcsv("circle_20x50/original_circle.csv")
