@@ -9,7 +9,7 @@ minp=""
 for f in filter(x -> ismatch(r"\.csv", x),readdir("batch"))
   solution = readcsv(string("batch/",f))
   absdif=(sum(abs.(actual-solution))) #abs() or abs.() will depend on Julia version.
-  MSE=(1.0/length(f))*sum((actual-solution).^2)
+  MSE=(1.0/length(actual))*sum((actual-solution).^2)
   MAX=255.0
   PSNR=10.0*log10(MAX^2/MSE)
   if absdif < mindif

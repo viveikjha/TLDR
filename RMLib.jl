@@ -111,19 +111,19 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 	Pars.IDsM=Array{Float64}(dims[1],dims[2],length(Pars.wavelet_bases))
 
 
-	X= Gen_Var(Pars.rho0,dims,initial_psi)
-	Z = Gen_Var(Pars.rho0,dims,initial_psi)
-	P = Gen_Var(Pars.rho0,dims,initial_psi)
-	N = Gen_Var(Pars.rho0,dims,initial_psi)
+	X= Gen_Var("X",Pars.rho0,dims,initial_psi)
+	Z = Gen_Var("Z",Pars.rho0,dims,initial_psi)
+	P = Gen_Var("P",Pars.rho0,dims,initial_psi)
+	N = Gen_Var("N",Pars.rho0,dims,initial_psi)
 
 	#THESE WILL NEED TO CHANGE FOR WAVELETS. 3D OR JUST EXTENDED...
 	if Fit.waves==true
 		wdims=(Pars.num_tdf_times,DATA.num_lines,length(Pars.wavelet_bases)) #WAVELETS
-		T = Gen_Var(Pars.rho0,wdims,initial_psi)
-		V = Gen_Var(Pars.rho0,wdims,initial_psi)
+		T = Gen_Var("T",Pars.rho0,wdims,initial_psi)
+		V = Gen_Var("V",Pars.rho0,wdims,initial_psi)
 	else
-		T = Gen_Var(Pars.rho0,dims,initial_psi)
-		V = Gen_Var(Pars.rho0,dims,initial_psi)
+		T = Gen_Var("T",Pars.rho0,dims,initial_psi)
+		V = Gen_Var("V",Pars.rho0,dims,initial_psi)
 	end
 	#if isnan(Fit.TI) == false && isnan(Fit.TI2) == false
 		#if Fit.TI != Fit.TI2
@@ -253,7 +253,15 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 
 	while Pars.it <= Pars.nits && Pars.conflag==0        #ADMM ITERATION LOOP
 
-		X.vdm_previous = copy(X.vdm)
+		#X.vdm_previous = copy(X.vdm)
+		#P.vdm_previous = copy(P.vdm)
+		#T.vdm_previous = copy(T.vdm)
+		#V.vdm_previous = copy(V.vdm)
+		#N.vdm_previous = copy(N.vdm)
+		#Z.vdm_previous = copy(Z.vdm)
+
+		X.vdm_previous,P.vdm_previous,T.vdm_previous,V.vdm_previous,N.vdm_previous,Z.vdm_previous=pmap(copy,[X.vdm_previous,P.vdm,T.vdm,V.vdm,N.vdm,Z.vdm]) #MULTI
+
 	#Step 1: MINIMIZATION W.R.T. X
 		X.vdm = min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 		#X.vdm = X.vdm.*(X.vdm.>0.0)
@@ -261,75 +269,101 @@ function TLDR(flx_scale,DATA,Mats,Pars,Fit;Plot_F=true,Plot_A=false,vdmact="",Re
 
 
 
-		P.vdm_squiggle = X.vdm - P.U./P.rho
-		N.vdm_squiggle = X.vdm - N.U./N.rho
+		#P.vdm_squiggle=get_squiggy(X.vdm,P.U,P.rho)
+		#P.vdm_squiggle = X.vdm - P.U./P.rho
+		#N.vdm_squiggle = X.vdm - N.U./N.rho
 		if Fit.waves == true
-			T.vdm_squiggle = Ds(X.vdm,Pars)-T.U./T.rho	#WAVELETS
-			V.vdm_squiggle = Dv(Z.vdm,Pars) - V.U./V.rho	#WAVELETS
+			#T.vdm_squiggle = Ds(X.vdm,Pars)-T.U./T.rho	#WAVELETS
+			#V.vdm_squiggle = Dv(Z.vdm,Pars) - V.U./V.rho	#WAVELETS
+			Ts_SP=Ds(X.vdm,Pars)
+			Vs_SP=Dv(Z.vdm,Pars)
 		else
-			T.vdm_squiggle = Mats.Ds*X.vdm-T.U./T.rho
-			V.vdm_squiggle = Z.vdm*Mats.Dv - V.U./V.rho
+			#T.vdm_squiggle = Mats.Ds*X.vdm-T.U./T.rho
+			#V.vdm_squiggle = Z.vdm*Mats.Dv - V.U./V.rho
+			Ts_SP=Mats.Ds*X.vdm
+			Vs_SP=Z.vdm*Mats.Dv
 		end
 
-		P.vdm_previous = copy(P.vdm)
-		P.vdm = pos_prox_op(P.vdm_squiggle)
+		P.vdm_squiggle,N.vdm_squiggle,T.vdm_squiggle,V.vdm_squiggle=pmap(get_squiggy,[X.vdm,X.vdm,Ts_SP,Vs_SP],[P.U,N.U,T.U,V.U],[P.rho,N.rho,T.rho,V.rho])
 
-		T.vdm_previous = copy(T.vdm)
-		T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Fit.mtem,T.rho)
+		#P.vdm = pos_prox_op(P.vdm_squiggle)
+		#T.vdm = ell1_prox_op(T.vdm,T.vdm_squiggle,Fit.mtem,T.rho)
+		#V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Fit.mspe,V.rho)
+		#N.vdm = ell1_prox_op(N.vdm,N.vdm_squiggle,Fit.ml1,N.rho)
+		P.vdm,N.vdm,T.vdm,V.vdm=pmap(prox_op,[P.ID,N.ID,T.ID,V.ID],[P.vdm_squiggle,N.vdm,T.vdm,V.vdm],[P.vdm_squiggle,N.vdm_squiggle,T.vdm_squiggle,V.vdm_squiggle],[1.0,Fit.ml1,Fit.mtem,Fit.mspe],[P.rho,N.rho,T.rho,V.rho])
 
-		V.vdm_previous = copy(V.vdm)
-		V.vdm = ell1_prox_op(V.vdm,V.vdm_squiggle,Fit.mspe,V.rho)
-
-		N.vdm_previous = copy(N.vdm)
-		N.vdm = ell1_prox_op(N.vdm,N.vdm_squiggle,Fit.ml1,N.rho)
-
-		Z.vdm_previous = copy(Z.vdm)
 		Z.vdm = min_wrt_z(X,V,Z,Pars,DATA,Mats,Fit)
 
 		#Step 4: UPDATE LAGRANGE MULTIPLIERS
 		#CHANGE
 		if Fit.waves == true
-			T.U = LG_update(T.U,T.vdm,Ds(X.vdm,Pars),T.rho,Pars.alpha)	#WAVELETS
-			V.U = LG_update(V.U,V.vdm,Dv(Z.vdm,Pars),V.rho,Pars.alpha) #WAVELETS
+			#T.U = LG_update(T.U,T.vdm,Ds(X.vdm,Pars),T.rho,Pars.alpha)	#WAVELETS
+			#V.U = LG_update(V.U,V.vdm,Dv(Z.vdm,Pars),V.rho,Pars.alpha) #WAVELETS
+			TLGU=Ds(X.vdm,Pars)
+			VLGU=Dv(Z.vdm,Pars)
 		else
-			T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
-			V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
+			#T.U = LG_update(T.U,T.vdm,Mats.Ds*X.vdm,T.rho,Pars.alpha)
+			#V.U = LG_update(V.U,V.vdm,Z.vdm*Mats.Dv,V.rho,Pars.alpha)
+			TLGU=Mats.Ds*X.vdm
+			VLGU=Z.vdm*Mats.Dv
 		end
-
-		N.U = LG_update(N.U,N.vdm,X.vdm,N.rho,Pars.alpha)
-		P.U = LG_update(P.U,P.vdm,X.vdm,P.rho,Pars.alpha)
-		Z.U = LG_update(Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha)
-
+		#N.U = LG_update(N.U,N.vdm,X.vdm,N.rho,Pars.alpha)
+		NLGU=[N.U,N.vdm,X.vdm,N.rho,Pars.alpha]
+		#P.U = LG_update(P.U,P.vdm,X.vdm,P.rho,Pars.alpha)
+		PLGU=[P.U,P.vdm,X.vdm,P.rho,Pars.alpha]
+		#Z.U = LG_update(Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha)
+		ZLGU=[Z.U,Z.vdm,X.vdm,Z.rho,Pars.alpha]
+		P.U,N.U,T.U,V.U,Z.U=pmap(LG_update,[P.U,N.U,T.U,V.U,Z.U],[P.vdm,N.vdm,T.vdm,V.vdm,Z.vdm],[X.vdm,X.vdm,TLGU,VLGU,X.vdm],[P.rho,N.rho,T.rho,V.rho,Z.rho],[Pars.alpha,Pars.alpha,Pars.alpha,Pars.alpha,Pars.alpha])	#MULTI
 
 		if Fit.fast==false && (Pars.it%10 == 0 || Pars.it==2) #UPUDATE EVERY ## ITERATIONS
 			#Step 5: UPDATE INTERMEDIATE MULTIPLIERS
-			T.UI_previous=copy(T.UI)
-			V.UI_previous=copy(V.UI)
+			#T.UI_previous=copy(T.UI)
+			#V.UI_previous=copy(V.UI)
+			#N.UI_previous=copy(N.UI)
+			#P.UI_previous=copy(P.UI)
+			#Z.UI_previous=copy(Z.UI)
+
+			T.UI_previous,V.UI_previous,N.UI_previous,P.UI_previous,Z.UI_previous=pmap(copy,[T.UI,V.UI,N.UI,P.UI,Z.UI]) #MULTI
+
 			if Fit.waves == true
-				T.UI = IM_update(T.UI,T.vdm,Ds(X.vdm_previous,Pars),T.rho) #Wavelets
-				V.UI = IM_update(V.UI,V.vdm,Dv(Z.vdm_previous,Pars),V.rho)	#WAVELETS
+				#T.UI = IM_update(T.UI,T.vdm,Ds(X.vdm_previous,Pars),T.rho) #Wavelets
+				#V.UI = IM_update(V.UI,V.vdm,Dv(Z.vdm_previous,Pars),V.rho)	#WAVELETS
+				TUI=Ds(X.vdm_previous,Pars)
+				VUI=Dv(Z.vdm_previous,Pars)
 			else
-				T.UI = IM_update(T.UI,T.vdm,Mats.Ds*X.vdm_previous,T.rho)
-				V.UI = IM_update(V.UI,V.vdm,Z.vdm_previous*Mats.Dv,V.rho)
+				#T.UI = IM_update(T.UI,T.vdm,Mats.Ds*X.vdm_previous,T.rho)
+				#V.UI = IM_update(V.UI,V.vdm,Z.vdm_previous*Mats.Dv,V.rho)
+				TUI=Mats.Ds*X.vdm_previous
+				VUI=Z.vdm_previous*Mats.Dv
 			end
 
-			N.UI_previous=copy(N.UI)
-			N.UI = IM_update(N.UI,N.vdm,X.vdm_previous,N.rho)
-			P.UI_previous=copy(P.UI)
-			P.UI = IM_update(P.UI,P.vdm,X.vdm_previous,P.rho)
-			Z.UI_previous=copy(Z.UI)
-			Z.UI = IM_update(Z.UI,Z.vdm,X.vdm_previous,Z.rho)
+			#N.UI = IM_update(N.UI,N.vdm,X.vdm_previous,N.rho)
+			NUI=[N.UI,N.vdm,X.vdm_previous,N.rho]
+			#P.UI = IM_update(P.UI,P.vdm,X.vdm_previous,P.rho)
+			PUI=[P.UI,P.vdm,X.vdm_previous,P.rho]
+			#Z.UI = IM_update(Z.UI,Z.vdm,X.vdm_previous,Z.rho)
+			ZUI=[Z.UI,Z.vdm,X.vdm_previous,Z.rho]
+			P.UI,N.UI,T.UI,V.UI,Z.UI=pmap(IM_update,[P.UI,N.UI,T.UI,V.UI,Z.UI],[P.vdm,N.vdm,T.vdm,V.vdm,Z.vdm],[X.vdm_previous,P.vdm_previous,TUI,VUI,X.vdm_previous],[P.rho,N.rho,T.rho,V.rho,Z.rho])
+
 			#Step 6: UPDATE RHO
 			if Fit.waves == true
-				T.rho=adapt(T,Ds(X.vdm,Pars),Ds(X.vdm_previous,Pars),Ds(Z.UI_previous,Pars),Ds(Z.UI,Pars),Pars.it) #WAVELETS #TROUBLE HERE!
-				V.rho=adapt(V,Dv(Z.vdm,Pars),Dv(Z.vdm_previous,Pars),Dv(Z.UI_previous,Pars),Dv(Z.UI,Pars),Pars.it) #WAVELETS #TROUBLE HERE!
+				#T.rho=adapt(T,Ds(X.vdm,Pars),Ds(X.vdm_previous,Pars),Ds(Z.UI_previous,Pars),Ds(Z.UI,Pars),Pars.it) #WAVELETS #TROUBLE HERE!
+				#V.rho=adapt(V,Dv(Z.vdm,Pars),Dv(Z.vdm_previous,Pars),Dv(Z.UI_previous,Pars),Dv(Z.UI,Pars),Pars.it) #WAVELETS #TROUBLE HERE!
+				TA=[Ds(X.vdm,Pars),Ds(X.vdm_previous,Pars),Ds(Z.UI_previous,Pars),Ds(Z.UI,Pars)]
+				VA=[V,Dv(Z.vdm,Pars),Dv(Z.vdm_previous,Pars),Dv(Z.UI_previous,Pars),Dv(Z.UI,Pars)]
 			else
-				T.rho=adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-				V.rho=adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
+				#T.rho=adapt(T,Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+				#V.rho=adapt(V,Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI,Pars.it)
+				TA=[Mats.Ds*X.vdm,Mats.Ds*X.vdm_previous,Z.UI_previous,Z.UI]
+				VA=[Z.vdm*Mats.Dv,Z.vdm_previous*Mats.Dv,Z.UI_previous,Z.UI]
 			end
-			N.rho=adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-			P.rho=adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
-			Z.rho=adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			#N.rho=adapt(N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			NA=[N,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it]
+			#P.rho=adapt(P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			PA=[P,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it]
+			#Z.rho=adapt(Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it)
+			ZA=[Z,X.vdm,X.vdm_previous,Z.UI_previous,Z.UI,Pars.it]
+			P.rho,N.rho,T.rho,V.rho,Z.rho=pmap(adapt,[TA,VA,NA,PA,ZA],[P,N,T,V,Z],[X.vdm,X.vdm,TA[1],VA[1],X.vdm],[X.vdm_previous,X.vdm_previous,TA[2],VA[2],X.vdm_previous],[Z.UI_previous,Z.UI_previous,TA[3],ZA[3],Z.UI_previous],[Z.UI,Z.UI,TA[4],VA[4],Z.UI],[Pars.it,Pars.it,Pars.it,Pars.it,Pars.it])
 		end
 
 
@@ -452,9 +486,10 @@ end
 #============= Generate ADMM Variable ===============#
 #=--------------------------------------------------=#
 #Intializes and fills the regularization terms for ADMM
- function Gen_Var(rhoi, dims,psi)
+ function Gen_Var(id,rhoi, dims,psi)
 	#dims=num_tdf_times,num_lines
 	x = init_IMAGE(rhoi,dims)
+	x.ID=id
 	x.vdm = zeros(dims)
 	fill!(x.vdm,psi)
 	x.vdm_squiggle = zeros(dims)
@@ -476,6 +511,7 @@ function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 	tmp=Array{Float64}(size(Mats.HT)[1],size(Mats.H)[2])
 	DsTDs=length(Pars.wavelet_bases)#*eye(s[1],s[2]) #not sure where the length( should end......
 	for l=1:DATA.num_lines        #SPECTAL CHANNEL LOOP
+
 		if Fit.fast==true
 			if Fit.waves==true
 				B = Mats.HTWL[:,:,l] + DsT(T.U+T.rho.*T.vdm,Pars)+P.U+P.rho.*P.vdm+Z.U+Z.rho.*Z.vdm+N.U+N.rho*N.vdm #INCLUDES L1 NORM ON X
@@ -502,6 +538,7 @@ function min_wrt_x(X,T,P,N,Z,Pars,DATA,Mats,Fit)
 	X.vdm=copy(vdm) #sdata() pulls the underlying shared array
 	X.vdm
 end
+
 
 #=--------------------------------------------------=#
 #=============== Minimization wrt Z =================#
@@ -670,6 +707,10 @@ end
 			end
 		end
 		reshape(sum(Params.IDsM,3)/length(Params.wavelet_bases),(size(mat)[1],size(mat)[2]));
+	end
+	#CALCULATE the SQUIGGLE
+	function get_squiggy(A,B,C)#A=vdm,B=associated_multipliers,C=associated_penalty
+		squiggy=A-B./C
 	end
 
 end #endmodule

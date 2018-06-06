@@ -3,7 +3,7 @@ using RMTypes
 using GenMatrices
 using PyPlot
 using JLD
-export J,regX,regT,regV,regN,regP,Report,data_report,Write_FITS,interp,gen_UTD,gen_tiksol,plotfin,Model,Chi2,ell1_prox_op,ell2_prox_op,pos_prox_op,ell1norm,ell2norm,ell2normsquared,save_vars,load_vars,save_data,load_data,load_record
+export J,regX,regT,regV,regN,regP,Report,data_report,Write_FITS,interp,gen_UTD,gen_tiksol,plotfin,Model,Chi2,ell1_prox_op,ell2_prox_op,pos_prox_op,ell1norm,ell2norm,ell2normsquared,save_vars,load_vars,save_data,load_data,load_record,prox_op
 #THIS FILE CONTAINS THE BASE LEVEL FUNCTIONS FOR TLDR THAT ARE NOT PART OF THE CORE ADMM ALGORITHM
 #Inputs include all the reconstruction variables. Options are for printed lines.
 
@@ -282,6 +282,17 @@ function Chi2(M,D,Sigma)
     sum(   ((M-D)./(Sigma)).^2)
 end
 
+#=--------------------------------------------------=#
+#================Proximal Operator ==================#
+#=--------------------------------------------------=#
+function prox_op(ID,X,XS,mu,rho)
+    if ID== "T" || ID=="V"|| ID== "N"
+        tmp=ell1_prox_op(X,XS,mu,rho)
+    else
+        tmp=pos_prox_op(X)
+    end
+    tmp
+end
 #=--------------------------------------------------=#
 #============= ELL1 Proximal Operator ===============#
 #=--------------------------------------------------=#
