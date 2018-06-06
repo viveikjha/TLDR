@@ -3,7 +3,7 @@ using Wavelets
 export ADMM_IMAGE,Data,Params,Fit_Params,DATA,Matrices_S,init_IMAGE,init_Params,init_Data,init_Mats,init_fit,Init_Record_Data
 #export ADMM_IMAGE,Fit_Params,Params,Matrices_S,Data,Rec_Data
 mutable struct ADMM_IMAGE
-	ID::Char
+	ID::String
 	vdm::Array{Float64}										#1
 	vdm_previous::Array{Float64}					#2
 	vdm_squiggle::Array{Float64}					#3

@@ -46,7 +46,7 @@ plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 i=1#1
 im1=np.loadtxt((names[i]+"/"+names[i]+".csv"),delimiter=",")
 info=np.loadtxt((names[i]+"/result.csv"),dtype=str,delimiter=",")
-#im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
+im2=np.loadtxt((names[i]+"/batch/"+info[0]),delimiter=",")
 ax=plt.subplot(gs[place+3])
 ax.imshow(im1,interpolation="none",cmap="Greys")
 ax.set_xticks([])
@@ -57,12 +57,12 @@ ax.set_xticks([])
 ax.set_yticks([])
 
 
-#txt=str(np.round(float(info[1]),2))+" dB"
-#ax=plt.subplot(gs[1,3:5])
-#ax.set_xticks([])
-#ax.set_yticks([])
-#ax.axis('off')
-#plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
+txt=str(np.round(float(info[1]),2))+" dB"
+ax=plt.subplot(gs[1,3:5])
+ax.set_xticks([])
+ax.set_yticks([])
+ax.axis('off')
+plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 
 #Set3
 i=2
@@ -409,5 +409,5 @@ plt.text(0.5, 0.5, txt, ha='center', va='center', size=12)
 gs.update(left=0.1,right=0.9,top=0.9,bottom=0.1,wspace=0.1,hspace=00.001)
 
 #plt.tight_layout()
-#plt.show()
-plt.savefig("NEWRecSwatches.png", bbox_inches='tight')
+plt.show()
+#plt.savefig("NEWRecSwatches.png", bbox_inches='tight')

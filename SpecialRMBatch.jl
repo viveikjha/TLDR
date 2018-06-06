@@ -13,10 +13,10 @@ mastercount=0
 pb="10x10/"
 #names=["box","checkerboard","circle","diagonal","diagonalinverted","halfbottom","halfleft","halfright","halftop","horizontalstripe","invertedbox","invertedhorizontalstripe","invertedverticalstripe","lowertri","reverseddiagonal","reverseddiagonalinverted","ring","uppertri","verticalstripe"]
 #names=["reverseddiagonal","reverseddiagonalinverted"]
-names=["diagonal"]
-nps=4
+names=["box"]
+nps=5
 #m1=logspace(0.0,3.0,nps)
-m1=linspace(1.0,20.0,nps)
+m1=linspace(1.0,100.0,nps)
 m2=linspace(30.0,70.0,nps)
 m3=linspace(85.0,95.0,nps)
 m4=linspace(1.0,10,nps)
@@ -64,15 +64,18 @@ for i in range(1,length(names))
     save_data("TLDR_data.jld",DATA)
     save_vars("TLDR_vars.jld",Mats,Pars)
 
+#    for msmo in [1.0]#linspace(1.0,12.0,nps) #msmo
+#      for ml1 in linspace(30.0,40.0,nps) #ml1
+#        for mspe in linspace(10.0,20.0,nps)
+#          for mtem in [4.0]#linspace(1.0,10.0,nps)
 
     #SAME DATA, DIFFERENT RUN? LOAD DATA AND VARIABLES
     #DATA = load_data("TLDR_data.jld")
     #Pars,Mats=load_vars("TLDR_vars.jld")
-
-    for msmo in linspace(1.0,12.0,nps) #msmo
-      for ml1 in linspace(40.0,55.0,nps) #ml1
-        for mspe in linspace(10.0,20.0,nps)
-          for mtem in linspace(1.0,10.0,nps)
+        for msmo in m1#linspace(1.0,12.0,nps) #msmo
+          for ml1 in m1#linspace(30.0,40.0,nps) #ml1
+            for mspe in m1#linspace(1.0,5.0,nps)
+              for mtem in m1#linspace(1.0,10.0,nps)
               mastercount+=1
               count+=1
 

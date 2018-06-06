@@ -288,7 +288,7 @@ end
 function prox_op(ID,X,XS,mu,rho)
     if ID== "T" || ID=="V"|| ID== "N"
         tmp=ell1_prox_op(X,XS,mu,rho)
-    else
+    elseif ID=="P"
         tmp=pos_prox_op(X)
     end
     tmp
